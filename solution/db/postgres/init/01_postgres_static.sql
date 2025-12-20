@@ -1,5 +1,19 @@
 -- DATABASE: anime_core
 
+-- Tabella per i profili utente
+CREATE TABLE profiles (
+    username VARCHAR(255) PRIMARY KEY,
+    gender VARCHAR(50),
+    birthday DATE,
+    location VARCHAR(255),
+    joined DATE,
+    watching INT,
+    completed INT,
+    on_hold INT,
+    dropped INT,
+    plan_to_watch INT
+);
+
 -- Tabella per gli anime
 CREATE TABLE anime (
     anime_id INT PRIMARY KEY,

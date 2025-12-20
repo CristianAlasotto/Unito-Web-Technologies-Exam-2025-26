@@ -10,6 +10,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./db/postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./data/data-server-express:/import:ro
 
   mongo:
     image: mongo:7
