@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: anime_db
+      POSTGRES_USER: anime_user
+      POSTGRES_PASSWORD: anime_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/postgres/init:/docker-entrypoint-initdb.d:ro
+
+  mongo:
+    image: mongo:7
+    environment:
+      MONGO_INITDB_DATABASE: anime_dynamic
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+  mongoexpress:
+    image: mongo-express:1
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+    ports:
+      - "5051:8081"
+    depends_on:
+      - mongo
+
+  main_server:
+    profiles: ["app"]
+    build: ./services/main-server-express
+    environment:
+      DATA_EXPRESS_URL: http://data_express:3001
+      DATA_SPRING_URL: http://data_spring:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - data_express
+      - data_spring
+
+  data_express:
+    profiles: ["app"]
+    build: ./services/data-server-express
+    environment:
+      MONGO_URL: mongodb://mongo:27017/anime_dynamic
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mongo
+
+  data_spring:
+    profiles: ["app"]
+    build: ./services/data-server-spring
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/anime_db
+      SPRING_DATASOURCE_USERNAME: anime_user
+      SPRING_DATASOURCE_PASSWORD: anime_pass
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:
+  mongodata:
