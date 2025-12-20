@@ -1,6 +1,5 @@
-#dataset
-solution/data/
-*.csv
+# dataset
+solution/data/*.csv
 *.dump
 
 # macOS

@@ -2,12 +2,19 @@
 
 ## Start development environment
 
-### Linux
+insert dataset files in "solution/data"
+
+#### Linux
+```bash
 sudo systemctl start docker
+```
 
-### MacOS
+#### MacOS
+```bash
 open -a Docker
+```
 
+### Start containers
 ```bash
 docker-compose up -d
 ```
