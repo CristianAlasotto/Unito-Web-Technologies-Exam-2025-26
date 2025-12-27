@@ -5,14 +5,18 @@
 ### Prerequisiti
 - Docker Desktop in esecuzione
 - Node.js installato
+- Dataset in file .csv nella cartella `data/` (fondamentale solo per popolamento iniziale)
 
-### Metodo 1: Script Bash (consigliato per Linux/macOS)
+### Metodo 1: Script Bash (consigliato per Linux/MacOS)
 ```bash
-./solution/start-dev.sh
+cd solution
+./start-dev.sh
 ```
 
 ### Metodo 2: NPM Scripts (multi-piattaforma)
 ```bash
+cd solution
+
 # Prima volta
 npm run install:all
 
@@ -28,14 +32,15 @@ npm run docker:reset
 
 ### Metodo manuale
 ```bash
-# 1. Avvia container
+# 1. Avvia container + popolamento DB (prima volta)
+docker compose up -d postgres
 docker compose up -d
 
 # 2. Installa dipendenze (prima volta)
 cd services/main-server-express
 npm install
 
-# 3. Avvia server
+# 3. Avvia server di sviluppo
 npm run dev
 ```
 
@@ -64,6 +69,19 @@ npm run dev
 ## Comandi utili
 
 ```bash
-npm run docker:logs    # Vedi i log dei container
 docker compose ps -a   # Status dei container
+```
+
+## Eliminazione container Docker
+```bash
+docker compose down # Se precedentemente attivo
+docker rm -f $(docker ps -aq) # Elimina tutti i container
+docker rmi -f $(docker images -aq) # Elimina tutte le immagini
+
+docker ps -a  # Verifica che non ci siano container attivi
+```
+
+## Test popolamento DB
+```bash
+docker compose exec postgres psql -U anime_user -d anime_db -c "SELECT count(*) FROM profiles;"
 ```

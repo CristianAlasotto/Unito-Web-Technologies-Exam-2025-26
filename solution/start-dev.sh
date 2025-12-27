@@ -10,6 +10,7 @@ fi
 
 # Avvia i container
 echo "📦 Avvio container Docker..."
+docker compose up -d postgres
 docker compose up -d
 
 # Attendi che i database siano pronti
