@@ -1,23 +1,53 @@
 # ColluraCorrendoAlasotto
 
-## Start development environment
+## Avvio rapido
 
-insert dataset files in "solution/data"
+### Prerequisiti
+- Docker Desktop in esecuzione
+- Node.js installato
 
-#### Linux
+### Metodo 1: Script Bash (consigliato per Linux/macOS)
 ```bash
-sudo systemctl start docker
+./solution/start-dev.sh
 ```
 
-#### MacOS
+### Metodo 2: NPM Scripts (multi-piattaforma)
 ```bash
-open -a Docker
+# Prima volta
+npm run install:all
+
+# Avvio ambiente completo
+npm run dev
+
+# Stop
+npm run stop
+
+# Reset database
+npm run docker:reset
 ```
 
-### Start containers
+### Metodo manuale
 ```bash
-docker-compose up -d
+# 1. Avvia container
+docker compose up -d
+
+# 2. Installa dipendenze (prima volta)
+cd services/main-server-express
+npm install
+
+# 3. Avvia server
+npm run dev
 ```
+
+## Accesso servizi
+
+- **Frontend**: http://localhost:3000
+- **pgAdmin**: http://localhost:5050
+  - Email: `admin@example.com`
+  - Password: `admin`
+- **Mongo Express**: http://localhost:5051
+  - Username: `admin`
+  - Password: `admin`
 
 ## In pgAdmin
 
@@ -26,24 +56,14 @@ docker-compose up -d
    - Name: `local-postgres`
 3. Tab **Connection**
    - Host name/address: `postgres`
-     - **Importante**: non `localhost` (pgAdmin è in un container; localhost lì dentro è il container pgAdmin stesso)
    - Port: `5432`
    - Maintenance database: `anime_db`
    - Username: `anime_user`
    - Password: `anime_pass`
 
-### Run reset
-```bash
-docker compose down -v
-docker compose up -d
-```
+## Comandi utili
 
-## Debugging
 ```bash
-docker compose ps -a
-```
-
-test postgres seeding logs
-```bash
-docker compose down -v && docker compose up -d postgres && docker compose logs -f postgres
+npm run docker:logs    # Vedi i log dei container
+docker compose ps -a   # Status dei container
 ```
