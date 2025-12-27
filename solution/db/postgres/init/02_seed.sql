@@ -3,16 +3,18 @@
 BEGIN;
 
 TRUNCATE TABLE
-  profiles,
   character_nicknames,
   character_anime_works,
-  characters,
   person_alternate_names,
   person_details,
   person_anime_works,
   person_voice_works,
+  recommendations,
+  details,
+  characters,
   person,
-  details;
+  anime,
+  profiles;
 
 ---------------------------------------------------
 -- STAGING (TEMP TABLES)
@@ -31,6 +33,31 @@ CREATE TEMP TABLE stg_profiles (
   plan_to_watch TEXT
 );
 
+CREATE TEMP TABLE stg_anime (
+  anime_id TEXT,
+  title TEXT,
+  title_english TEXT,
+  title_japanese TEXT,
+  type TEXT,
+  episodes TEXT,
+  status TEXT,
+  aired_from TEXT,
+  aired_to TEXT,
+  score TEXT,
+  scored_by TEXT,
+  rank TEXT,
+  popularity TEXT,
+  members TEXT,
+  favorites TEXT,
+  synopsis TEXT,
+  background TEXT,
+  premiered TEXT,
+  broadcast TEXT,
+  source TEXT,
+  duration TEXT,
+  rating TEXT
+);
+
 CREATE TEMP TABLE stg_characters (
   character_id TEXT,
   url TEXT,
@@ -44,6 +71,12 @@ CREATE TEMP TABLE stg_characters (
 CREATE TEMP TABLE stg_character_nicknames (
   character_id TEXT,
   nickname TEXT
+);
+
+CREATE TEMP TABLE stg_character_anime_works (
+  character_id TEXT,
+  anime_id TEXT,
+  role TEXT
 );
 
 CREATE TEMP TABLE stg_person (
@@ -68,6 +101,24 @@ CREATE TEMP TABLE stg_person_details (
   detail_value TEXT
 );
 
+CREATE TEMP TABLE stg_person_anime_works (
+  person_id TEXT,
+  anime_id TEXT,
+  role TEXT
+);
+
+CREATE TEMP TABLE stg_person_voice_works (
+  person_id TEXT,
+  character_id TEXT,
+  anime_id TEXT
+);
+
+CREATE TEMP TABLE stg_recommendations (
+  anime_id TEXT,
+  recommended_anime_id TEXT,
+  recommendation_count TEXT
+);
+
 CREATE TEMP TABLE stg_details (
   entity_id TEXT,
   entity_type TEXT,
@@ -85,6 +136,12 @@ FROM '/import/profiles.csv'
 DELIMITER ','
 CSV HEADER;
 
+-- Import anime
+COPY stg_anime(anime_id, title, title_english, title_japanese, type, episodes, status, aired_from, aired_to, score, scored_by, rank, popularity, members, favorites, synopsis, background, premiered, broadcast, source, duration, rating)
+FROM '/import/anime.csv'
+DELIMITER ','
+CSV HEADER;
+
 -- Import characters
 COPY stg_characters(character_id, url, name, name_kanji, image_url, favorites, about)
 FROM '/import/characters.csv'
@@ -94,6 +151,12 @@ CSV HEADER;
 -- Import character nicknames
 COPY stg_character_nicknames(character_id, nickname)
 FROM '/import/character_nicknames.csv'
+DELIMITER ','
+CSV HEADER;
+
+-- Import character anime works
+COPY stg_character_anime_works(character_id, anime_id, role)
+FROM '/import/character_anime_works.csv'
 DELIMITER ','
 CSV HEADER;
 
@@ -112,6 +175,24 @@ CSV HEADER;
 -- Import person details
 COPY stg_person_details(person_id, detail_type, detail_value)
 FROM '/import/person_details.csv'
+DELIMITER ','
+CSV HEADER;
+
+-- Import person anime works
+COPY stg_person_anime_works(person_id, anime_id, role)
+FROM '/import/person_anime_works.csv'
+DELIMITER ','
+CSV HEADER;
+
+-- Import person voice works
+COPY stg_person_voice_works(person_id, character_id, anime_id)
+FROM '/import/person_voice_works.csv'
+DELIMITER ','
+CSV HEADER;
+
+-- Import recommendations
+COPY stg_recommendations(anime_id, recommended_anime_id, recommendation_count)
+FROM '/import/recommendations.csv'
 DELIMITER ','
 CSV HEADER;
 
@@ -141,6 +222,36 @@ SELECT
 FROM stg_profiles p
 WHERE p.username IS NOT NULL AND p.username <> '';
 
+-- Insert anime
+INSERT INTO anime (anime_id, title, title_english, title_japanese, type, episodes, status, aired_from, aired_to, score, scored_by, rank, popularity, members, favorites, synopsis, background, premiered, broadcast, source, duration, rating)
+SELECT
+  CASE WHEN a.anime_id ~ '^\d+$' THEN a.anime_id::INT ELSE NULL END,
+  LEFT(a.title, 50),
+  LEFT(a.title_english, 50),
+  LEFT(a.title_japanese, 50),
+  LEFT(a.type, 50),
+  CASE WHEN a.episodes ~ '^\d+$' THEN a.episodes::INT ELSE NULL END,
+  LEFT(a.status, 50),
+  CASE WHEN LEFT(a.aired_from,10) ~ '^\d{4}-\d{2}-\d{2}$' THEN LEFT(a.aired_from,10)::DATE ELSE NULL END,
+  CASE WHEN LEFT(a.aired_to,10) ~ '^\d{4}-\d{2}-\d{2}$' THEN LEFT(a.aired_to,10)::DATE ELSE NULL END,
+  CASE WHEN a.score ~ '^\d+\.?\d*$' THEN a.score::DECIMAL(4,2) ELSE NULL END,
+  CASE WHEN a.scored_by ~ '^\d+$' THEN a.scored_by::INT ELSE NULL END,
+  CASE WHEN a.rank ~ '^\d+$' THEN a.rank::INT ELSE NULL END,
+  CASE WHEN a.popularity ~ '^\d+$' THEN a.popularity::INT ELSE NULL END,
+  CASE WHEN a.members ~ '^\d+$' THEN a.members::INT ELSE NULL END,
+  CASE WHEN a.favorites ~ '^\d+$' THEN a.favorites::INT ELSE NULL END,
+  a.synopsis,
+  a.background,
+  LEFT(a.premiered, 50),
+  LEFT(a.broadcast, 100),
+  LEFT(a.source, 100),
+  LEFT(a.duration, 100),
+  LEFT(a.rating, 50)
+FROM stg_anime a
+WHERE a.anime_id ~ '^\d+$'
+  AND a.anime_id IS NOT NULL
+  AND a.anime_id <> '';
+
 -- Insert characters
 INSERT INTO characters (character_id, url, name, name_kanji, image_url, favorites, about)
 SELECT
@@ -168,6 +279,22 @@ WHERE cn.character_id ~ '^\d+$'
   AND cn.nickname IS NOT NULL
   AND cn.nickname <> ''
   AND EXISTS (SELECT 1 FROM characters WHERE character_id = cn.character_id::INT);
+
+-- Insert character anime works
+INSERT INTO character_anime_works (character_id, anime_id, role)
+SELECT
+  CASE WHEN caw.character_id ~ '^\d+$' THEN caw.character_id::INT ELSE NULL END,
+  CASE WHEN caw.anime_id ~ '^\d+$' THEN caw.anime_id::INT ELSE NULL END,
+  LEFT(caw.role, 100)
+FROM stg_character_anime_works caw
+WHERE caw.character_id ~ '^\d+$'
+  AND caw.character_id IS NOT NULL
+  AND caw.character_id <> ''
+  AND caw.anime_id ~ '^\d+$'
+  AND caw.anime_id IS NOT NULL
+  AND caw.anime_id <> ''
+  AND EXISTS (SELECT 1 FROM characters WHERE character_id = caw.character_id::INT)
+  AND EXISTS (SELECT 1 FROM anime WHERE anime_id = caw.anime_id::INT);
 
 -- Insert person
 INSERT INTO person (person_id, name, given_name, family_name, birthday, website, image_url, favorites)
@@ -211,6 +338,60 @@ WHERE pd.person_id ~ '^\d+$'
   AND pd.detail_type IS NOT NULL
   AND pd.detail_type <> ''
   AND EXISTS (SELECT 1 FROM person WHERE person_id = pd.person_id::INT);
+
+-- Insert person anime works
+INSERT INTO person_anime_works (person_id, anime_id, role)
+SELECT
+  CASE WHEN paw.person_id ~ '^\d+$' THEN paw.person_id::INT ELSE NULL END,
+  CASE WHEN paw.anime_id ~ '^\d+$' THEN paw.anime_id::INT ELSE NULL END,
+  LEFT(paw.role, 100)
+FROM stg_person_anime_works paw
+WHERE paw.person_id ~ '^\d+$'
+  AND paw.person_id IS NOT NULL
+  AND paw.person_id <> ''
+  AND paw.anime_id ~ '^\d+$'
+  AND paw.anime_id IS NOT NULL
+  AND paw.anime_id <> ''
+  AND paw.role IS NOT NULL
+  AND paw.role <> ''
+  AND EXISTS (SELECT 1 FROM person WHERE person_id = paw.person_id::INT)
+  AND EXISTS (SELECT 1 FROM anime WHERE anime_id = paw.anime_id::INT);
+
+-- Insert person voice works
+INSERT INTO person_voice_works (person_id, character_id, anime_id)
+SELECT
+  CASE WHEN pvw.person_id ~ '^\d+$' THEN pvw.person_id::INT ELSE NULL END,
+  CASE WHEN pvw.character_id ~ '^\d+$' THEN pvw.character_id::INT ELSE NULL END,
+  CASE WHEN pvw.anime_id ~ '^\d+$' THEN pvw.anime_id::INT ELSE NULL END
+FROM stg_person_voice_works pvw
+WHERE pvw.person_id ~ '^\d+$'
+  AND pvw.person_id IS NOT NULL
+  AND pvw.person_id <> ''
+  AND pvw.character_id ~ '^\d+$'
+  AND pvw.character_id IS NOT NULL
+  AND pvw.character_id <> ''
+  AND pvw.anime_id ~ '^\d+$'
+  AND pvw.anime_id IS NOT NULL
+  AND pvw.anime_id <> ''
+  AND EXISTS (SELECT 1 FROM person WHERE person_id = pvw.person_id::INT)
+  AND EXISTS (SELECT 1 FROM characters WHERE character_id = pvw.character_id::INT)
+  AND EXISTS (SELECT 1 FROM anime WHERE anime_id = pvw.anime_id::INT);
+
+-- Insert recommendations
+INSERT INTO recommendations (anime_id, recommended_anime_id, recommendation_count)
+SELECT
+  CASE WHEN r.anime_id ~ '^\d+$' THEN r.anime_id::INT ELSE NULL END,
+  CASE WHEN r.recommended_anime_id ~ '^\d+$' THEN r.recommended_anime_id::INT ELSE NULL END,
+  CASE WHEN r.recommendation_count ~ '^\d+$' THEN r.recommendation_count::INT ELSE NULL END
+FROM stg_recommendations r
+WHERE r.anime_id ~ '^\d+$'
+  AND r.anime_id IS NOT NULL
+  AND r.anime_id <> ''
+  AND r.recommended_anime_id ~ '^\d+$'
+  AND r.recommended_anime_id IS NOT NULL
+  AND r.recommended_anime_id <> ''
+  AND EXISTS (SELECT 1 FROM anime WHERE anime_id = r.anime_id::INT)
+  AND EXISTS (SELECT 1 FROM anime WHERE anime_id = r.recommended_anime_id::INT);
 
 -- Insert details
 INSERT INTO details (entity_id, entity_type, detail_key, detail_value)
