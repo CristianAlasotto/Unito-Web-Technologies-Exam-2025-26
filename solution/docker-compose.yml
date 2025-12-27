@@ -20,7 +20,7 @@ services:
       - "27017:27017"
     volumes:
       - mongodata:/data/db
-      - ./data:/data/csv:ro
+      - ./data:/csvdata:ro
 
   pgadmin:
     image: dpage/pgadmin4

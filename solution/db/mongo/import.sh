@@ -1,66 +1,51 @@
 #!/bin/bash
 
-echo "🚀 Importing CSV files to MongoDB..."
+# Configuration
+CONTAINER_NAME="solution-mongo-1"
+DB_NAME="anime_dynamic"
 
-# Trova il nome del container mongo
-MONGO_CONTAINER=$(docker ps --filter "ancestor=mongo:7" --format "{{.Names}}" | head -1)
+echo "Starting parallel MongoDB import..."
+start_time=$(date +%s)
 
-if [ -z "$MONGO_CONTAINER" ]; then
-    echo "❌ MongoDB container not running. Starting it..."
-    cd /home/davide/anno_III/TWEB/project/ColluraCorrendoAlasotto
-    sudo docker-compose up -d mongo
-    sleep 5
-    MONGO_CONTAINER=$(docker ps --filter "ancestor=mongo:7" --format "{{.Names}}" | head -1)
-fi
+# Import function
+import_csv() {
+    local collection=$1
+    local file=$2
 
-echo "✅ Using MongoDB container: $MONGO_CONTAINER"
+    echo "Importing $collection..."
+    docker exec -i $CONTAINER_NAME mongoimport \
+        --db=$DB_NAME \
+        --collection=$collection \
+        --type=csv \
+        --headerline \
+        --file=/csvdata/$file \
+        --numInsertionWorkers=4 \
+        --batchSize=25000 &
+}
 
-# Path corretto ai CSV
-DATA_PATH="/home/davide/anno_III/TWEB/project/ColluraCorrendoAlasotto/solution/data"
+import_csv "stats" "stats.csv"
+import_csv "favs" "favs.csv"
+import_csv "ratings" "ratings.csv"
 
-# Copia i file nel container
-echo "📦 Copying files..."
-sudo docker cp "$DATA_PATH/ratings.csv" $MONGO_CONTAINER:/tmp/
-sudo docker cp "$DATA_PATH/stats.csv" $MONGO_CONTAINER:/tmp/
-sudo docker cp "$DATA_PATH/favs.csv" $MONGO_CONTAINER:/tmp/
+# Wait for all background jobs to complete
+wait
 
-# Importa ratings
-echo "📊 Importing ratings (this may take several minutes)..."
-sudo docker exec $MONGO_CONTAINER mongoimport \
-  --db anime_dynamic \
-  --collection ratings \
-  --type csv \
-  --headerline \
-  --drop \
-  --file /tmp/ratings.csv
+end_time=$(date +%s)
+duration=$((end_time - start_time))
 
-# Importa stats
-echo "📊 Importing stats..."
-sudo docker exec $MONGO_CONTAINER mongoimport \
-  --db anime_dynamic \
-  --collection stats \
-  --type csv \
-  --headerline \
-  --drop \
-  --file /tmp/stats.csv
-
-# Importa favs
-echo "📊 Importing favs..."
-sudo docker exec $MONGO_CONTAINER mongoimport \
-  --db anime_dynamic \
-  --collection favs \
-  --type csv \
-  --headerline \
-  --drop \
-  --file /tmp/favs.csv
-
-echo "✅ Import complete!"
-
-# Verifica
 echo ""
-echo "📊 Record counts:"
-sudo docker exec $MONGO_CONTAINER mongosh anime_dynamic --quiet --eval "
-  print('Ratings: ' + db.ratings.countDocuments());
-  print('Stats: ' + db.stats.countDocuments());
-  print('Favs: ' + db.favs.countDocuments());
-"
+echo "========================================"
+echo "Import complete!"
+echo "Total time: ${duration}s"
+echo "========================================"
+
+# Create indexes for better query performance
+echo "Creating indexes..."
+docker exec -i $CONTAINER_NAME mongosh $DB_NAME --eval '
+db.ratings.createIndex({"anime_id": 1});
+db.ratings.createIndex({"username": 1});
+db.favs.createIndex({"id": 1});
+db.favs.createIndex({"username": 1});
+'
+
+echo "✓ Indexes created!"
