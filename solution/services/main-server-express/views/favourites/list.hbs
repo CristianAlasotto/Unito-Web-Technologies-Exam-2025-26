@@ -1,0 +1,8 @@
+<h1>Your Favourites</h1>
+<ul>
+	{{#each favourites}}
+		<li>{{this.name}} - {{this.description}}</li>
+	{{else}}
+		<span>No favourites found.</span>
+	{{/each}}
+</ul>

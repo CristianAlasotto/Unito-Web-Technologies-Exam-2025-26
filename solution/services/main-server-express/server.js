@@ -4,7 +4,7 @@ const axios = require('axios');
 const { engine } = require('express-handlebars');
 const app = express();
 
-// Configurazione Handlebars - VERSIONE CORRETTA
+// Handlebars configuration - CORRECT VERSION
 app.engine('hbs', engine({
   extname: '.hbs',
   layoutsDir: path.join(__dirname, 'views/layout'),
@@ -20,19 +20,19 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Variabili d'ambiente
+// Environment variables
 const DATA_EXPRESS_URL = process.env.DATA_EXPRESS_URL || 'http://localhost:3001';
 const DATA_SPRING_URL = process.env.DATA_SPRING_URL || 'http://localhost:8080';
 
-// Configurazione axios con timeout
+// Axios configuration with timeout
 const apiClient = axios.create({
   timeout: 5000
 });
 
-// Route pagina home - VERSIONE FALLBACK
+// Home page route - FALLBACK VERSION
 app.get('/', async (req, res) => {
   try {
-    // Tenta di caricare statistiche
+    // Attempt to load statistics
     try {
       const stats = await apiClient.get(`${DATA_SPRING_URL}/api/anime/stats`);
       return res.render('anime/index', { 
@@ -40,8 +40,8 @@ app.get('/', async (req, res) => {
         stats: stats.data 
       });
     } catch (statsError) {
-      console.warn('API stats non disponibile, caricamento dati di fallback');
-      // Dati fallback se API non disponibile
+      console.warn('API stats not available, loading fallback data');
+      // Fallback data if API is not available
       const fallbackStats = {
         totalAnime: 'N/A',
         totalCharacters: 'N/A',
@@ -50,19 +50,19 @@ app.get('/', async (req, res) => {
       return res.render('anime/index', { 
         title: 'Anime Database',
         stats: fallbackStats,
-        warning: 'API non disponibile al momento'
+        warning: 'API not available at the moment'
       });
     }
   } catch (error) {
-    console.error('Errore home:', error.message);
+    console.error('Home error:', error.message);
     res.render('anime/index', { 
       title: 'Anime Database', 
-      error: 'Errore caricamento pagina' 
+      error: 'Error loading page' 
     });
   }
 });
 
-// Route anime list
+// Anime list route
 app.get('/anime', async (req, res) => {
   try {
     const anime = await apiClient.get(`${DATA_SPRING_URL}/api/anime`);
@@ -71,30 +71,30 @@ app.get('/anime', async (req, res) => {
       animes: anime.data || []
     });
   } catch (error) {
-    console.error('Errore anime list:', error.message);
+    console.error('Anime list error:', error.message);
     res.render('anime/list', { 
       title: 'Anime List', 
-      error: 'Impossibile caricare la lista anime',
+      error: 'Unable to load anime list',
       animes: []
     });
   }
 });
 
-// Route anime detail
+// Anime detail route
 app.get('/anime/:id', async (req, res) => {
   try {
     const anime = await apiClient.get(`${DATA_SPRING_URL}/api/anime/${req.params.id}`);
     res.render('anime/detail', { 
-      title: anime.data.title || 'Dettagli Anime',
+      title: anime.data.title || 'Anime Details',
       anime: anime.data 
     });
   } catch (error) {
-    console.error('Errore anime detail:', error.message);
-    res.status(404).render('error', { message: 'Anime non trovato' });
+    console.error('Anime detail error:', error.message);
+    res.status(404).render('error', { message: 'Anime not found' });
   }
 });
 
-// Route personaggi
+// Characters route
 app.get('/characters', async (req, res) => {
   try {
     const characters = await apiClient.get(`${DATA_EXPRESS_URL}/api/characters`);
@@ -103,33 +103,122 @@ app.get('/characters', async (req, res) => {
       characters: characters.data || []
     });
   } catch (error) {
-    console.error('Errore characters:', error.message);
+    console.error('Characters error:', error.message);
     res.render('characters/list', { 
       title: 'Characters', 
-      error: 'Impossibile caricare i personaggi',
+      error: 'Unable to load characters',
       characters: []
     });
   }
 });
 
-// Route profilo utente
+// Staff list route
+app.get('/staff', async (req, res) => {
+  try {
+    const staff = await apiClient.get(`${DATA_SPRING_URL}/api/staff`);
+    res.render('staff/list', { 
+      title: 'Staff',
+      staff: staff.data || []
+    });
+  } catch (error) {
+    console.error('Staff error:', error.message);
+    res.render('staff/list', { 
+      title: 'Staff', 
+      error: 'Unable to load staff',
+      staff: []
+    });
+  }
+});
+
+// Staff detail route
+app.get('/staff/:id', async (req, res) => {
+  try {
+    const staff = await apiClient.get(`${DATA_SPRING_URL}/api/staff/${req.params.id}`);
+    res.render('staff/detail', { 
+      title: staff.data.name || 'Staff Details',
+      staff: staff.data 
+    });
+  } catch (error) {
+    console.error('Staff detail error:', error.message);
+    res.status(404).render('error', { message: 'Staff not found' });
+  }
+});
+
+// User profile route
 app.get('/profile/:username', async (req, res) => {
+  // Check if the user is authenticated
+  if (!req.isAuthenticated()) {
+    console.log(`User ${req.params.username} attempted to access profile without authentication`);
+    return res.render('error', { 
+      message: 'Please log in to access your profile',
+      clientLogJson: JSON.stringify(`Profile access blocked: user "${req.params.username}" not authenticated`)
+    });
+  }
+
   try {
     const profile = await apiClient.get(`${DATA_EXPRESS_URL}/api/users/${req.params.username}`);
     res.render('profile/user', { 
-      title: `Profilo - ${req.params.username}`,
+      title: `Profile - ${req.params.username}`,
       profile: profile.data 
     });
   } catch (error) {
-    console.error('Errore profile:', error.message);
-    res.status(404).render('error', { message: 'Profilo non trovato' });
+    console.error('Profile error:', error.message);
+    res.status(404).render('error', { message: 'Profile not found' });
+  }
+});
+
+// Profile route without username (fallback)
+app.get('/profile', (req, res) => {
+  return res.status(400).render('error', {
+    message: 'Invalid profile path. Use /profile/:username',
+    clientLogJson: JSON.stringify('Username not found /profile/:username')
+  });
+});
+
+// Favourites route
+app.get('/favourites', async (req, res) => {
+  try {
+    const favourites = await apiClient.get(`${DATA_EXPRESS_URL}/api/favourites`);
+    res.render('favourites/list', { 
+      title: 'My Favourites',
+      favourites: favourites.data || []
+    });
+  } catch (error) {
+    console.error('Favourites error:', error.message);
+    res.render('favourites/list', { 
+      title: 'My Favourites', 
+      error: 'Unable to load favourites',
+      favourites: []
+    });
+  }
+});
+
+// Add to favourites route
+app.post('/favourites/:id', async (req, res) => {
+  try {
+    await apiClient.post(`${DATA_EXPRESS_URL}/api/favourites/${req.params.id}`);
+    res.json({ success: true, message: 'Added to favourites' });
+  } catch (error) {
+    console.error('Add favourite error:', error.message);
+    res.status(400).json({ success: false, error: 'Unable to add to favourites' });
+  }
+});
+
+// Remove from favourites route
+app.delete('/favourites/:id', async (req, res) => {
+  try {
+    await apiClient.delete(`${DATA_EXPRESS_URL}/api/favourites/${req.params.id}`);
+    res.json({ success: true, message: 'Removed from favourites' });
+  } catch (error) {
+    console.error('Remove favourite error:', error.message);
+    res.status(400).json({ success: false, error: 'Unable to remove from favourites' });
   }
 });
 
 // 404 Handler
 app.use((req, res) => {
-  res.status(404).render('error', { message: 'Pagina non trovata' });
+  res.status(404).render('error', { message: 'Page not found' });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server in ascolto su porta ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Server listening on port ${PORT}`));

@@ -1,4 +1,4 @@
-// Ricerca anime/personaggi
+// Search for anime/characters
 document.getElementById('searchInput')?.addEventListener('input', function(e) {
   const searchTerm = e.target.value.toLowerCase();
   const cards = document.querySelectorAll('.anime-card');
@@ -9,7 +9,7 @@ document.getElementById('searchInput')?.addEventListener('input', function(e) {
   });
 });
 
-// Filtro per tipo
+// Filter by type
 document.getElementById('typeFilter')?.addEventListener('change', function(e) {
   const selectedType = e.target.value;
   const cards = document.querySelectorAll('.anime-card');
@@ -20,7 +20,7 @@ document.getElementById('typeFilter')?.addEventListener('change', function(e) {
   });
 });
 
-// Lazy loading immagini
+// Lazy loading images
 if ('IntersectionObserver' in window) {
   const images = document.querySelectorAll('img[data-src]');
   const imageObserver = new IntersectionObserver((entries) => {
