@@ -50,55 +50,54 @@ docker compose down -v && docker compose up -d postgres && docker compose logs -
 
 ## MongoDB Setup
 
-### Initial data import (first time only - takes 20-30 minutes)
+### Data Import
 
-Start MongoDB:
+Import the three dynamic collections (ratings, favs, stats) into MongoDB:
 ```bash
-docker-compose up -d mongo
+./db/mongo/import.sh
 ```
 
-Import collections:
+**Expected time:**
+- Import: ~11 minutes
+- Indexing: ~7-8 minutes
+- **Total: ~18 minutes**
+
+### Verify Import
+
+Check that all data was imported successfully:
 ```bash
-# Ratings (~4.2GB - 15-20 minutes)
-docker exec solution-mongo-1 mongoimport \
-  --db anime_dynamic \
-  --collection ratings \
-  --type csv \
-  --headerline \
-  --drop \
-  --file /data/csv/ratings.csv
-
-# Stats (~3.5MB - 10 seconds)
-docker exec solution-mongo-1 mongoimport \
-  --db anime_dynamic \
-  --collection stats \
-  --type csv \
-  --headerline \
-  --drop \
-  --file /data/csv/stats.csv
-
-# Favs (~98MB - 1 minute)
-docker exec solution-mongo-1 mongoimport \
-  --db anime_dynamic \
-  --collection favs \
-  --type csv \
-  --headerline \
-  --drop \
-  --file /data/csv/favs.csv
-```
-
-Verify import:
-```bash
-docker exec solution-mongo-1 mongosh anime_dynamic --quiet --eval "
-  print('Ratings: ' + db.ratings.countDocuments());
-  print('Stats: ' + db.getCollection('stats').countDocuments());
-  print('Favs: ' + db.favs.countDocuments());
+docker-compose exec mongo mongosh anime_dynamic --quiet --eval "
+  print('Ratings: ' + db.ratings.countDocuments() + ' documents');
+  print('Stats: ' + db.getCollection('stats').countDocuments() + ' documents');
+  print('Favs: ' + db.favs.countDocuments() + ' documents');
 "
 ```
 
-**Note**: Data persists across restarts.
+Expected output:
+```
+Ratings: 124298357 documents
+Stats: 28955 documents
+Favs: 4178747 documents
+```
+
+### Test Query Performance
+
+Verify that indexes are working correctly:
+```bash
+docker-compose exec mongo mongosh anime_dynamic --eval '
+var start = new Date();
+var count = db.ratings.find({anime_id: 1}).count();
+print("Query speed: " + count + " results in " + (new Date() - start) + "ms");
+'
+```
+
+**Expected result:** < 100ms (with indexes)  
+**Without indexes:** Would take 60,000+ ms for the same query
 
 ### Access Mongo Express UI
+
 http://localhost:5051
 - Username: `admin`
 - Password: `admin`
+
+**Note:** Data persists across restarts. To reset completely, use `docker-compose down -v`
