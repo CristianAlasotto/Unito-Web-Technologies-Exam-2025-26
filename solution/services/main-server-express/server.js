@@ -29,50 +29,129 @@ const apiClient = axios.create({
   timeout: 5000
 });
 
-// Home page route - FALLBACK VERSION
+// Home page route - VERSIONE CON MOCK DATA
 app.get('/', async (req, res) => {
   try {
-    // Attempt to load statistics
-    try {
-      const stats = await apiClient.get(`${DATA_SPRING_URL}/api/anime/stats`);
-      return res.render('anime/index', { 
-        title: 'Anime Database',
-        stats: stats.data 
-      });
-    } catch (statsError) {
-      console.warn('API stats not available, loading fallback data');
-      // Fallback data if API is not available
-      const fallbackStats = {
-        totalAnime: 'N/A',
-        totalCharacters: 'N/A',
-        totalUsers: 'N/A'
-      };
-      return res.render('anime/index', { 
-        title: 'Anime Database',
-        stats: fallbackStats,
-        warning: 'API not available at the moment'
-      });
-    }
+    console.log("RENDERING HOMEPAGE WITH ANIME LIST");
+    
+    // Mock data degli anime per la homepage
+    const mockAnime = [
+      {
+        anime_id: 1,
+        title: "Attack on Titan",
+        image_url: "https://cdn.myanimelist.net/images/anime/10/47347.jpg",
+        score: 8.5,
+        type: "TV",
+        episodes: 25
+      },
+      {
+        anime_id: 2,
+        title: "Death Note",
+        image_url: "https://cdn.myanimelist.net/images/anime/9/9453.jpg",
+        score: 8.6,
+        type: "TV",
+        episodes: 37
+      },
+      {
+        anime_id: 3,
+        title: "One Piece",
+        image_url: "https://cdn.myanimelist.net/images/anime/6/73245.jpg",
+        score: 8.7,
+        type: "TV",
+        episodes: 1000
+      },
+      {
+        anime_id: 4,
+        title: "Fullmetal Alchemist: Brotherhood",
+        image_url: "https://cdn.myanimelist.net/images/anime/1223/96541.jpg",
+        score: 9.1,
+        type: "TV",
+        episodes: 64
+      },
+      {
+        anime_id: 5,
+        title: "Steins;Gate",
+        image_url: "https://cdn.myanimelist.net/images/anime/5/73199.jpg",
+        score: 9.0,
+        type: "TV",
+        episodes: 24
+      },
+      {
+        anime_id: 6,
+        title: "Hunter x Hunter",
+        image_url: "https://cdn.myanimelist.net/images/anime/11/33657.jpg",
+        score: 9.0,
+        type: "TV",
+        episodes: 148
+      }
+    ];
+
+    res.render('anime/index', { 
+      title: 'Anime Database',
+      animes: mockAnime
+    });
+    
+    // Versione originale con API (decommentare quando Spring è pronto)
+    // try {
+    //   const stats = await apiClient.get(`${DATA_SPRING_URL}/api/anime/stats`);
+    //   const anime = await apiClient.get(`${DATA_SPRING_URL}/api/anime`);
+    //   return res.render('anime/index', { 
+    //     title: 'Anime Database',
+    //     stats: stats.data,
+    //     animes: anime.data
+    //   });
+    // } catch (apiError) {
+    //   console.warn('API not available, using fallback data');
+    // }
   } catch (error) {
     console.error('Home error:', error.message);
     res.render('anime/index', { 
       title: 'Anime Database', 
-      error: 'Error loading page' 
+      error: 'Error loading page',
+      animes: []
     });
   }
 });
 
-// Anime list route
+// Anime list route - VERSIONE PER TEST !
 app.get('/anime', async (req, res) => {
   try {
-    const anime = await apiClient.get(`${DATA_SPRING_URL}/api/anime`);
-    res.render('anime/list', { 
+    console.log("MOCK ANIME LIST RENDER");
+    
+    // Mock data per testing (da rimuovere quando il backend Spring è pronto)
+    const mockAnime = [
+      {
+        anime_id: 1,
+        title: "Attack on Titan",
+        image_url: "https://cdn.myanimelist.net/images/anime/10/47347.jpg",
+        score: 8.5,
+        type: "TV",
+        episodes: 25
+      },
+      {
+        anime_id: 2,
+        title: "Death Note",
+        image_url: "https://cdn.myanimelist.net/images/anime/9/9453.jpg",
+        score: 8.6,
+        type: "TV",
+        episodes: 37
+      }
+    ];
+
+    res.render('anime/anime_list', { 
       title: 'Anime List',
-      animes: anime.data || []
+      animes: mockAnime
     });
+    
+    // Versione originale con API (decommentare quando Spring è pronto)
+    // const anime = await apiClient.get(`${DATA_SPRING_URL}/api/anime`);
+    // res.render('anime/list', { 
+    //   title: 'Anime List',
+    //   animes: anime.data || []
+    // });
   } catch (error) {
     console.error('Anime list error:', error.message);
-    res.render('anime/list', { 
+    res.render('anime/anime_list', { 
       title: 'Anime List', 
       error: 'Unable to load anime list',
       animes: []
