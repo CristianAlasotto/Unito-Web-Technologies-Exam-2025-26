@@ -609,3 +609,68 @@ INNER JOIN character_anime_works caw ON d.mal_id = caw.anime_mal_id
 INNER JOIN characters c ON caw.character_mal_id = c.character_mal_id
 INNER JOIN person_voice_works pvw ON c.character_mal_id = pvw.character_mal_id AND d.mal_id = pvw.anime_mal_id
 INNER JOIN person_details pd ON pvw.person_mal_id = pd.person_mal_id;
+
+-- ========================================
+-- ADDITIONAL STABILITY AND INTEGRITY TESTS
+-- ========================================
+
+-- Query 21: Test data completeness - characters without any anime works
+SELECT 'Query 21: Orphaned characters (no anime works)' AS test_name, COUNT(*) AS result
+FROM characters c
+WHERE NOT EXISTS (SELECT 1 FROM character_anime_works WHERE character_mal_id = c.character_mal_id);
+
+-- Query 22: Test data completeness - persons without any works
+SELECT 'Query 22: Orphaned persons (no anime or voice works)' AS test_name, COUNT(*) AS result
+FROM person_details pd
+WHERE NOT EXISTS (SELECT 1 FROM person_anime_works WHERE person_mal_id = pd.person_mal_id)
+  AND NOT EXISTS (SELECT 1 FROM person_voice_works WHERE person_mal_id = pd.person_mal_id);
+
+-- Query 23: Test referential integrity - voice works with missing character
+SELECT 'Query 23: Broken FK in person_voice_works (character)' AS test_name, COUNT(*) AS result
+FROM person_voice_works pvw
+WHERE NOT EXISTS (SELECT 1 FROM characters WHERE character_mal_id = pvw.character_mal_id);
+
+-- Query 24: Test referential integrity - voice works with missing person
+SELECT 'Query 24: Broken FK in person_voice_works (person)' AS test_name, COUNT(*) AS result
+FROM person_voice_works pvw
+WHERE NOT EXISTS (SELECT 1 FROM person_details WHERE person_mal_id = pvw.person_mal_id);
+
+-- Query 25: Test referential integrity - voice works with missing anime
+SELECT 'Query 25: Broken FK in person_voice_works (anime)' AS test_name, COUNT(*) AS result
+FROM person_voice_works pvw
+WHERE NOT EXISTS (SELECT 1 FROM details WHERE mal_id = pvw.anime_mal_id);
+
+-- Query 26: Test data quality - anime with NULL or invalid scores
+SELECT 'Query 26: Anime with invalid scores' AS test_name, COUNT(*) AS result
+FROM details
+WHERE score IS NOT NULL AND (score < 0 OR score > 10);
+
+-- Query 27: Test data quality - anime with future dates
+SELECT 'Query 27: Anime with future start dates' AS test_name, COUNT(*) AS result
+FROM details
+WHERE start_date > CURRENT_DATE;
+
+-- Query 28: Test data distribution - most prolific voice actors (top 5)
+SELECT 'Query 28: Top 5 voice actors by work count' AS test_name, pd.name, COUNT(*) as work_count
+FROM person_voice_works pvw
+INNER JOIN person_details pd ON pvw.person_mal_id = pd.person_mal_id
+GROUP BY pd.person_mal_id, pd.name
+ORDER BY work_count DESC
+LIMIT 5;
+
+-- Query 29: Test data distribution - anime with most characters (top 5)
+SELECT 'Query 29: Top 5 anime by character count' AS test_name, d.title, COUNT(DISTINCT caw.character_mal_id) as character_count
+FROM details d
+INNER JOIN character_anime_works caw ON d.mal_id = caw.anime_mal_id
+GROUP BY d.mal_id, d.title
+ORDER BY character_count DESC
+LIMIT 5;
+
+-- Query 30: Test cross-table consistency - total relationships count
+SELECT 'Query 30: Total relationship records across all tables' AS test_name,
+       (SELECT COUNT(*) FROM character_nicknames) +
+       (SELECT COUNT(*) FROM character_anime_works) +
+       (SELECT COUNT(*) FROM person_alternate_names) +
+       (SELECT COUNT(*) FROM person_anime_works) +
+       (SELECT COUNT(*) FROM person_voice_works) +
+       (SELECT COUNT(*) FROM recommendations) AS total_relationships;
