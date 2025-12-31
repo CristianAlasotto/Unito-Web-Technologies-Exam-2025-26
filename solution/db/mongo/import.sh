@@ -4,30 +4,40 @@
 CONTAINER_NAME="solution-mongo-1"
 DB_NAME="anime_dynamic"
 
-echo "Starting parallel MongoDB import..."
+echo "Starting optimized MongoDB import for large dataset..."
 start_time=$(date +%s)
 
-# Import function in parallel
+# Ottimizzazioni pre-import per file giganti
+echo "Configuring MongoDB for bulk import..."
+docker exec -i $CONTAINER_NAME mongosh admin --eval "
+    db.adminCommand({ setParameter: 1, syncdelay: 300 });
+    db.adminCommand({ setParameter: 1, journalCommitInterval: 300 });
+" 2>/dev/null
+
+# Import function ottimizzata per file grandi
 import_csv() {
     local collection=$1
     local file=$2
 
-    echo "Importing $collection..."
+    echo "Importing $collection from $file..."
     docker exec -i $CONTAINER_NAME mongoimport \
         --db=$DB_NAME \
         --collection=$collection \
         --type=csv \
         --headerline \
         --file=/csvdata/$file \
-        --numInsertionWorkers=4 \
-        --batchSize=25000 &
+        --numInsertionWorkers=12 \
+        --batchSize=100000 \
+        --bypassDocumentValidation \
+        --writeConcern="{w:0}" &
 }
 
+# Se hai più file, importali in parallelo
 import_csv "stats" "stats.csv"
 import_csv "favs" "favs.csv"
 import_csv "ratings" "ratings.csv"
 
-# Wait for all background jobs to complete
+# Wait for all imports
 wait
 
 end_time=$(date +%s)
@@ -36,35 +46,13 @@ duration=$((end_time - start_time))
 echo ""
 echo "========================================"
 echo "Import complete!"
-echo "Total time: ${duration}s"
+echo "Total time: ${duration}s ($(($duration / 60)) minutes)"
 echo "========================================"
 
-# Create indexes for better query performance
-echo "Starting indexing..."
-
-#if it crashes, reduce maxIndexBuildMemoryUsageMegabytes
+# Ripristina impostazioni normali
 docker exec -i $CONTAINER_NAME mongosh admin --eval "
-    db.adminCommand({ setParameter: 1, maxIndexBuildMemoryUsageMegabytes: 4096 });
-" 2>/dev/null || echo "Note: Could not increase index memory (non-critical)"
+    db.adminCommand({ setParameter: 1, syncdelay: 60 });
+    db.adminCommand({ setParameter: 1, journalCommitInterval: 100 });
+" 2>/dev/null
 
-# Create indexes sequentially per collection, but collections in parallel
-docker exec -i $CONTAINER_NAME mongosh $DB_NAME --eval "
-    db.ratings.createIndexes([
-        { key: { anime_id: 1 }, name: 'idx_anime_id' },
-        { key: { username: 1 }, name: 'idx_username' }
-    ]);
-" &
-
-docker exec -i $CONTAINER_NAME mongosh $DB_NAME --eval "
-    db.favs.createIndexes([
-        { key: { id: 1 }, name: 'idx_id' },
-        { key: { username: 1 }, name: 'idx_username' }
-    ]);
-" &
-
-docker exec -i $CONTAINER_NAME mongosh $DB_NAME --eval "
-    db.getCollection('stats').createIndex({ mal_id: 1 }, { name: 'idx_mal_id' });
-" &
-
-wait
-echo "✓ All indexes created!"
+echo "MongoDB settings restored to normal"
