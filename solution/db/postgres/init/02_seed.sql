@@ -508,7 +508,7 @@ COMMIT;
 ---------------------------------------------------
 -- TEST QUERIES (20 queries to test all tables and keys)
 ---------------------------------------------------
-
+/* 
 -- Query 1: Test profiles table - count all users
 SELECT 'Query 1: Total users' AS test_name, COUNT(*) AS result FROM profiles;
 
@@ -673,4 +673,4 @@ SELECT 'Query 30: Total relationship records across all tables' AS test_name,
        (SELECT COUNT(*) FROM person_alternate_names) +
        (SELECT COUNT(*) FROM person_anime_works) +
        (SELECT COUNT(*) FROM person_voice_works) +
-       (SELECT COUNT(*) FROM recommendations) AS total_relationships;
+       (SELECT COUNT(*) FROM recommendations) AS total_relationships; */

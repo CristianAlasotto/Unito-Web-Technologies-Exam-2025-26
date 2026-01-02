@@ -43,7 +43,7 @@ docker compose up -d
 docker compose ps -a
 ```
 
-test postgres seeding logs
+#### Reset e ripopolamento di postgres e visualizzazione log
 ```bash
 docker compose down -v && docker compose up -d postgres && docker compose logs -f postgres
 ```
