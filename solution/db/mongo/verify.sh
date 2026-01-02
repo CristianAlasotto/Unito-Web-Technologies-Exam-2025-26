@@ -28,6 +28,7 @@ docker exec -i $CONTAINER_NAME mongosh $DB_NAME --quiet --eval "
   var expectedStats = 28955;
   var expectedFavs = 4178747;
   
+  var missingCollections = [];
   var allGood = true;
   
   // Controlla che le collezioni abbiano dati (almeno 10% dei valori attesi)
@@ -35,6 +36,7 @@ docker exec -i $CONTAINER_NAME mongosh $DB_NAME --quiet --eval "
     print('✓ Ratings: OK (' + ratings + ' documents)');
   } else {
     print('✗ Ratings: Expected ~' + expectedRatings + ', found ' + ratings);
+    missingCollections.push('ratings');
     allGood = false;
   }
   
@@ -42,6 +44,7 @@ docker exec -i $CONTAINER_NAME mongosh $DB_NAME --quiet --eval "
     print('✓ Stats: OK (' + stats + ' documents)');
   } else {
     print('✗ Stats: Expected ~' + expectedStats + ', found ' + stats);
+    missingCollections.push('stats');
     allGood = false;
   }
   
@@ -49,6 +52,7 @@ docker exec -i $CONTAINER_NAME mongosh $DB_NAME --quiet --eval "
     print('✓ Favs: OK (' + favs + ' documents)');
   } else {
     print('✗ Favs: Expected ~' + expectedFavs + ', found ' + favs);
+    missingCollections.push('favs');
     allGood = false;
   }
   
@@ -58,6 +62,7 @@ docker exec -i $CONTAINER_NAME mongosh $DB_NAME --quiet --eval "
     quit(0);
   } else {
     print('✗ Data import incomplete or incorrect');
+    print('MISSING:' + missingCollections.join(','));
     quit(1);
   }
 " 2>/dev/null
@@ -72,9 +77,28 @@ if [ $VERIFY_RESULT -ne 0 ]; then
     echo "Data is missing or incomplete. Starting automatic import..."
     echo ""
     
-    # Richiama import.sh
+    # Estrai le collezioni mancanti dal precedente comando
+    MISSING_COLLECTIONS=$(docker exec -i $CONTAINER_NAME mongosh $DB_NAME --quiet --eval "
+      var ratings = db.ratings.estimatedDocumentCount();
+      var stats = db.getCollection('stats').estimatedDocumentCount();
+      var favs = db.favs.estimatedDocumentCount();
+      
+      var expectedRatings = 124298357;
+      var expectedStats = 28955;
+      var expectedFavs = 4178747;
+      
+      var missing = [];
+      
+      if (ratings <= expectedRatings * 0.1) missing.push('ratings');
+      if (stats <= expectedStats * 0.1) missing.push('stats');
+      if (favs <= expectedFavs * 0.1) missing.push('favs');
+      
+      print(missing.join(' '));
+    " 2>/dev/null)
+    
+    # Richiama import.sh solo con le collezioni mancanti
     if [ -f "./db/mongo/import.sh" ]; then
-        ./db/mongo/import.sh
+        ./db/mongo/import.sh $MISSING_COLLECTIONS
         if [ $? -eq 0 ]; then
             echo ""
             echo "Import completed successfully!"
