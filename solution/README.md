@@ -7,15 +7,15 @@ Insert dataset files in "solution/data"
 - Node.js installato
 - Dataset in file .csv nella cartella `data/` (fondamentale solo per popolamento iniziale)
 
-## Avvio ambiente di sviluppo Express Server
-### Metodo 1: Script Bash Automatizzato (per Linux/MacOS)
+## Avvio ambiente di sviluppo Completo (per Linux/MacOS)
+#### Script Bash Automatizzato
 ```bash
 cd solution
 ./start-dev.sh
 ```
 
-### Metodo 2: Manuale multi-piattaforma
-#### Avvio ambiente di sviluppo Docker
+## Avvio ambiente di sviluppo manuale multi-piattaforma
+#### Avvio Docker + Popolamento DB PostgreSQL
 ```bash
 # 1. Avvia container + popolamento DB (prima volta)
 docker compose up -d postgres
@@ -27,6 +27,10 @@ npm install
 
 # 3. Avvia server di sviluppo
 npm run dev
+```
+#### Popolamento/verifica mongoDB
+```bash
+cd ../../db/mongo/verify.sh
 ```
 
 #### Avvio Express server

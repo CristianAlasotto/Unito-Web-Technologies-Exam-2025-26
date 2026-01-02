@@ -15,11 +15,26 @@ docker compose up -d
 
 # Attendi che i database siano pronti
 echo "⏳ Attendo che i database siano pronti..."
-sleep 5
+sleep 10
 
 # Controlla lo stato dei container
 echo "🔍 Verifica stato container..."
 docker compose ps
+
+# Verifica e popola MongoDB
+echo ""
+echo "🗄️ Verifica e popolazione MongoDB..."
+if [ -f "./db/mongo/verify.sh" ]; then
+    chmod +x ./db/mongo/verify.sh
+    ./db/mongo/verify.sh
+    if [ $? -ne 0 ]; then
+        echo "⚠️ Avviso: Verifica MongoDB non completata. Continuando comunque..."
+    fi
+else
+    echo "❌ verify.sh non trovato!"
+fi
+
+echo ""
 
 # Naviga nella cartella del server
 cd services/main-server-express
