@@ -1,63 +1,57 @@
-# ColluraCorrendoAlasotto
-
-## Start development environment
+# Avvio rapido
 
 Insert dataset files in "solution/data"
 
-### Linux
+### Prerequisiti
+- Docker Desktop in esecuzione
+- Node.js installato
+- Dataset in file .csv nella cartella `data/` (fondamentale solo per popolamento iniziale)
 
+## Avvio ambiente di sviluppo Express Server
+### Metodo 1: Script Bash Automatizzato (per Linux/MacOS)
 ```bash
-sudo systemctl start docker
+cd solution
+./start-dev.sh
 ```
 
-### MacOS
-
+### Metodo 2: Manuale multi-piattaforma
+#### Avvio ambiente di sviluppo Docker
 ```bash
-open -a Docker
-```
-
-### Start containers
-
-```bash
-docker-compose up -d
-```
-
-## In pgAdmin
-
-1. Add New Server
-2. Tab **General**
-   - Name: `local-postgres`
-3. Tab **Connection**
-   - Host name/address: `postgres`
-      - **Importante**: non `localhost` (pgAdmin è in un container; localhost lì dentro è il container pgAdmin stesso)
-   - Port: `5432`
-   - Maintenance database: `anime_db`
-   - Username: `anime_user`
-   - Password: `anime_pass`
-
-### Run reset
-
-```bash
-docker compose down -v
+# 1. Avvia container + popolamento DB (prima volta)
+docker compose up -d postgres
 docker compose up -d
+
+# 2. Installa dipendenze (prima volta)
+cd services/main-server-express
+npm install
+
+# 3. Avvia server di sviluppo
+npm run dev
 ```
 
-## Debugging
-
+#### Avvio Express server
 ```bash
-docker compose ps -a
-```
+cd solution
 
-Test postgres seeding logs
+# Prima volta
+npm run install:all
 
-```bash
-docker compose down -v && docker compose up -d postgres && docker compose logs -f postgres
+# Avvio ambiente completo
+npm run dev
+
+# Stop
+npm run stop
 ```
+---
 
 ## MongoDB Setup
 
-### Automatic Data Import/Verification
+**Expected time:**
+- Import: ~10 minutes
+- Indexing: ~7-8 minutes
+- **Total: ~17-18 minutes**
 
+### Automatic Data Import/Verification
 Import and verify data with:
 
 ```bash
@@ -73,11 +67,6 @@ Import the three dynamic collections (ratings, favs, stats) and the indexes into
 ./db/mongo/index.sh
 ```
 
-**Expected time:**
-- Import: ~10 minutes
-- Indexing: ~7-8 minutes
-- **Total: ~17-18 minutes**
-
 ### Verify Import
 
 Check that all data was imported successfully:
@@ -89,86 +78,48 @@ docker exec -i solution-mongo-1 mongosh anime_dynamic --quiet --eval "print('Rat
 Expected output:
 
 ```
-Ratings: 124298357 documents
-Stats: 28955 documents
-Favs: 4178747 documents
+Ratings: 248596714 | Stats: 57910 | Favs: 8357494
 ```
+---
 
-### Test Query Performance
+# Accesso servizi
 
-Verify that indexes are working correctly:
+- **Frontend**: http://localhost:3000
+- **pgAdmin**: http://localhost:5050
+  - Email: `admin@example.com`
+  - Password: `admin`
+- **Mongo Express**: http://localhost:5051
+  - Username: `admin`
+  - Password: `admin`
 
-**Basic anime lookup:**
+### Connessione database in pgAdmin
 
+1. Add New Server
+2. Tab **General**
+   - Name: `local-postgres`
+3. Tab **Connection**
+   - Host name/address: `postgres`
+      - **Importante**: non `localhost` (pgAdmin è in un container; localhost lì dentro è il container pgAdmin stesso)
+   - Port: `5432`
+   - Maintenance database: `anime_db`
+   - Username: `anime_user`
+   - Password: `anime_pass`
+
+---
+
+# Debugging
 ```bash
-docker compose exec mongo mongosh anime_dynamic --eval '
-var start = new Date();
-var count = db.ratings.find({anime_id: 1}).count();
-print("Query speed: " + count + " results in " + (new Date() - start) + "ms");
-'
+docker compose ps -a   # Status dei container
 ```
-
-Expected: < 100ms
-
-**Sorted query (anime ratings sorted by username):**
-
+## Test popolamento DB postgreSQL
 ```bash
-docker compose exec mongo mongosh anime_dynamic --eval '
-var start = new Date();
-var docs = db.ratings.find({anime_id: 1}).sort({username: 1}).limit(10).toArray();
-print("Query speed (Sorted Query): " + docs.length + " results in " + (new Date() - start) + "ms");
-'
+docker compose exec postgres psql -U anime_user -d anime_db -c "SELECT count(*) FROM profiles;"
 ```
 
-Expected: < 100ms
-
-**Stats lookup:**
-
+## Eliminazione container Docker
 ```bash
-docker compose exec mongo mongosh anime_dynamic --eval '
-var start = new Date();
-var doc = db.getCollection("stats").find({mal_id: 1}).hint("idx_mal_id").limit(1).toArray();
-print("Query speed (Stats Lookup): Found " + doc.length + " doc in " + (new Date() - start) + "ms");
-'
+docker compose down # Se precedentemente attivo
+docker compose down -v --rmi all
+
+docker ps -a  # Verifica che non ci siano container attivi
 ```
-
-Expected: < 50ms
-
-**Favs by ID:**
-
-```bash
-docker compose exec mongo mongosh anime_dynamic --eval '
-var start = new Date();
-var count = db.favs.find({id: 1}).hint("idx_id").count();
-print("Query speed (Favs by ID): " + count + " results in " + (new Date() - start) + "ms");
-'
-```
-
-Expected: < 50ms
-
-**User ratings lookup:**
-
-```bash
-docker compose exec mongo mongosh anime_dynamic --eval '
-var sample = db.ratings.findOne();
-var targetUser = sample ? sample.username : "unknown";
-print("Testing query for user: " + targetUser);
-
-var start = new Date();
-var count = db.ratings.find({username: targetUser}).hint("idx_username").count(); 
-print("Query speed (User Ratings): " + count + " results in " + (new Date() - start) + "ms");
-'
-```
-
-Expected: < 10ms
-
-**Without indexes:** These queries would take 60,000+ ms
-
-### Access Mongo Express UI
-
-[http://localhost:5051](http://localhost:5051)
-
-- Username: `admin`
-- Password: `admin`
-
-**Note:** Data persists across restarts. To reset completely, use `docker-compose down -v`
