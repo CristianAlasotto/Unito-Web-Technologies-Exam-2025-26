@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}} - Anime DB</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+    rel="stylesheet">
+
+  <!-- Global CSS -->
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/navbar.css">
+  <link rel="stylesheet" href="/css/hero.css">
+  <link rel="stylesheet" href="/css/footer.css">
+
+  <!-- CSS for reusable components -->
+  <link rel="stylesheet" href="/css/cards.css">
+  <link rel="stylesheet" href="/css/forms.css">
+
+  <!-- Page-specific CSS (optional, if different for each route) -->
+  <link rel="stylesheet" href="/css/pages/{{currentPage}}.css">
+
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <h1 class="logo">Anime Database</h1>
+      <ul class="nav-links">
+        <li><a href="/">home</a></li>
+        <li><a href="/characters">characters</a></li>
+        <li><a href="/staff">staff</a></li>
+        <li><a href="/profile">profile</a></li>
+        <li><a href="/favourites">favourites</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="container">
+    {{{body}}}
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Anime Database. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/main.js"></script>
+</body>
+
+</html>
