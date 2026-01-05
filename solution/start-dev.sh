@@ -1,35 +1,50 @@
 #!/bin/bash
 
-echo "🚀 Avvio ambiente di sviluppo..."
+echo "🚀 Starting development environment..."
 
-# Controlla se Docker è in esecuzione
+# Check if Docker is running
 if ! docker info > /dev/null 2>&1; then
-    echo "❌ Docker non è in esecuzione. Avvialo prima di continuare."
+    echo "❌ Docker is not running. Start it before continuing."
     exit 1
 fi
 
-# Avvia i container
-echo "📦 Avvio container Docker..."
+# Start containers
+echo "📦 Starting Docker containers..."
 docker compose up -d postgres
 docker compose up -d
 
-# Attendi che i database siano pronti
-echo "⏳ Attendo che i database siano pronti..."
-sleep 5
+# Wait for databases to be ready
+echo "⏳ Waiting for databases to be ready..."
+sleep 10
 
-# Controlla lo stato dei container
-echo "🔍 Verifica stato container..."
+# Check container status
+echo "🔍 Checking container status..."
 docker compose ps
 
-# Naviga nella cartella del server
+# Verify and populate MongoDB
+echo ""
+echo "🗄️ Verifying and populating MongoDB..."
+if [ -f "./db/mongo/verify.sh" ]; then
+    chmod +x ./db/mongo/verify.sh
+    ./db/mongo/verify.sh
+    if [ $? -ne 0 ]; then
+        echo "⚠️ Warning: MongoDB verification not completed. Continuing anyway..."
+    fi
+else
+    echo "❌ verify.sh not found!"
+fi
+
+echo ""
+
+# Navigate to server folder
 cd services/main-server-express
 
-# Installa le dipendenze se necessario
+# Install dependencies if needed
 if [ ! -d "node_modules" ]; then
-    echo "📥 Installazione dipendenze..."
+    echo "📥 Installing dependencies..."
     npm install
 fi
 
-# Avvia il server in modalità dev
-echo "🌐 Avvio server Express..."
+# Start server in dev mode
+echo "🌐 Starting Express server..."
 npm run dev
