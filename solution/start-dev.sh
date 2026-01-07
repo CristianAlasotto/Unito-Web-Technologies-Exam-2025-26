@@ -28,10 +28,13 @@ if [ -f "./db/mongo/verify.sh" ]; then
     chmod +x ./db/mongo/verify.sh
     ./db/mongo/verify.sh
     if [ $? -ne 0 ]; then
-        echo "⚠️ Warning: MongoDB verification not completed. Continuing anyway..."
+        echo "❌ MongoDB setup failed. Please check the logs above."
+        exit 1
     fi
+    echo "✅ MongoDB is ready!"
 else
     echo "❌ verify.sh not found!"
+    exit 1
 fi
 
 echo ""

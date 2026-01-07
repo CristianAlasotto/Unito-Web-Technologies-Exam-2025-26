@@ -38,10 +38,45 @@ import_csv() {
         --numInsertionWorkers=12 \
         --batchSize=100000 \
         --bypassDocumentValidation \
-        --writeConcern="{w:0}" &
+        --stopOnError &
 }
 
-# Importa solo le collezioni richieste
+echo "Checking for required CSV files..."
+for collection in "${COLLECTIONS_TO_IMPORT[@]}"; do
+    case $collection in
+        "stats")
+            if [ ! -f "data/stats.csv" ]; then
+                echo "File not found: solution/data/stats.csv"
+                MISSING_FILES+=("stats.csv")
+            fi
+            ;;
+        "favs")
+            if [ ! -f "data/favs.csv" ]; then
+                echo "File not found: solution/data/favs.csv"
+                MISSING_FILES+=("favs.csv")
+            fi
+            ;;
+        "ratings")
+            if [ ! -f "data/ratings.csv" ]; then
+                echo "File not found: solution/data/ratings.csv"
+                MISSING_FILES+=("ratings.csv")
+            fi
+            ;;
+    esac
+done
+
+# Se mancano file, blocca l'esecuzione
+if [ ${#MISSING_FILES[@]} -gt 0 ]; then
+    echo "ERROR: Missing dataset files:"
+    for file in "${MISSING_FILES[@]}"; do
+        echo "  - data/$file"
+    done
+    exit 1
+fi
+
+echo "All required CSV files found. Proceeding with import..."
+
+# Import just the required collections
 for collection in "${COLLECTIONS_TO_IMPORT[@]}"; do
     case $collection in
         "stats")
