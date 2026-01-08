@@ -1,8 +1,33 @@
-const express = require('express');
-const path = require('path');
-const axios = require('axios');
-const { engine } = require('express-handlebars');
+import morgan from "morgan";
+import express from 'express';
+import path from 'path';
+import dotenv from 'dotenv';
+import { engine } from 'express-handlebars';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { dataExpressApi, dataSpringApi } from './lib/api.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables from solution/.env (two levels up)
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
 const app = express();
+// Toggle HTTP request logging via LOG_HTTP_ENABLED
+const LOG_HTTP_ENABLED = (process.env.LOG_HTTP_ENABLED || 'true').toLowerCase() === 'true';
+if (LOG_HTTP_ENABLED) {
+  app.use(
+    morgan((tokens, req, res) => {
+      const method = tokens.method(req, res).padEnd(7);
+      const url = tokens.url(req, res).padEnd(30);
+      const status = tokens.status(req, res).padEnd(6);
+      const time = (tokens['response-time'](req, res) + " ms").padEnd(10);
+
+      return `${method} | ${url} | ${status} | ${time}`;
+    })
+  );
+}
 
 // Handlebars configuration - CORRECT VERSION
 app.engine('hbs', engine({
@@ -24,17 +49,12 @@ app.use(express.urlencoded({ extended: true }));
 const DATA_EXPRESS_URL = process.env.DATA_EXPRESS_URL || 'http://localhost:3001';
 const DATA_SPRING_URL = process.env.DATA_SPRING_URL || 'http://localhost:8080';
 
-// Axios configuration with timeout
-const apiClient = axios.create({
-  timeout: 5000
-});
-
 // Home page route - FALLBACK VERSION
 app.get('/', async (req, res) => {
   try {
     // Attempt to load statistics
     try {
-      const stats = await apiClient.get(`${DATA_SPRING_URL}/api/anime/stats`);
+      const stats = await dataSpringApi.get('/api/anime/stats');
       return res.render('anime/index', { 
         title: 'Anime Database',
         stats: stats.data 
@@ -55,39 +75,26 @@ app.get('/', async (req, res) => {
     }
   } catch (error) {
     console.error('Home error:', error.message);
-    res.render('anime/index', { 
-      title: 'Anime Database', 
-      error: 'Error loading page' 
-    });
+    res.render('anime/index', { title: 'Anime Database', error: 'Error loading page' });
   }
 });
 
 // Anime list route
 app.get('/anime', async (req, res) => {
   try {
-    const anime = await apiClient.get(`${DATA_SPRING_URL}/api/anime`);
-    res.render('anime/list', { 
-      title: 'Anime List',
-      animes: anime.data || []
-    });
+    const anime = await dataSpringApi.get('/api/anime');
+    res.render('anime/list', { title: 'Anime List', animes: anime.data || [] });
   } catch (error) {
     console.error('Anime list error:', error.message);
-    res.render('anime/list', { 
-      title: 'Anime List', 
-      error: 'Unable to load anime list',
-      animes: []
-    });
+    res.render('anime/list', { title: 'Anime List', error: 'Unable to load anime list', animes: [] });
   }
 });
 
 // Anime detail route
 app.get('/anime/:id', async (req, res) => {
   try {
-    const anime = await apiClient.get(`${DATA_SPRING_URL}/api/anime/${req.params.id}`);
-    res.render('anime/detail', { 
-      title: anime.data.title || 'Anime Details',
-      anime: anime.data 
-    });
+    const anime = await dataSpringApi.get(`/api/anime/${req.params.id}`);
+    res.render('anime/detail', { title: anime.data.title || 'Anime Details', anime: anime.data });
   } catch (error) {
     console.error('Anime detail error:', error.message);
     res.status(404).render('error', { message: 'Anime not found' });
@@ -97,47 +104,30 @@ app.get('/anime/:id', async (req, res) => {
 // Characters route
 app.get('/characters', async (req, res) => {
   try {
-    const characters = await apiClient.get(`${DATA_EXPRESS_URL}/api/characters`);
-    res.render('characters/list', { 
-      title: 'Characters',
-      characters: characters.data || []
-    });
+    const characters = await dataExpressApi.get('/api/characters');
+    res.render('characters/list', { title: 'Characters', characters: characters.data || [] });
   } catch (error) {
     console.error('Characters error:', error.message);
-    res.render('characters/list', { 
-      title: 'Characters', 
-      error: 'Unable to load characters',
-      characters: []
-    });
+    res.render('characters/list', { title: 'Characters', error: 'Unable to load characters', characters: [] });
   }
 });
 
 // Staff list route
 app.get('/staff', async (req, res) => {
   try {
-    const staff = await apiClient.get(`${DATA_SPRING_URL}/api/staff`);
-    res.render('staff/list', { 
-      title: 'Staff',
-      staff: staff.data || []
-    });
+    const staff = await dataSpringApi.get('/api/staff');
+    res.render('staff/list', { title: 'Staff', staff: staff.data || [] });
   } catch (error) {
     console.error('Staff error:', error.message);
-    res.render('staff/list', { 
-      title: 'Staff', 
-      error: 'Unable to load staff',
-      staff: []
-    });
+    res.render('staff/list', { title: 'Staff', error: 'Unable to load staff', staff: [] });
   }
 });
 
 // Staff detail route
 app.get('/staff/:id', async (req, res) => {
   try {
-    const staff = await apiClient.get(`${DATA_SPRING_URL}/api/staff/${req.params.id}`);
-    res.render('staff/detail', { 
-      title: staff.data.name || 'Staff Details',
-      staff: staff.data 
-    });
+    const staff = await dataSpringApi.get(`/api/staff/${req.params.id}`);
+    res.render('staff/detail', { title: staff.data.name || 'Staff Details', staff: staff.data });
   } catch (error) {
     console.error('Staff detail error:', error.message);
     res.status(404).render('error', { message: 'Staff not found' });
@@ -156,11 +146,8 @@ app.get('/profile/:username', async (req, res) => {
   }
 
   try {
-    const profile = await apiClient.get(`${DATA_EXPRESS_URL}/api/users/${req.params.username}`);
-    res.render('profile/user', { 
-      title: `Profile - ${req.params.username}`,
-      profile: profile.data 
-    });
+    const profile = await dataExpressApi.get(`/api/users/${req.params.username}`);
+    res.render('profile/user', { title: `Profile - ${req.params.username}`, profile: profile.data });
   } catch (error) {
     console.error('Profile error:', error.message);
     res.status(404).render('error', { message: 'Profile not found' });
@@ -178,25 +165,18 @@ app.get('/profile', (req, res) => {
 // Favourites route
 app.get('/favourites', async (req, res) => {
   try {
-    const favourites = await apiClient.get(`${DATA_EXPRESS_URL}/api/favourites`);
-    res.render('favourites/list', { 
-      title: 'My Favourites',
-      favourites: favourites.data || []
-    });
+    const favourites = await dataExpressApi.get('/api/favourites');
+    res.render('favourites/list', { title: 'My Favourites', favourites: favourites.data || [] });
   } catch (error) {
     console.error('Favourites error:', error.message);
-    res.render('favourites/list', { 
-      title: 'My Favourites', 
-      error: 'Unable to load favourites',
-      favourites: []
-    });
+    res.render('favourites/list', { title: 'My Favourites', error: 'Unable to load favourites', favourites: [] });
   }
 });
 
 // Add to favourites route
 app.post('/favourites/:id', async (req, res) => {
   try {
-    await apiClient.post(`${DATA_EXPRESS_URL}/api/favourites/${req.params.id}`);
+    await dataExpressApi.post(`/api/favourites/${req.params.id}`);
     res.json({ success: true, message: 'Added to favourites' });
   } catch (error) {
     console.error('Add favourite error:', error.message);
@@ -207,7 +187,7 @@ app.post('/favourites/:id', async (req, res) => {
 // Remove from favourites route
 app.delete('/favourites/:id', async (req, res) => {
   try {
-    await apiClient.delete(`${DATA_EXPRESS_URL}/api/favourites/${req.params.id}`);
+    await dataExpressApi.delete(`/api/favourites/${req.params.id}`);
     res.json({ success: true, message: 'Removed from favourites' });
   } catch (error) {
     console.error('Remove favourite error:', error.message);
