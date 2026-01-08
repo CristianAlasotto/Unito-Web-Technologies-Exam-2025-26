@@ -1,51 +1,83 @@
-# Avvio rapido
+# Quick Start
 
 Insert dataset files in "solution/data"
 
-### Prerequisiti
-- Docker Desktop in esecuzione
-- Node.js installato
-- Dataset in file .csv nella cartella `data/` (fondamentale solo per popolamento iniziale)
+## Prerequisites
 
-## Avvio ambiente di sviluppo Completo (per Linux/MacOS)
-#### Script Bash Automatizzato
+- Docker Desktop running
+- Node.js installed
+- Dataset in .csv files in the `data/` folder (essential only for initial population)
+
+## Starting Complete Development Environment (for Linux/MacOS)
+
+### Automated Bash Script
+
 ```bash
 cd solution
 ./start-dev.sh
 ```
 
-## Avvio ambiente di sviluppo manuale multi-piattaforma
-#### Avvio Docker + Popolamento DB PostgreSQL
+## Environment Variables Configuration (Global)
+
+- Global file: `.env` in the `solution/` folder (`.env.example` also exists).
+- Automatically loaded by:
+   - Docker Compose (for variable interpolation)
+   - Express Server (via dotenv) for `LOG_HTTP_ENABLED`, `LOG_API_ENABLED`, `DATA_*`, `PORT`.
+
+To disable HTTP/API logs:
+
+```env
+LOG_HTTP_ENABLED=false
+LOG_API_ENABLED=false
+```
+
+To customize service URLs:
+
+```env
+DATA_EXPRESS_URL=http://localhost:3001
+DATA_SPRING_URL=http://localhost:8080
+```
+
+## Starting Manual Multi-Platform Development Environment
+
+### Starting Docker + PostgreSQL Database Population
+
 ```bash
-# 1. Avvia container + popolamento DB (prima volta)
+# 1. Start container + DB population (first time)
 docker compose up -d postgres
 docker compose up -d
 
-# 2. Installa dipendenze (prima volta)
+# 2. Install dependencies (first time)
 cd services/main-server-express
 npm install
 
-# 3. Avvia server di sviluppo
+# 3. Start development server
 npm run dev
 ```
-#### Popolamento/verifica mongoDB
+
+> Tip: copy `.env.example` to `.env` and adapt the values.
+
+### MongoDB Population/Verification
+
 ```bash
 cd ../../db/mongo/verify.sh
 ```
 
-#### Avvio Express server
+### Starting Express Server
+
 ```bash
 cd solution
 
-# Prima volta
+# First time
 npm run install:all
 
-# Avvio ambiente completo
+# Start complete environment
 npm run dev
 
 # Stop
 npm run stop
 ```
+
 ---
 
 ## MongoDB Setup
@@ -56,6 +88,7 @@ npm run stop
 - **Total: ~17-18 minutes**
 
 ### Automatic Data Import/Verification
+
 Import and verify data with:
 
 ```bash
@@ -84,46 +117,53 @@ Expected output:
 ```
 Ratings: 248596714 | Stats: 57910 | Favs: 8357494
 ```
+
 ---
 
-# Accesso servizi
+## Service Access
 
 - **Frontend**: http://localhost:3000
 - **pgAdmin**: http://localhost:5050
-  - Email: `admin@example.com`
-  - Password: `admin`
+   - Email: `admin@example.com`
+   - Password: `admin`
 - **Mongo Express**: http://localhost:5051
-  - Username: `admin`
-  - Password: `admin`
+   - Username: `admin`
+   - Password: `admin`
+- **(EXTRA) Dozzle logs**: http://localhost:9999
 
-### Connessione database in pgAdmin
+### Database Connection in pgAdmin
 
 1. Add New Server
-2. Tab **General**
-   - Name: `local-postgres`
-3. Tab **Connection**
-   - Host name/address: `postgres`
-      - **Importante**: non `localhost` (pgAdmin è in un container; localhost lì dentro è il container pgAdmin stesso)
-   - Port: `5432`
-   - Maintenance database: `anime_db`
-   - Username: `anime_user`
-   - Password: `anime_pass`
+2. **General** Tab
+    - Name: `local-postgres`
+3. **Connection** Tab
+    - Host name/address: `postgres`
+         - **Important**: not `localhost` (pgAdmin is in a container; localhost there is the pgAdmin container itself)
+    - Port: `5432`
+    - Maintenance database: `anime_db`
+    - Username: `anime_user`
+    - Password: `anime_pass`
 
 ---
 
-# Debugging
+## Debugging
+
 ```bash
-docker compose ps -a   # Status dei container
+docker compose ps -a   # Container status
 ```
-## Test popolamento DB postgreSQL
+
+### Test PostgreSQL Database Population
+
 ```bash
 docker compose exec postgres psql -U anime_user -d anime_db -c "SELECT count(*) FROM profiles;"
 ```
 
-## Eliminazione container Docker
+### Docker Container Removal
+
 ```bash
-docker compose down # Se precedentemente attivo
+docker compose down # If previously active
 docker compose down -v --rmi all
 
-docker ps -a  # Verifica che non ci siano container attivi
+docker ps -a  # Verify no active containers remain
 ```
+
