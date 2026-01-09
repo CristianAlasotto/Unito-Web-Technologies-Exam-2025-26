@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const server = 'mongo:27017';
+const server = 'localhost:27017';
 const database = 'anime_dynamic';
 
 const connectDB = async () => {
