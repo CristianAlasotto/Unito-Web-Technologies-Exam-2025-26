@@ -1,10 +1,15 @@
 services:
   postgres:
     image: postgres:16
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U anime_user -d anime_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     environment:
-      POSTGRES_DB: anime_db
-      POSTGRES_USER: anime_user
-      POSTGRES_PASSWORD: anime_pass
+      POSTGRES_DB: ${POSTGRES_DB:-anime_db}
+      POSTGRES_USER: ${POSTGRES_USER:-anime_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-anime_pass}
     ports:
       - "5432:5432"
     volumes:
@@ -15,7 +20,7 @@ services:
   mongo:
     image: mongo:7
     environment:
-      MONGO_INITDB_DATABASE: anime_dynamic
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-anime_dynamic}
     ports:
       - "27017:27017"
     volumes:
@@ -25,8 +30,8 @@ services:
   pgadmin:
     image: dpage/pgadmin4
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
     ports:
       - "5050:80"
     depends_on:
@@ -35,9 +40,9 @@ services:
   mongoexpress:
     image: mongo-express:1
     environment:
-      ME_CONFIG_MONGODB_SERVER: mongo
-      ME_CONFIG_BASICAUTH_USERNAME: admin
-      ME_CONFIG_BASICAUTH_PASSWORD: admin
+      ME_CONFIG_MONGODB_SERVER: ${ME_CONFIG_MONGODB_SERVER:-mongo}
+      ME_CONFIG_BASICAUTH_USERNAME: ${ME_CONFIG_BASICAUTH_USERNAME:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${ME_CONFIG_BASICAUTH_PASSWORD:-admin}
     ports:
       - "5051:8081"
     depends_on:
@@ -47,19 +52,24 @@ services:
     profiles: ["app"]
     build: ./services/main-server-express
     environment:
-      DATA_EXPRESS_URL: http://data_express:3001
-      DATA_SPRING_URL: http://data_spring:8080
+      DATA_EXPRESS_URL: ${DATA_EXPRESS_URL:-http://data_express:3001}
+      DATA_SPRING_URL: ${DATA_SPRING_URL:-http://data_spring:8080}
+      LOG_HTTP_ENABLED: ${LOG_HTTP_ENABLED:-true}
+      LOG_API_ENABLED: ${LOG_API_ENABLED:-true}
     ports:
       - "3000:3000"
     depends_on:
-      - data_express
-      - data_spring
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_started
 
   data_express:
     profiles: ["app"]
     build: ./services/data-server-express
     environment:
-      MONGO_URL: mongodb://mongo:27017/anime_dynamic
+      MONGO_URL: ${MONGO_URL:-mongodb://mongo:27017/anime_dynamic}
+      LOG_API_ENABLED: ${LOG_API_ENABLED:-true}
     ports:
       - "3001:3001"
     depends_on:
@@ -69,13 +79,21 @@ services:
     profiles: ["app"]
     build: ./services/data-server-spring
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/anime_db
-      SPRING_DATASOURCE_USERNAME: anime_user
-      SPRING_DATASOURCE_PASSWORD: anime_pass
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/anime_db}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-anime_user}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-anime_pass}
     ports:
       - "8080:8080"
     depends_on:
       - postgres
+
+  dozzle:
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "127.0.0.1:9999:8080"
+    restart: unless-stopped
 
 volumes:
   pgdata:
