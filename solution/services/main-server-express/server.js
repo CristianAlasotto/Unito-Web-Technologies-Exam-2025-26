@@ -58,10 +58,7 @@ const DATA_SPRING_URL = process.env.DATA_SPRING_URL || "http://localhost:8080";
 const USE_MOCK_DATA =
   (process.env.USE_MOCK_DATA || "false").toLowerCase() === "true";
 
-/**
- * Mock data (temporary)
- * Keep it centralized so you can remove it in one shot later.
- */
+/* --- Mock data (temporary) --- */
 const MOCK_ANIME_HOME = [
   {
     anime_id: 1,
@@ -78,39 +75,7 @@ const MOCK_ANIME_HOME = [
     score: 8.6,
     type: "TV",
     episodes: 37,
-  },
-  {
-    anime_id: 3,
-    title: "One Piece",
-    image_url: "https://cdn.myanimelist.net/images/anime/6/73245.jpg",
-    score: 8.7,
-    type: "TV",
-    episodes: 1000,
-  },
-  {
-    anime_id: 4,
-    title: "Fullmetal Alchemist: Brotherhood",
-    image_url: "https://cdn.myanimelist.net/images/anime/1223/96541.jpg",
-    score: 9.1,
-    type: "TV",
-    episodes: 64,
-  },
-  {
-    anime_id: 5,
-    title: "Steins;Gate",
-    image_url: "https://cdn.myanimelist.net/images/anime/5/73199.jpg",
-    score: 9.0,
-    type: "TV",
-    episodes: 24,
-  },
-  {
-    anime_id: 6,
-    title: "Hunter x Hunter",
-    image_url: "https://cdn.myanimelist.net/images/anime/11/33657.jpg",
-    score: 9.0,
-    type: "TV",
-    episodes: 148,
-  },
+  }
 ];
 
 const MOCK_ANIME_LIST = [
@@ -131,6 +96,53 @@ const MOCK_ANIME_LIST = [
     episodes: 37,
   },
 ];
+
+const MOCK_ANIME_DETAIL = {
+  1: {
+    anime_id: 1,
+    title: "Attack on Titan",
+    title_japanese: "進撃の巨人",
+    image_url: "https://cdn.myanimelist.net/images/anime/10/47347.jpg",
+    score: 8.5,
+    type: "TV",
+    status: "Finished Airing",
+    episodes: 25,
+    start_date: "2013-04-07",
+    end_date: "2013-09-29",
+    synopsis: "Centuries ago, mankind was slaughtered to near extinction by monstrous humanoid creatures called Titans, forcing humans to hide in fear behind enormous concentric walls. What makes these giants truly terrifying is that their taste for human flesh is not born out of hunger but what appears to be out of pleasure.",
+    genres: ["Action", "Drama", "Fantasy", "Mystery"],
+    themes: ["Gore", "Military", "Survival"],
+    studios: ["Wit Studio"],
+    demographics: ["Shounen"],
+    rank: 1,
+    popularity: 1,
+    members: 3500000,
+    favorites: 180000,
+    url: "https://myanimelist.net/anime/16498/Shingeki_no_Kyojin"
+  },
+  2: {
+    anime_id: 2,
+    title: "Death Note",
+    title_japanese: "デスノート",
+    image_url: "https://cdn.myanimelist.net/images/anime/9/9453.jpg",
+    score: 8.6,
+    type: "TV",
+    status: "Finished Airing",
+    episodes: 37,
+    start_date: "2006-10-04",
+    end_date: "2007-06-27",
+    synopsis: "A shinigami, as a god of death, can kill any person—provided they see their victim's face and write their victim's name in a notebook called a Death Note. One day, Ryuk, bored by the shinigami lifestyle and interested in seeing how a human would use a Death Note, drops one into the human realm.",
+    genres: ["Mystery", "Supernatural", "Suspense"],
+    themes: ["Psychological"],
+    studios: ["Madhouse"],
+    demographics: ["Shounen"],
+    rank: 2,
+    popularity: 2,
+    members: 3200000,
+    favorites: 165000,
+    url: "https://myanimelist.net/anime/1535/Death_Note"
+  }
+};
 
 // Home page route - development approach + optional mock
 app.get("/", async (req, res) => {
@@ -179,7 +191,7 @@ app.get("/", async (req, res) => {
 app.get("/anime", async (req, res) => {
   try {
     if (USE_MOCK_DATA) {
-      return res.render("anime/list", {
+      return res.render("anime/anime_list", {
         title: "Anime List",
         animes: MOCK_ANIME_LIST,
         warning: "Mock data enabled (USE_MOCK_DATA=true)",
@@ -187,13 +199,13 @@ app.get("/anime", async (req, res) => {
     }
 
     const anime = await dataSpringApi.get("/api/anime");
-    return res.render("anime/list", {
+    return res.render("anime/anime_list", {
       title: "Anime List",
       animes: anime.data || [],
     });
   } catch (error) {
     console.error("Anime list error:", error.message);
-    return res.render("anime/list", {
+    return res.render("anime/anime_list", {
       title: "Anime List",
       error: "Unable to load anime list",
       animes: [],
@@ -204,6 +216,23 @@ app.get("/anime", async (req, res) => {
 // Anime detail route
 app.get("/anime/:id", async (req, res) => {
   try {
+    if (USE_MOCK_DATA) {
+      const animeId = parseInt(req.params.id);
+      const anime = MOCK_ANIME_DETAIL[animeId];
+      
+      if (!anime) {
+        return res.status(404).render("error", { 
+          message: "Anime not found in mock data" 
+        });
+      }
+      
+      return res.render("anime/detail", {
+        title: anime.title || "Anime Details",
+        anime: anime,
+        warning: "Mock data enabled (USE_MOCK_DATA=true)",
+      });
+    }
+
     const anime = await dataSpringApi.get(`/api/anime/${req.params.id}`);
     return res.render("anime/detail", {
       title: anime.data.title || "Anime Details",
@@ -275,7 +304,7 @@ app.get("/profile/:username", async (req, res) => {
     return res.render("error", {
       message: "Please log in to access your profile",
       clientLogJson: JSON.stringify(
-        `Profile access blocked: user "${req.params.username}" not authenticated`
+        `Profile access blocked: sis "${req.params.username}" not authenticated`
       ),
     });
   }
@@ -347,6 +376,24 @@ app.delete("/favourites/:id", async (req, res) => {
 // 404 Handler
 app.use((req, res) => {
   return res.status(404).render("error", { message: "Page not found" });
+});
+
+// Error handler centralized (x debug)
+app.use((err, req, res, next) => {
+  console.error("[UNHANDLED_ERROR]", err);
+  res.status(500).render("error", {
+    message: "Internal Server Error",
+    clientLogJson: JSON.stringify(
+      {
+        path: req.originalUrl,
+        method: req.method,
+        error: err.message,
+        stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+      },
+      null,
+      2
+    ),
+  });
 });
 
 const PORT = process.env.PORT || 3000;
