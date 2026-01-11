@@ -144,6 +144,54 @@ const MOCK_ANIME_DETAIL = {
   }
 };
 
+const MOCK_CHARACTERS_DETAIL = {
+  1: {
+    character_id: 1,
+    url: "https://myanimelist.net/character/1/Monkey_D_Luffy",
+    name: "Monkey D. Luffy",
+    name_kanji: "モンキー・D・ルフィ",
+    image_url: "https://cdn.myanimelist.net/images/characters/9/310307.jpg",
+    favorites: 210000,
+    about: "Captain of the Straw Hat Pirates. His dream is to become the Pirate King. He possesses the power of the Gomu Gomu no Mi."
+  },
+  2: {
+    character_id: 2,
+    url: "https://myanimelist.net/character/40/Levi_Ackerman",
+    name: "Levi Ackerman",
+    name_kanji: "リヴァイ・アッカーマン",
+    image_url: "https://cdn.myanimelist.net/images/characters/2/241413.jpg",
+    favorites: 190000,
+    about: "Captain of the Special Operations Squad. Known as humanity's strongest soldier and famous for his exceptional combat skills."
+  },
+  3: {
+    character_id: 3,
+    url: "https://myanimelist.net/character/17/Naruto_Uzumaki",
+    name: "Naruto Uzumaki",
+    name_kanji: "うずまき ナルト",
+    image_url: "https://cdn.myanimelist.net/images/characters/10/284121.jpg",
+    favorites: 230000,
+    about: "A shinobi of Konohagakure who dreams of becoming Hokage. Host of the Nine-Tailed Fox."
+  },
+  4: {
+    character_id: 4,
+    url: "https://myanimelist.net/character/45627/Gojou_Satoru",
+    name: "Satoru Gojo",
+    name_kanji: "五条 悟",
+    image_url: "https://cdn.myanimelist.net/images/characters/15/422826.jpg",
+    favorites: 175000,
+    about: "A jujutsu sorcerer and teacher at Tokyo Jujutsu High. Widely regarded as the strongest sorcerer alive."
+  },
+  5: {
+    character_id: 5,
+    url: "https://myanimelist.net/character/417/Lelouch_Lamperouge",
+    name: "Lelouch Lamperouge",
+    name_kanji: "ルルーシュ・ランペルージ",
+    image_url: "https://cdn.myanimelist.net/images/characters/8/406163.jpg",
+    favorites: 160000,
+    about: "An exiled prince of the Holy Britannian Empire who gains the power of Geass and seeks to overthrow the empire."
+  }
+};
+
 // Home page route - development approach + optional mock
 app.get("/", async (req, res) => {
   try {
@@ -247,6 +295,14 @@ app.get("/anime/:id", async (req, res) => {
 // Characters route
 app.get("/characters", async (req, res) => {
   try {
+    if (USE_MOCK_DATA) {
+      return res.render("characters/list", {
+        title: "Characters",
+        characters: MOCK_CHARACTERS_DETAIL,
+        warning: "Mock data enabled (USE_MOCK_DATA=true)",
+      });
+    }
+
     const characters = await dataExpressApi.get("/api/characters");
     return res.render("characters/list", {
       title: "Characters",
@@ -259,6 +315,37 @@ app.get("/characters", async (req, res) => {
       error: "Unable to load characters",
       characters: [],
     });
+  }
+});
+
+// Character detail route
+app.get("/characters/:id", async (req, res) => {
+  try {
+    if (USE_MOCK_DATA) {
+      const characterId = parseInt(req.params.id);
+      const character = MOCK_CHARACTERS_DETAIL[characterId];
+      
+      if (!character) {
+        return res.status(404).render("error", { 
+          message: "Character not found in mock data" 
+        });
+      }
+      
+      return res.render("characters/detail", {
+        title: character.name || "Character Details",
+        character: character,
+        warning: "Mock data enabled (USE_MOCK_DATA=true)",
+      });
+    }
+
+    const character = await dataExpressApi.get(`/api/characters/${req.params.id}`);
+    return res.render("characters/detail", {
+      title: character.data.name || "Character Details",
+      character: character.data,
+    });
+  } catch (error) {
+    console.error("Character detail error:", error.message);
+    return res.status(404).render("error", { message: "Character not found" });
   }
 });
 

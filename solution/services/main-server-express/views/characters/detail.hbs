@@ -6,32 +6,12 @@
       <h2 class="kanji">{{character.name_kanji}}</h2>
     </div>
   </div>
-  
+
   <section class="info">
-    <h3>Informazioni</h3>
-    <p><strong>Soprannomi:</strong> {{character.nicknames}}</p>
-    <p><strong>Età:</strong> {{character.age}}</p>
-    <p><strong>Genere:</strong> {{character.gender}}</p>
-    <p><strong>Ruolo:</strong> {{character.role}}</p>
-    <p><strong>Descrizione:</strong> {{character.about}}</p>
+    <h3>Information</h3>
+    <p><strong>Favorites:</strong> {{character.favorites}}</p>
+    <p><strong>Description:</strong> {{character.about}}</p>
   </section>
-  
-  <section class="appearances">
-    <h3>Appare in</h3>
-    {{#each character.animes}}
-      <div class="anime-appearance">
-        <a href="/anime/{{this.anime_id}}">{{this.title}}</a>
-        <span>come {{this.role}}</span>
-      </div>
-    {{/each}}
-  </section>
-  
-  <section class="voice-actors">
-    <h3>Doppiatori</h3>
-    {{#each character.voice_actors}}
-      <p>🎤 {{this.name}} ({{this.language}})</p>
-    {{/each}}
-  </section>
-  
-  <a href="/characters">← Torna alla lista</a>
+
+  <a href="/characters">← Back to list</a>
 </div>
