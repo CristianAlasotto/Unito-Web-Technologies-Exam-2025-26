@@ -28,32 +28,32 @@ Expected output:
 MongoDB Connected successfully
 ```
 
-The server runs on `http://localhost:3000`
+The server runs on `http://localhost:3001`
 
 ## API Endpoints
 
 ### Get Favorites
 ```bash
-curl http://localhost:3000/getfavs
+curl http://localhost:3001/getfavs
 ```
 
 ### Get Ratings
 ```bash
-curl http://localhost:3000/getratings
+curl http://localhost:3001/getratings
 ```
 
 ### Get Statistics
 ```bash
-curl http://localhost:3000/getstats
+curl http://localhost:3001/getstats
 ```
 
 ## Testing
 
 Test all endpoints after starting the server:
 ```bash
-curl http://localhost:3000/getfavs
-curl http://localhost:3000/getratings
-curl http://localhost:3000/getstats
+curl http://localhost:3001/getfavs
+curl http://localhost:3001/getratings
+curl http://localhost:3001/getstats
 ```
 
 ## Requirements

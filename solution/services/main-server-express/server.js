@@ -396,5 +396,5 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server listening on port ${PORT}`));
+const PORT = process.env.MAIN_EXPRESS_PORT || 3000;
+app.listen(PORT, () => console.log(`✅ MAIN EXPRESS Server listening on port ${PORT}`));
