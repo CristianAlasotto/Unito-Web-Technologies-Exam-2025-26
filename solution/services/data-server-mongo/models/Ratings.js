@@ -1,9 +1,12 @@
 const mongoose = require('mongoose');
 
 const RatingSchema = new mongoose.Schema({
-    user_id: Number,
+    username: String,
     anime_id: Number,
-    rating: Number
+    status: Number,
+    score: Number,
+    is_rewatching: Number,
+    num_watched_episodes: Number
 }, {
     collection: 'ratings'
 });
