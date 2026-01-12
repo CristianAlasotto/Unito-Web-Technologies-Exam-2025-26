@@ -39,6 +39,11 @@ app.engine(
     layoutsDir: path.join(__dirname, "views/layout"),
     defaultLayout: "main",
     partialsDir: path.join(__dirname, "views/partials"),
+    helpers: {
+      json: function(context) {
+        return JSON.stringify(context, null, 2);
+      }
+    }
   })
 );
 
@@ -329,6 +334,33 @@ app.get("/profile", (req, res) => {
   });
 });
 
+// General tests route - displays data from MongoDB endpoints
+app.get("/general-tests", async (req, res) => {
+  try {
+    const [favs, ratings, stats] = await Promise.all([
+      dataExpressApi.get("/getfavs").catch(err => ({ data: null, error: err.message })),
+      dataExpressApi.get("/getratings").catch(err => ({ data: null, error: err.message })),
+      dataExpressApi.get("/getstats").catch(err => ({ data: null, error: err.message }))
+    ]);
+
+    return res.render("general-tests", {
+      title: "General Tests - MongoDB Data",
+      favs: favs.data || { error: favs.error },
+      ratings: ratings.data || { error: ratings.error },
+      stats: stats.data || { error: stats.error },
+      favsError: !favs.data,
+      ratingsError: !ratings.data,
+      statsError: !stats.data
+    });
+  } catch (error) {
+    console.error("General tests error:", error.message);
+    return res.status(500).render("error", { 
+      message: "Unable to load test data",
+      clientLogJson: JSON.stringify({ error: error.message })
+    });
+  }
+});
+
 // Favourites route
 app.get("/favourites", async (req, res) => {
   try {
@@ -370,6 +402,37 @@ app.delete("/favourites/:id", async (req, res) => {
     return res
       .status(400)
       .json({ success: false, error: "Unable to remove from favourites" });
+  }
+});
+
+/* --- Mongo requests --- */
+app.get("/api/favorites", async (req, res) => {
+  try {
+    const response = await dataExpressApi.get("/getfavs");
+    return res.json(response.data);
+  } catch (error) {
+    console.error("Favorites API error:", error.message);
+    return res.status(500).json({ error: "Unable to load favorites" });
+  }
+});
+
+app.get("/api/ratings", async (req, res) => {
+  try {
+    const response = await dataExpressApi.get("/getratings");
+    return res.json(response.data);
+  } catch (error) {
+    console.error("Ratings API error:", error.message);
+    return res.status(500).json({ error: "Unable to load ratings" });
+  }
+});
+
+app.get("/api/stats", async (req, res) => {
+  try {
+    const response = await dataExpressApi.get("/getstats");
+    return res.json(response.data);
+  } catch (error) {
+    console.error("Stats API error:", error.message);
+    return res.status(500).json({ error: "Unable to load stats" });
   }
 });
 
