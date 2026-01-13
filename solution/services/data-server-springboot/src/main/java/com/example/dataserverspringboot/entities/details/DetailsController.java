@@ -11,7 +11,7 @@ import java.util.Optional;
 
 /**
  * REST Controller for Details (Anime) endpoints
- * Provides API endpoints that server.js uses
+ * Now returns only first 10 results by default
  */
 @RestController
 @RequestMapping("/api/anime")
@@ -44,7 +44,7 @@ public class DetailsController {
      * Required by: server.js line 85
      * Purpose: Anime list page
      *
-     * Returns all anime from the database
+     * Returns FIRST 10 anime from the database
      */
     @GetMapping
     public ResponseEntity<List<Details>> getAllAnime() {
@@ -69,11 +69,12 @@ public class DetailsController {
 
     // ============================================================
     // BONUS ENDPOINTS (optional - not required by server.js)
+    // All return max 10 results
     // ============================================================
 
     /**
      * GET /api/anime/search?title=xxx
-     * Search anime by title
+     * Search anime by title (returns first 10 matches)
      */
     @GetMapping("/search")
     public ResponseEntity<List<Details>> searchByTitle(@RequestParam String title) {
@@ -97,7 +98,7 @@ public class DetailsController {
 
     /**
      * GET /api/anime/type/{type}
-     * Filter anime by type (TV, Movie, OVA, etc.)
+     * Filter anime by type (returns first 10 matches)
      */
     @GetMapping("/type/{type}")
     public ResponseEntity<List<Details>> getByType(@PathVariable String type) {
@@ -107,7 +108,7 @@ public class DetailsController {
 
     /**
      * GET /api/anime/genre/{genre}
-     * Filter anime by genre
+     * Filter anime by genre (returns first 10 matches)
      */
     @GetMapping("/genre/{genre}")
     public ResponseEntity<List<Details>> getByGenre(@PathVariable String genre) {
@@ -117,7 +118,7 @@ public class DetailsController {
 
     /**
      * GET /api/anime/score?minScore=8.0&maxScore=10.0
-     * Filter anime by score range
+     * Filter anime by score range (returns first 10 matches)
      */
     @GetMapping("/score")
     public ResponseEntity<List<Details>> getByScoreRange(

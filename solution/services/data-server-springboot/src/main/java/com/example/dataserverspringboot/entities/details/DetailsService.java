@@ -1,6 +1,8 @@
 package com.example.dataserverspringboot.entities.details;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,15 +19,17 @@ public class DetailsService {
     private DetailsRepository repository;
 
     /**
-     * Get all anime from database
+     * Get first 10 anime from database
      * Used by: GET /api/anime
      */
     public List<Details> getAllAnime() {
-        return repository.findAll();
+        // Return only first 10 records
+        Pageable limit = PageRequest.of(0, 10);
+        return repository.findAll(limit).getContent();
     }
 
     /**
-     * Get a single anime by mal_id
+     * Get a single anime by its mal_id
      * Used by: GET /api/anime/{id}
      */
     public Optional<Details> getAnimeById(Integer mal_id) {
@@ -41,43 +45,41 @@ public class DetailsService {
     }
 
     /**
-     * Search anime by title (case-insensitive partial match)
-     * Used by: GET /api/anime/search?title=xxx
+     * Search anime by title (limited to 10 results)
      */
     public List<Details> searchByTitle(String title) {
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("Title cannot be empty");
         }
-        return repository.findByTitleContainingIgnoreCase(title);
+        Pageable limit = PageRequest.of(0, 10);
+        return repository.findByTitleContainingIgnoreCase(title, limit);
     }
 
     /**
-     * Get anime by type (TV, Movie, OVA, etc.)
-     * Used by: GET /api/anime/type/{type}
+     * Get anime by type (limited to 10 results)
      */
     public List<Details> getByType(String type) {
-        return repository.findByType(type);
+        Pageable limit = PageRequest.of(0, 10);
+        return repository.findByType(type, limit);
     }
 
     /**
      * Get top 10 highest rated anime
-     * Used by: GET /api/anime/top-rated
      */
     public List<Details> getTopRated() {
         return repository.findTop10ByOrderByScoreDesc();
     }
 
     /**
-     * Get anime by genre
-     * Used by: GET /api/anime/genre/{genre}
+     * Get anime by genre (limited to 10 results)
      */
     public List<Details> getByGenre(String genre) {
-        return repository.findByGenreContaining(genre);
+        Pageable limit = PageRequest.of(0, 10);
+        return repository.findByGenreContaining(genre, limit);
     }
 
     /**
-     * Get anime within a score range
-     * Used by: GET /api/anime/score?minScore=8&maxScore=10
+     * Get anime within a score range (limited to 10 results)
      */
     public List<Details> getByScoreRange(Double minScore, Double maxScore) {
         if (minScore < 0 || maxScore > 10) {
@@ -86,6 +88,7 @@ public class DetailsService {
         if (minScore > maxScore) {
             throw new IllegalArgumentException("Min score cannot be greater than max score");
         }
-        return repository.findByScoreRange(minScore, maxScore);
+        Pageable limit = PageRequest.of(0, 10);
+        return repository.findByScoreRange(minScore, maxScore, limit);
     }
 }
