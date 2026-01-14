@@ -6,6 +6,18 @@ import { engine } from "express-handlebars";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { dataExpressApi, dataSpringApi } from "./lib/api.js";
+import profileRouter from './routes/profile.js';
+
+// only for mock datas
+import {
+  MOCK_ANIME_HOME,
+  MOCK_ANIME_LIST,
+  MOCK_ANIME_DETAIL,
+  MOCK_CHARACTERS_LIST,
+  MOCK_CHARACTERS_DETAIL,
+  MOCK_FAVOURITES,
+  MOCK_PROFILE
+} from "./lib/mockDb.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -63,139 +75,219 @@ const DATA_SPRING_URL = process.env.DATA_SPRING_URL || "http://localhost:8080";
 const USE_MOCK_DATA =
   (process.env.USE_MOCK_DATA || "false").toLowerCase() === "true";
 
-/* --- Mock data (temporary) --- */
-const MOCK_ANIME_HOME = [
-  {
-    anime_id: 1,
-    title: "Attack on Titan",
-    image_url: "https://cdn.myanimelist.net/images/anime/10/47347.jpg",
-    score: 8.5,
-    type: "TV",
-    episodes: 25,
-  },
-  {
-    anime_id: 2,
-    title: "Death Note",
-    image_url: "https://cdn.myanimelist.net/images/anime/9/9453.jpg",
-    score: 8.6,
-    type: "TV",
-    episodes: 37,
-  }
-];
 
-const MOCK_ANIME_LIST = [
-  {
-    anime_id: 1,
-    title: "Attack on Titan",
-    image_url: "https://cdn.myanimelist.net/images/anime/10/47347.jpg",
-    score: 8.5,
-    type: "TV",
-    episodes: 25,
-  },
-  {
-    anime_id: 2,
-    title: "Death Note",
-    image_url: "https://cdn.myanimelist.net/images/anime/9/9453.jpg",
-    score: 8.6,
-    type: "TV",
-    episodes: 37,
-  },
-];
+/* --- REST API (gateway) routes --- */
+/**
+ * NOTE:
+ * - In production (USE_MOCK_DATA=false) these endpoints behave as a thin gateway/proxy:
+ *   they forward query params as-is and return the upstream JSON without reshaping.
+ * - In mock mode we emulate the formats to allow frontend development.
+ */
 
-const MOCK_ANIME_DETAIL = {
-  1: {
-    anime_id: 1,
-    title: "Attack on Titan",
-    title_japanese: "進撃の巨人",
-    image_url: "https://cdn.myanimelist.net/images/anime/10/47347.jpg",
-    score: 8.5,
-    type: "TV",
-    status: "Finished Airing",
-    episodes: 25,
-    start_date: "2013-04-07",
-    end_date: "2013-09-29",
-    synopsis: "Centuries ago, mankind was slaughtered to near extinction by monstrous humanoid creatures called Titans, forcing humans to hide in fear behind enormous concentric walls. What makes these giants truly terrifying is that their taste for human flesh is not born out of hunger but what appears to be out of pleasure.",
-    genres: ["Action", "Drama", "Fantasy", "Mystery"],
-    themes: ["Gore", "Military", "Survival"],
-    studios: ["Wit Studio"],
-    demographics: ["Shounen"],
-    rank: 1,
-    popularity: 1,
-    members: 3500000,
-    favorites: 180000,
-    url: "https://myanimelist.net/anime/16498/Shingeki_no_Kyojin"
-  },
-  2: {
-    anime_id: 2,
-    title: "Death Note",
-    title_japanese: "デスノート",
-    image_url: "https://cdn.myanimelist.net/images/anime/9/9453.jpg",
-    score: 8.6,
-    type: "TV",
-    status: "Finished Airing",
-    episodes: 37,
-    start_date: "2006-10-04",
-    end_date: "2007-06-27",
-    synopsis: "A shinigami, as a god of death, can kill any person—provided they see their victim's face and write their victim's name in a notebook called a Death Note. One day, Ryuk, bored by the shinigami lifestyle and interested in seeing how a human would use a Death Note, drops one into the human realm.",
-    genres: ["Mystery", "Supernatural", "Suspense"],
-    themes: ["Psychological"],
-    studios: ["Madhouse"],
-    demographics: ["Shounen"],
-    rank: 2,
-    popularity: 2,
-    members: 3200000,
-    favorites: 165000,
-    url: "https://myanimelist.net/anime/1535/Death_Note"
-  }
-};
+function pickFields(obj, fieldsCsv) {
+  const fields = (fieldsCsv || "")
+    .split(",")
+    .map(s => s.trim())
+    .filter(Boolean);
 
-const MOCK_CHARACTERS_DETAIL = {
-  1: {
-    character_id: 1,
-    url: "https://myanimelist.net/character/1/Monkey_D_Luffy",
-    name: "Monkey D. Luffy",
-    name_kanji: "モンキー・D・ルフィ",
-    image_url: "https://cdn.myanimelist.net/images/characters/9/310307.jpg",
-    favorites: 210000,
-    about: "Captain of the Straw Hat Pirates. His dream is to become the Pirate King. He possesses the power of the Gomu Gomu no Mi."
-  },
-  2: {
-    character_id: 2,
-    url: "https://myanimelist.net/character/40/Levi_Ackerman",
-    name: "Levi Ackerman",
-    name_kanji: "リヴァイ・アッカーマン",
-    image_url: "https://cdn.myanimelist.net/images/characters/2/241413.jpg",
-    favorites: 190000,
-    about: "Captain of the Special Operations Squad. Known as humanity's strongest soldier and famous for his exceptional combat skills."
-  },
-  3: {
-    character_id: 3,
-    url: "https://myanimelist.net/character/17/Naruto_Uzumaki",
-    name: "Naruto Uzumaki",
-    name_kanji: "うずまき ナルト",
-    image_url: "https://cdn.myanimelist.net/images/characters/10/284121.jpg",
-    favorites: 230000,
-    about: "A shinobi of Konohagakure who dreams of becoming Hokage. Host of the Nine-Tailed Fox."
-  },
-  4: {
-    character_id: 4,
-    url: "https://myanimelist.net/character/45627/Gojou_Satoru",
-    name: "Satoru Gojo",
-    name_kanji: "五条 悟",
-    image_url: "https://cdn.myanimelist.net/images/characters/15/422826.jpg",
-    favorites: 175000,
-    about: "A jujutsu sorcerer and teacher at Tokyo Jujutsu High. Widely regarded as the strongest sorcerer alive."
-  },
-  5: {
-    character_id: 5,
-    url: "https://myanimelist.net/character/417/Lelouch_Lamperouge",
-    name: "Lelouch Lamperouge",
-    name_kanji: "ルルーシュ・ランペルージ",
-    image_url: "https://cdn.myanimelist.net/images/characters/8/406163.jpg",
-    favorites: 160000,
-    about: "An exiled prince of the Holy Britannian Empire who gains the power of Geass and seeks to overthrow the empire."
+  if (fields.length === 0) return obj;
+
+  const out = {};
+  for (const f of fields) {
+    // allow "id" as alias of "anime_id" for convenience (as in the PDF examples)
+    if (f === "id" && obj.anime_id !== undefined) out.anime_id = obj.anime_id;
+    else if (obj[f] !== undefined) out[f] = obj[f];
+    else if (f === "anime_id" && obj.anime_id !== undefined) out.anime_id = obj.anime_id;
   }
-};
+  return out;
+}
+
+function safeInt(v, fallback = undefined) {
+  const n = Number.parseInt(v, 10);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function deriveYear(anime) {
+  if (anime.year) return anime.year;
+  const d = anime.start_date || anime.startDate;
+  if (typeof d === "string" && d.length >= 4) {
+    const y = safeInt(d.slice(0, 4));
+    if (y) return y;
+  }
+  return undefined;
+}
+
+function applySearchFilterSort(animes, query) {
+  let items = [...animes];
+
+  // Filtering (e.g., ?type=TV&year=2013)
+  if (query.type) items = items.filter(a => (a.type || "").toLowerCase() === String(query.type).toLowerCase());
+  if (query.year) {
+    const y = safeInt(query.year);
+    if (y) items = items.filter(a => deriveYear(a) === y);
+  }
+
+  // Text search (e.g., ?search=attack)
+  if (query.search) {
+    const q = String(query.search).toLowerCase();
+    items = items.filter(a => (a.title || "").toLowerCase().includes(q));
+  }
+
+  // Sorting (e.g., ?sort=-score or ?sort=score)
+  if (query.sort) {
+    const raw = String(query.sort);
+    const desc = raw.startsWith("-");
+    const key = desc ? raw.slice(1) : raw;
+
+    items.sort((a, b) => {
+      const av = a[key];
+      const bv = b[key];
+
+      // numbers first
+      if (typeof av === "number" && typeof bv === "number") return desc ? (bv - av) : (av - bv);
+
+      // fallback to string compare
+      const as = av === undefined || av === null ? "" : String(av);
+      const bs = bv === undefined || bv === null ? "" : String(bv);
+      return desc ? bs.localeCompare(as) : as.localeCompare(bs);
+    });
+  }
+
+  return items;
+}
+
+/**
+ * GET /api/anime
+ * Supports:
+ * - List
+ * - Filtering (?type=...&year=...)
+ * - Search (?search=...)
+ * - Sort (?sort=... or ?sort=-...)
+ * - Pagination (?limit&offset) OR (?page&pageSize)
+ *
+ * In non-mock mode, forwards everything to the upstream dataSpringApi.
+ */
+app.get("/api/anime", async (req, res) => {
+  try {
+    if (!USE_MOCK_DATA) {
+      const response = await dataSpringApi.get("/api/anime", { params: req.query });
+      return res.json(response.data);
+    }
+
+    // Mock mode
+    // Use detail objects for richer filtering/sorting support, but keep lightweight fields in output when possible.
+    const base = Object.values(MOCK_ANIME_DETAIL);
+    const filtered = applySearchFilterSort(base, req.query);
+
+    const total = filtered.length;
+
+    // Pagination: limit/offset
+    const limit = safeInt(req.query.limit);
+    const offset = safeInt(req.query.offset);
+    if (limit !== undefined || offset !== undefined) {
+      const l = limit ?? 20;
+      const o = offset ?? 0;
+      const items = filtered.slice(o, o + l);
+      return res.json({ limit: l, offset: o, total, items });
+    }
+
+    // Pagination: page/pageSize
+    const page = safeInt(req.query.page);
+    const pageSize = safeInt(req.query.pageSize);
+    if (page !== undefined || pageSize !== undefined) {
+      const ps = pageSize ?? 20;
+      const p = page ?? 1;
+      const totalPages = Math.max(1, Math.ceil(total / ps));
+      const start = (p - 1) * ps;
+      const items = filtered.slice(start, start + ps);
+      return res.json({ page: p, pageSize: ps, totalPages, items });
+    }
+
+    // Default list response: array
+    return res.json(filtered);
+  } catch (error) {
+    console.error("GET /api/anime error:", error.message);
+    return res.status(500).json({ error: "Unable to load anime list" });
+  }
+});
+
+/**
+ * GET /api/anime/:id
+ * Supports:
+ * - Resource single
+ * - Field selection (?fields=...)
+ * - Expansion (?include=characters,staff) -> in mock we attach empty arrays if requested
+ *
+ * In non-mock mode, forwards everything to the upstream dataSpringApi.
+ */
+app.get("/api/anime/:id", async (req, res) => {
+  try {
+    if (!USE_MOCK_DATA) {
+      const response = await dataSpringApi.get(`/api/anime/${req.params.id}`, { params: req.query });
+      return res.json(response.data);
+    }
+
+    const animeId = safeInt(req.params.id);
+    const anime = MOCK_ANIME_DETAIL[animeId];
+
+    if (!anime) return res.status(404).json({ error: "Anime not found" });
+
+    let out = { ...anime };
+
+    // Expansion relations (mock: empty payloads, but correct shape)
+    if (req.query.include) {
+      const includes = String(req.query.include)
+        .split(",")
+        .map(s => s.trim())
+        .filter(Boolean);
+
+      if (includes.includes("characters") && out.characters === undefined) out.characters = [];
+      if (includes.includes("staff") && out.staff === undefined) out.staff = [];
+    }
+
+    // Field selection
+    if (req.query.fields) out = pickFields(out, req.query.fields);
+
+    return res.json(out);
+  } catch (error) {
+    console.error("GET /api/anime/:id error:", error.message);
+    return res.status(500).json({ error: "Unable to load anime detail" });
+  }
+});
+
+/**
+ * GET /api/anime/:id/summary
+ * Returns a reduced view.
+ *
+ * In non-mock mode, forwards everything to the upstream dataSpringApi.
+ */
+app.get("/api/anime/:id/summary", async (req, res) => {
+  try {
+    if (!USE_MOCK_DATA) {
+      const response = await dataSpringApi.get(`/api/anime/${req.params.id}/summary`, { params: req.query });
+      return res.json(response.data);
+    }
+
+    const animeId = safeInt(req.params.id);
+    const anime = MOCK_ANIME_DETAIL[animeId];
+    if (!anime) return res.status(404).json({ error: "Anime not found" });
+
+    // Mock summary (shape as per PDF example)
+    const summary = {
+      anime_id: anime.anime_id,
+      title: anime.title,
+      score: anime.score,
+      popularity: anime.popularity
+    };
+
+    return res.json(summary);
+  } catch (error) {
+    console.error("GET /api/anime/:id/summary error:", error.message);
+    return res.status(500).json({ error: "Unable to load anime summary" });
+  }
+});
+/* --- END REST API (gateway) routes --- */
+
 
 // Home page route - development approach + optional mock
 app.get("/", async (req, res) => {
@@ -303,7 +395,7 @@ app.get("/characters", async (req, res) => {
     if (USE_MOCK_DATA) {
       return res.render("characters/list", {
         title: "Characters",
-        characters: MOCK_CHARACTERS_DETAIL,
+        characters: MOCK_CHARACTERS_LIST,
         warning: "Mock data enabled (USE_MOCK_DATA=true)",
       });
     }
@@ -386,40 +478,8 @@ app.get("/staff/:id", async (req, res) => {
   }
 });
 
-// User profile route
-app.get("/profile/:username", async (req, res) => {
-  // Check if the user is authenticated
-  if (!req.isAuthenticated()) {
-    console.log(
-      `User ${req.params.username} attempted to access profile without authentication`
-    );
-    return res.render("error", {
-      message: "Please log in to access your profile",
-      clientLogJson: JSON.stringify(
-        `Profile access blocked: sis "${req.params.username}" not authenticated`
-      ),
-    });
-  }
-
-  try {
-    const profile = await dataExpressApi.get(`/api/users/${req.params.username}`);
-    return res.render("profile/user", {
-      title: `Profile - ${req.params.username}`,
-      profile: profile.data,
-    });
-  } catch (error) {
-    console.error("Profile error:", error.message);
-    return res.status(404).render("error", { message: "Profile not found" });
-  }
-});
-
-// Profile route without username (fallback)
-app.get("/profile", (req, res) => {
-  return res.status(400).render("error", {
-    message: "Invalid profile path. Use /profile/:username",
-    clientLogJson: JSON.stringify("Username not found /profile/:username"),
-  });
-});
+// Use profile router
+app.use('/profile', profileRouter);
 
 // General tests route - displays data from MongoDB endpoints
 app.get("/general-tests", async (req, res) => {
@@ -445,50 +505,6 @@ app.get("/general-tests", async (req, res) => {
       message: "Unable to load test data",
       clientLogJson: JSON.stringify({ error: error.message })
     });
-  }
-});
-
-// Favourites route
-app.get("/favourites", async (req, res) => {
-  try {
-    const favourites = await dataExpressApi.get("/api/favourites");
-    return res.render("favourites/list", {
-      title: "My Favourites",
-      favourites: favourites.data || [],
-    });
-  } catch (error) {
-    console.error("Favourites error:", error.message);
-    return res.render("favourites/list", {
-      title: "My Favourites",
-      error: "Unable to load favourites",
-      favourites: [],
-    });
-  }
-});
-
-// Add to favourites route
-app.post("/favourites/:id", async (req, res) => {
-  try {
-    await dataExpressApi.post(`/api/favourites/${req.params.id}`);
-    return res.json({ success: true, message: "Added to favourites" });
-  } catch (error) {
-    console.error("Add favourite error:", error.message);
-    return res
-      .status(400)
-      .json({ success: false, error: "Unable to add to favourites" });
-  }
-});
-
-// Remove from favourites route
-app.delete("/favourites/:id", async (req, res) => {
-  try {
-    await dataExpressApi.delete(`/api/favourites/${req.params.id}`);
-    return res.json({ success: true, message: "Removed from favourites" });
-  } catch (error) {
-    console.error("Remove favourite error:", error.message);
-    return res
-      .status(400)
-      .json({ success: false, error: "Unable to remove from favourites" });
   }
 });
 
