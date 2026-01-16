@@ -1,4 +1,4 @@
-package com.anime.model;
+package com.example.dataserverspringboot.entities.person_voice_works;
 
 import jakarta.persistence.*;
 import java.io.Serializable;

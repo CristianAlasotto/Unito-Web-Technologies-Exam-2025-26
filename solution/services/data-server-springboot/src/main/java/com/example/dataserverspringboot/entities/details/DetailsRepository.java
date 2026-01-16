@@ -1,58 +1,92 @@
 package com.example.dataserverspringboot.entities.details;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
-/**
- * Repository interface for Details entity
- * Now with Pageable support to limit results
- */
 @Repository
 public interface DetailsRepository extends JpaRepository<Details, Integer> {
 
-    // Basic methods provided by JpaRepository:
-    // - findAll() - get all records
-    // - findAll(Pageable) - get limited records with pagination
-    // - findById(id) - get one anime
-    // - count() - count total anime
+    // ============================================
+    // Filtering Methods
+    // ============================================
 
     /**
-     * Find anime by title (case-insensitive, partial match)
-     * Limited by Pageable parameter
+     * Find by type (TV, Movie, OVA, etc.)
      */
-    List<Details> findByTitleContainingIgnoreCase(String title, Pageable pageable);
+    Page<Details> findByType(String type, Pageable pageable);
 
     /**
-     * Find anime by type
-     * Limited by Pageable parameter
+     * Find by year
      */
-    List<Details> findByType(String type, Pageable pageable);
+    Page<Details> findByYear(Integer year, Pageable pageable);
 
     /**
-     * Find top 10 anime by score (descending order)
-     * Already limited to 10 by method name
+     * Find by status (Finished Airing, Currently Airing, etc.)
      */
-    List<Details> findTop10ByOrderByScoreDesc();
+    Page<Details> findByStatus(String status, Pageable pageable);
 
     /**
-     * Find anime by genre (custom query)
-     * Limited by Pageable parameter
+     * Find by rating (G, PG, PG-13, R, etc.)
+     */
+    Page<Details> findByRating(String rating, Pageable pageable);
+
+    /**
+     * Find by source (Manga, Original, Light novel, etc.)
+     */
+    Page<Details> findBySource(String source, Pageable pageable);
+
+    /**
+     * Combined filter: type and year
+     */
+    Page<Details> findByTypeAndYear(String type, Integer year, Pageable pageable);
+
+    // ============================================
+    // Search Methods
+    // ============================================
+
+    /**
+     * Search by title (case-insensitive, partial match)
+     */
+    @Query("SELECT d FROM Details d WHERE LOWER(d.title) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<Details> searchByTitle(@Param("search") String search, Pageable pageable);
+
+    /**
+     * Search in title and title_japanese
+     */
+    @Query("SELECT d FROM Details d WHERE " +
+            "LOWER(d.title) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(d.title_japanese) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<Details> searchInAllTitles(@Param("search") String search, Pageable pageable);
+
+    // ============================================
+    // Sorting/Filtering Combinations
+    // ============================================
+
+    /**
+     * Find by genre (searches in genres field)
      */
     @Query("SELECT d FROM Details d WHERE LOWER(d.genres) LIKE LOWER(CONCAT('%', :genre, '%'))")
-    List<Details> findByGenreContaining(@Param("genre") String genre, Pageable pageable);
+    Page<Details> findByGenreContaining(@Param("genre") String genre, Pageable pageable);
 
     /**
-     * Find anime by score range (native SQL query)
-     * Limited by Pageable parameter
+     * Find by theme
      */
-    @Query(value = "SELECT * FROM details WHERE score BETWEEN :minScore AND :maxScore ORDER BY score DESC",
-            nativeQuery = true)
-    List<Details> findByScoreRange(@Param("minScore") Double minScore,
-                                   @Param("maxScore") Double maxScore,
-                                   Pageable pageable);
+    @Query("SELECT d FROM Details d WHERE LOWER(d.themes) LIKE LOWER(CONCAT('%', :theme, '%'))")
+    Page<Details> findByThemeContaining(@Param("theme") String theme, Pageable pageable);
+
+    /**
+     * Find by score range
+     */
+    @Query("SELECT d FROM Details d WHERE d.score BETWEEN :minScore AND :maxScore")
+    Page<Details> findByScoreBetween(@Param("minScore") Double minScore, @Param("maxScore") Double maxScore, Pageable pageable);
+
+    /**
+     * Find top rated (score >= threshold)
+     */
+    @Query("SELECT d FROM Details d WHERE d.score >= :minScore ORDER BY d.score DESC")
+    Page<Details> findTopRated(@Param("minScore") Double minScore, Pageable pageable);
 }

@@ -1,4 +1,4 @@
-package com.anime.model;
+package com.example.dataserverspringboot.entities.profiles;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
