@@ -1,5 +1,13 @@
 package com.example.dataserverspringboot.entities.details;
 
+import com.example.dataserverspringboot.entities.characteranimeworks.CharacterAnimeWorks;
+import com.example.dataserverspringboot.entities.characteranimeworks.CharacterAnimeWorksRepository;
+import com.example.dataserverspringboot.entities.characters.Characters;
+import com.example.dataserverspringboot.entities.characters.CharactersRepository;
+import com.example.dataserverspringboot.entities.personanimeworks.PersonAnimeWorks;
+import com.example.dataserverspringboot.entities.personanimeworks.PersonAnimeWorksRepository;
+import com.example.dataserverspringboot.entities.persondetails.PersonDetails;
+import com.example.dataserverspringboot.entities.persondetails.PersonDetailsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -7,149 +15,133 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * REST API Controller for Details (Anime) following API conventions
- * Implements all patterns from Formati_API_REST_e_Formati_JSON.pdf
+ * REST API Controller for Details
+ * Returns field names in snake_case to match database columns
+ * Supports relation expansion via ?include parameter
  */
 @RestController
-@RequestMapping("/api/anime")
+@RequestMapping("/api/details")
 @CrossOrigin(origins = "*")
 public class DetailsController {
 
     @Autowired
     private DetailsService service;
+    
+    @Autowired
+    private CharacterAnimeWorksRepository characterAnimeWorksRepository;
+    
+    @Autowired
+    private CharactersRepository charactersRepository;
+    
+    @Autowired
+    private PersonAnimeWorksRepository personAnimeWorksRepository;
+    
+    @Autowired
+    private PersonDetailsRepository personDetailsRepository;
 
-    // ============================================
-    // 1. Recupero risorsa singola
-    // GET /api/anime/{id}
-    // ============================================
     @GetMapping("/{mal_id}")
-    public ResponseEntity<?> getAnimeById(
+    public ResponseEntity<?> getById(
             @PathVariable Integer mal_id,
             @RequestParam(required = false) String fields,
             @RequestParam(required = false) String include) {
-
-        Optional<Details> anime = service.getAnimeById(mal_id);
-
-        if (anime.isEmpty()) {
+        
+        Optional<Details> entity = service.getById(mal_id);
+        
+        if (entity.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
-            error.put("error", "Anime not found");
-            error.put("anime_id", mal_id);
+            error.put("error", "Details not found");
+            error.put("mal_id", mal_id);
             return ResponseEntity.status(404).body(error);
         }
-
-        Details animeData = anime.get();
-
-        // 2. Field selection
+        
+        Details data = entity.get();
+        
+        // Handle relation expansion
+        if (include != null && !include.isEmpty()) {
+            Map<String, Object> result = toSnakeCaseMap(data);
+            expandRelations(mal_id, include, result);
+            
+            // Apply field selection if requested
+            if (fields != null && !fields.isEmpty()) {
+                return ResponseEntity.ok(filterMapFields(result, fields));
+            }
+            
+            return ResponseEntity.ok(result);
+        }
+        
         if (fields != null && !fields.isEmpty()) {
-            Map<String, Object> filtered = filterFields(animeData, fields);
+            Map<String, Object> filtered = filterFields(data, fields);
             return ResponseEntity.ok(filtered);
         }
-
-        // 9. Espansione relazioni (placeholder for future implementation)
-        if (include != null && !include.isEmpty()) {
-            Map<String, Object> expanded = expandRelations(animeData, include);
-            return ResponseEntity.ok(expanded);
-        }
-
-        return ResponseEntity.ok(animeData);
+        
+        // Return all fields with snake_case names
+        return ResponseEntity.ok(toSnakeCaseMap(data));
     }
 
-    // ============================================
-    // 10. Vista ridotta (summary)
-    // GET /api/anime/{id}/summary
-    // ============================================
     @GetMapping("/{mal_id}/summary")
-    public ResponseEntity<?> getAnimeSummary(@PathVariable Integer mal_id) {
-        Optional<Details> anime = service.getAnimeById(mal_id);
-
-        if (anime.isEmpty()) {
+    public ResponseEntity<?> getSummary(@PathVariable Integer mal_id) {
+        Optional<Details> entity = service.getById(mal_id);
+        
+        if (entity.isEmpty()) {
             return ResponseEntity.status(404).build();
         }
-
-        Details animeData = anime.get();
+        
+        Details data = entity.get();
         Map<String, Object> summary = new HashMap<>();
-        summary.put("anime_id", animeData.getMal_id());
-        summary.put("title", animeData.getTitle());
-        summary.put("score", animeData.getScore());
-        summary.put("popularity", animeData.getPopularity());
-
+        summary.put("mal_id", data.getMalId());
+        summary.put("title", data.getTitle());
+        summary.put("score", data.getScore());
+        summary.put("popularity", data.getPopularity());
+        
         return ResponseEntity.ok(summary);
     }
 
-    // ============================================
-    // 3. Lista risorse
-    // 4. Filtraggio
-    // 5. Ricerca testuale
-    // 6. Ordinamento
-    // 7. Paginazione (limit/offset)
-    // 8. Paginazione (page/pageSize)
-    // GET /api/anime
-    // ============================================
     @GetMapping
-    public ResponseEntity<?> getAllAnime(
-            // Field selection
+    public ResponseEntity<?> getAll(
             @RequestParam(required = false) String fields,
-
-            // 4. Filtraggio
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String sort,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String rating,
             @RequestParam(required = false) String source,
-
-            // 5. Ricerca testuale
-            @RequestParam(required = false) String search,
-
-            // 6. Ordinamento
-            @RequestParam(required = false) String sort,
-
-            // 7. Paginazione (limit/offset)
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
-
-            // 8. Paginazione (page/pageSize)
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer pageSize) {
-
-        // Determine pagination strategy
+        
         boolean useLimitOffset = (limit != null || offset != null);
         boolean usePageBased = (page != null || pageSize != null);
-
-        // Default values
-        int defaultLimit = 10;
-        int defaultOffset = 0;
-        int defaultPage = 1;
-        int defaultPageSize = 10;
-
-        // Build query with filters
-        List<Details> results;
-        long totalCount;
-
-        // Create Sort object from sort parameter
+        
         Sort sortObj = parseSortParameter(sort);
-
+        
         if (useLimitOffset) {
-            // 7. Paginazione limit/offset
-            int finalLimit = (limit != null) ? limit : defaultLimit;
-            int finalOffset = (offset != null) ? offset : defaultOffset;
-
+            int finalLimit = (limit != null) ? limit : 10;
+            int finalOffset = (offset != null) ? offset : 0;
+            
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
-            Page<Details> pageResult = service.findWithFilters(type, year, status, rating, source, search, pageable);
-
-            results = pageResult.getContent();
-            totalCount = pageResult.getTotalElements();
-
-            // Apply field selection if requested
+            Page<Details> pageResult = service.findWithFilters(
+                search,
+                type,
+                year,
+                status,
+                rating,
+                source,
+                pageable);
+            
+            List<Details> results = pageResult.getContent();
+            long totalCount = pageResult.getTotalElements();
+            
             if (fields != null && !fields.isEmpty()) {
                 List<Map<String, Object>> filteredResults = results.stream()
-                        .map(anime -> filterFields(anime, fields))
-                        .collect(Collectors.toList());
-
+                    .map(entity -> filterFields(entity, fields))
+                    .collect(Collectors.toList());
+                
                 Map<String, Object> response = new HashMap<>();
                 response.put("limit", finalLimit);
                 response.put("offset", finalOffset);
@@ -157,32 +149,41 @@ public class DetailsController {
                 response.put("items", filteredResults);
                 return ResponseEntity.ok(response);
             }
-
+            
+            // Convert all entities to snake_case
+            List<Map<String, Object>> snakeCaseResults = results.stream()
+                .map(this::toSnakeCaseMap)
+                .collect(Collectors.toList());
+            
             Map<String, Object> response = new HashMap<>();
             response.put("limit", finalLimit);
             response.put("offset", finalOffset);
             response.put("total", totalCount);
-            response.put("items", results);
-
+            response.put("items", snakeCaseResults);
             return ResponseEntity.ok(response);
-
+            
         } else if (usePageBased) {
-            // 8. Paginazione page/pageSize
-            int finalPage = (page != null) ? page : defaultPage;
-            int finalPageSize = (pageSize != null) ? pageSize : defaultPageSize;
-
+            int finalPage = (page != null) ? page : 1;
+            int finalPageSize = (pageSize != null) ? pageSize : 10;
+            
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
-            Page<Details> pageResult = service.findWithFilters(type, year, status, rating, source, search, pageable);
-
-            results = pageResult.getContent();
+            Page<Details> pageResult = service.findWithFilters(
+                search,
+                type,
+                year,
+                status,
+                rating,
+                source,
+                pageable);
+            
+            List<Details> results = pageResult.getContent();
             long totalPages = pageResult.getTotalPages();
-
-            // Apply field selection if requested
+            
             if (fields != null && !fields.isEmpty()) {
                 List<Map<String, Object>> filteredResults = results.stream()
-                        .map(anime -> filterFields(anime, fields))
-                        .collect(Collectors.toList());
-
+                    .map(entity -> filterFields(entity, fields))
+                    .collect(Collectors.toList());
+                
                 Map<String, Object> response = new HashMap<>();
                 response.put("page", finalPage);
                 response.put("pageSize", finalPageSize);
@@ -190,233 +191,309 @@ public class DetailsController {
                 response.put("items", filteredResults);
                 return ResponseEntity.ok(response);
             }
-
+            
+            // Convert all entities to snake_case
+            List<Map<String, Object>> snakeCaseResults = results.stream()
+                .map(this::toSnakeCaseMap)
+                .collect(Collectors.toList());
+            
             Map<String, Object> response = new HashMap<>();
             response.put("page", finalPage);
             response.put("pageSize", finalPageSize);
             response.put("totalPages", totalPages);
-            response.put("items", results);
-
+            response.put("items", snakeCaseResults);
             return ResponseEntity.ok(response);
-
+            
         } else {
-            // 3. Simple list (default: first 10 results)
-            Pageable pageable = PageRequest.of(0, defaultLimit, sortObj);
-            Page<Details> pageResult = service.findWithFilters(type, year, status, rating, source, search, pageable);
-
-            results = pageResult.getContent();
-
-            // Apply field selection if requested
+            Pageable pageable = PageRequest.of(0, 10, sortObj);
+            Page<Details> pageResult = service.findWithFilters(
+                search,
+                type,
+                year,
+                status,
+                rating,
+                source,
+                pageable);
+            
+            List<Details> results = pageResult.getContent();
+            
             if (fields != null && !fields.isEmpty()) {
                 List<Map<String, Object>> filteredResults = results.stream()
-                        .map(anime -> filterFields(anime, fields))
-                        .collect(Collectors.toList());
+                    .map(entity -> filterFields(entity, fields))
+                    .collect(Collectors.toList());
                 return ResponseEntity.ok(filteredResults);
             }
-
-            return ResponseEntity.ok(results);
+            
+            // Convert all entities to snake_case
+            List<Map<String, Object>> snakeCaseResults = results.stream()
+                .map(this::toSnakeCaseMap)
+                .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(snakeCaseResults);
         }
     }
 
-    // ============================================
-    // Statistics endpoint
-    // ============================================
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
         Map<String, Object> stats = new HashMap<>();
-        stats.put("totalAnime", service.countAllAnime());
-        stats.put("totalCharacters", 0);
-        stats.put("totalUsers", 0);
+        stats.put("total", service.count());
         return ResponseEntity.ok(stats);
     }
 
-    // ============================================
-    // Helper Methods
-    // ============================================
-
     /**
-     * 2. Field selection - Filter object to only include requested fields
+     * Expand relations based on include parameter
+     * Supports: characters, staff
      */
-    private Map<String, Object> filterFields(Details anime, String fields) {
-        Map<String, Object> result = new HashMap<>();
-        String[] requestedFields = fields.split(",");
-
-        for (String field : requestedFields) {
-            field = field.trim();
-            switch (field) {
-                case "anime_id":
-                case "id":
-                case "mal_id":
-                    result.put("anime_id", anime.getMal_id());
-                    break;
-                case "title":
-                    result.put("title", anime.getTitle());
-                    break;
-                case "title_japanese":
-                    result.put("title_japanese", anime.getTitle_japanese());
-                    break;
-                case "type":
-                    result.put("type", anime.getType());
-                    break;
-                case "source":
-                    result.put("source", anime.getSource());
-                    break;
-                case "episodes":
-                    result.put("episodes", anime.getEpisodes());
-                    break;
-                case "status":
-                    result.put("status", anime.getStatus());
-                    break;
-                case "start_date":
-                    result.put("start_date", anime.getStart_date());
-                    break;
-                case "end_date":
-                    result.put("end_date", anime.getEnd_date());
-                    break;
-                case "score":
-                    result.put("score", anime.getScore());
-                    break;
-                case "scored_by":
-                    result.put("scored_by", anime.getScored_by());
-                    break;
-                case "rank":
-                    result.put("rank", anime.getRank());
-                    break;
-                case "popularity":
-                    result.put("popularity", anime.getPopularity());
-                    break;
-                case "members":
-                    result.put("members", anime.getMembers());
-                    break;
-                case "favorites":
-                    result.put("favorites", anime.getFavorites());
-                    break;
-                case "synopsis":
-                    result.put("synopsis", anime.getSynopsis());
-                    break;
-                case "year":
-                    result.put("year", anime.getYear());
-                    break;
-                case "rating":
-                    result.put("rating", anime.getRating());
-                    break;
-                case "studios":
-                    result.put("studios", anime.getStudios());
-                    break;
-                case "genres":
-                    result.put("genres", anime.getGenres());
-                    break;
-                case "themes":
-                    result.put("themes", anime.getThemes());
-                    break;
-                case "demographics":
-                    result.put("demographics", anime.getDemographics());
-                    break;
-                case "producers":
-                    result.put("producers", anime.getProducers());
-                    break;
-                case "licensors":
-                    result.put("licensors", anime.getLicensors());
-                    break;
-                case "streaming":
-                    result.put("streaming", anime.getStreaming());
-                    break;
-                case "image_url":
-                    result.put("image_url", anime.getImage_url());
-                    break;
-                case "url":
-                    result.put("url", anime.getUrl());
-                    break;
+    private void expandRelations(Integer mal_id, String include, Map<String, Object> result) {
+        String[] relations = include.split(",");
+        
+        for (String relation : relations) {
+            relation = relation.trim();
+            
+            if ("characters".equals(relation)) {
+                List<Map<String, Object>> characters = getCharactersForAnime(mal_id);
+                result.put("characters", characters);
+            }
+            else if ("staff".equals(relation)) {
+                List<Map<String, Object>> staff = getStaffForAnime(mal_id);
+                result.put("staff", staff);
             }
         }
+    }
+    
+    /**
+     * Get all characters for an anime
+     */
+    private List<Map<String, Object>> getCharactersForAnime(Integer mal_id) {
+        List<Map<String, Object>> characters = new ArrayList<>();
+        
+        // Find all character_anime_works entries for this anime
+        List<CharacterAnimeWorks> works = characterAnimeWorksRepository
+            .findByAnimeMalId(mal_id, Pageable.unpaged())
+            .getContent();
+        
+        for (CharacterAnimeWorks work : works) {
+            Optional<Characters> character = charactersRepository.findById(work.getCharacterMalId());
+            
+            if (character.isPresent()) {
+                Characters c = character.get();
+                Map<String, Object> charMap = new HashMap<>();
+                charMap.put("character_mal_id", c.getCharacterMalId());
+                charMap.put("name", c.getName());
+                charMap.put("name_kanji", c.getNameKanji());
+                charMap.put("image", c.getImage());
+                charMap.put("role", work.getRole());
+                characters.add(charMap);
+            }
+        }
+        
+        return characters;
+    }
+    
+    /**
+     * Get all staff for an anime
+     */
+    private List<Map<String, Object>> getStaffForAnime(Integer mal_id) {
+        List<Map<String, Object>> staff = new ArrayList<>();
+        
+        // Find all person_anime_works entries for this anime
+        List<PersonAnimeWorks> works = personAnimeWorksRepository
+            .findByAnimeMalId(mal_id, Pageable.unpaged())
+            .getContent();
+        
+        for (PersonAnimeWorks work : works) {
+            Optional<PersonDetails> person = personDetailsRepository.findById(work.getPersonMalId());
+            
+            if (person.isPresent()) {
+                PersonDetails p = person.get();
+                Map<String, Object> staffMap = new HashMap<>();
+                staffMap.put("person_mal_id", p.getPersonMalId());
+                staffMap.put("name", p.getName());
+                staffMap.put("given_name", p.getGivenName());
+                staffMap.put("family_name", p.getFamilyName());
+                staffMap.put("position", work.getPosition());
+                staff.add(staffMap);
+            }
+        }
+        
+        return staff;
+    }
 
+    /**
+     * Convert entity to Map with snake_case field names
+     */
+    private Map<String, Object> toSnakeCaseMap(Details entity) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("mal_id", entity.getMalId());
+        result.put("title", entity.getTitle());
+        result.put("title_japanese", entity.getTitleJapanese());
+        result.put("url", entity.getUrl());
+        result.put("image_url", entity.getImageUrl());
+        result.put("type", entity.getType());
+        result.put("status", entity.getStatus());
+        result.put("score", entity.getScore());
+        result.put("scored_by", entity.getScoredBy());
+        result.put("start_date", entity.getStartDate());
+        result.put("end_date", entity.getEndDate());
+        result.put("synopsis", entity.getSynopsis());
+        result.put("rank", entity.getRank());
+        result.put("popularity", entity.getPopularity());
+        result.put("members", entity.getMembers());
+        result.put("favorites", entity.getFavorites());
+        result.put("genres", entity.getGenres());
+        result.put("studios", entity.getStudios());
+        result.put("themes", entity.getThemes());
+        result.put("demographics", entity.getDemographics());
+        result.put("source", entity.getSource());
+        result.put("rating", entity.getRating());
+        result.put("episodes", entity.getEpisodes());
+        result.put("season", entity.getSeason());
+        result.put("year", entity.getYear());
+        result.put("producers", entity.getProducers());
+        result.put("explicit_genres", entity.getExplicitGenres());
+        result.put("licensors", entity.getLicensors());
+        result.put("streaming", entity.getStreaming());
         return result;
     }
 
     /**
-     * 6. Parse sort parameter
-     * Format: "-score" (descending) or "score" (ascending)
+     * Filter fields based on comma-separated field list
+     * Field names use snake_case
      */
+    private Map<String, Object> filterFields(Details entity, String fields) {
+        Map<String, Object> result = new HashMap<>();
+        String[] requestedFields = fields.split(",");
+        
+        for (String field : requestedFields) {
+            field = field.trim();
+            switch (field) {
+                case "mal_id":
+                    result.put("mal_id", entity.getMalId());
+                    break;
+                case "title":
+                    result.put("title", entity.getTitle());
+                    break;
+                case "title_japanese":
+                    result.put("title_japanese", entity.getTitleJapanese());
+                    break;
+                case "url":
+                    result.put("url", entity.getUrl());
+                    break;
+                case "image_url":
+                    result.put("image_url", entity.getImageUrl());
+                    break;
+                case "type":
+                    result.put("type", entity.getType());
+                    break;
+                case "status":
+                    result.put("status", entity.getStatus());
+                    break;
+                case "score":
+                    result.put("score", entity.getScore());
+                    break;
+                case "scored_by":
+                    result.put("scored_by", entity.getScoredBy());
+                    break;
+                case "start_date":
+                    result.put("start_date", entity.getStartDate());
+                    break;
+                case "end_date":
+                    result.put("end_date", entity.getEndDate());
+                    break;
+                case "synopsis":
+                    result.put("synopsis", entity.getSynopsis());
+                    break;
+                case "rank":
+                    result.put("rank", entity.getRank());
+                    break;
+                case "popularity":
+                    result.put("popularity", entity.getPopularity());
+                    break;
+                case "members":
+                    result.put("members", entity.getMembers());
+                    break;
+                case "favorites":
+                    result.put("favorites", entity.getFavorites());
+                    break;
+                case "genres":
+                    result.put("genres", entity.getGenres());
+                    break;
+                case "studios":
+                    result.put("studios", entity.getStudios());
+                    break;
+                case "themes":
+                    result.put("themes", entity.getThemes());
+                    break;
+                case "demographics":
+                    result.put("demographics", entity.getDemographics());
+                    break;
+                case "source":
+                    result.put("source", entity.getSource());
+                    break;
+                case "rating":
+                    result.put("rating", entity.getRating());
+                    break;
+                case "episodes":
+                    result.put("episodes", entity.getEpisodes());
+                    break;
+                case "season":
+                    result.put("season", entity.getSeason());
+                    break;
+                case "year":
+                    result.put("year", entity.getYear());
+                    break;
+                case "producers":
+                    result.put("producers", entity.getProducers());
+                    break;
+                case "explicit_genres":
+                    result.put("explicit_genres", entity.getExplicitGenres());
+                    break;
+                case "licensors":
+                    result.put("licensors", entity.getLicensors());
+                    break;
+                case "streaming":
+                    result.put("streaming", entity.getStreaming());
+                    break;
+            }
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Filter fields from a Map (used after relation expansion)
+     */
+    private Map<String, Object> filterMapFields(Map<String, Object> data, String fields) {
+        Map<String, Object> result = new HashMap<>();
+        String[] requestedFields = fields.split(",");
+        
+        for (String field : requestedFields) {
+            field = field.trim();
+            if (data.containsKey(field)) {
+                result.put(field, data.get(field));
+            }
+        }
+        
+        return result;
+    }
+
     private Sort parseSortParameter(String sort) {
         if (sort == null || sort.isEmpty()) {
             return Sort.unsorted();
         }
-
+        
         String[] sortFields = sort.split(",");
         List<Sort.Order> orders = new ArrayList<>();
-
+        
         for (String field : sortFields) {
             field = field.trim();
             if (field.startsWith("-")) {
-                // Descending
-                String fieldName = field.substring(1);
-                orders.add(Sort.Order.desc(mapSortField(fieldName)));
+                orders.add(Sort.Order.desc(field.substring(1)));
             } else {
-                // Ascending
-                orders.add(Sort.Order.asc(mapSortField(field)));
+                orders.add(Sort.Order.asc(field));
             }
         }
-
+        
         return Sort.by(orders);
-    }
-
-    /**
-     * Map API field names to database column names
-     */
-    private String mapSortField(String field) {
-        switch (field) {
-            case "anime_id":
-            case "id":
-                return "mal_id";
-            case "title":
-                return "title";
-            case "score":
-                return "score";
-            case "year":
-                return "year";
-            case "popularity":
-                return "popularity";
-            case "rank":
-                return "rank";
-            case "members":
-                return "members";
-            case "favorites":
-                return "favorites";
-            default:
-                return field;
-        }
-    }
-
-    /**
-     * 9. Espansione relazioni (placeholder)
-     * Future: expand to include characters, staff, etc.
-     */
-    private Map<String, Object> expandRelations(Details anime, String include) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("anime_id", anime.getMal_id());
-        result.put("title", anime.getTitle());
-        result.put("score", anime.getScore());
-        result.put("type", anime.getType());
-
-        String[] relations = include.split(",");
-        for (String relation : relations) {
-            relation = relation.trim();
-            switch (relation) {
-                case "characters":
-                    // TODO: Implement characters expansion
-                    result.put("characters", new ArrayList<>());
-                    break;
-                case "staff":
-                    // TODO: Implement staff expansion
-                    result.put("staff", new ArrayList<>());
-                    break;
-                case "reviews":
-                    // TODO: Implement reviews expansion
-                    result.put("reviews", new ArrayList<>());
-                    break;
-            }
-        }
-
-        return result;
     }
 }

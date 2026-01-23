@@ -11,73 +11,73 @@ public class Recommendations {
     
     @Id
     @Column(name = "mal_id")
-    private Integer mal_id;
+    private Integer malId;
     
     @Id
     @Column(name = "recommendation_mal_id")
-    private Integer recommendation_mal_id;
+    private Integer recommendationMalId;
 
     // Constructors
     public Recommendations() {
     }
 
-    public Recommendations(Integer mal_id, Integer recommendation_mal_id) {
-        this.mal_id = mal_id;
-        this.recommendation_mal_id = recommendation_mal_id;
+    public Recommendations(Integer malId, Integer recommendationMalId) {
+        this.malId = malId;
+        this.recommendationMalId = recommendationMalId;
     }
 
     // Getters and Setters
-    public Integer getMal_id() {
-        return mal_id;
+    public Integer getMalId() {
+        return malId;
     }
 
-    public void setMal_id(Integer mal_id) {
-        this.mal_id = mal_id;
+    public void setMalId(Integer malId) {
+        this.malId = malId;
     }
 
-    public Integer getRecommendation_mal_id() {
-        return recommendation_mal_id;
+    public Integer getRecommendationMalId() {
+        return recommendationMalId;
     }
 
-    public void setRecommendation_mal_id(Integer recommendation_mal_id) {
-        this.recommendation_mal_id = recommendation_mal_id;
+    public void setRecommendationMalId(Integer recommendationMalId) {
+        this.recommendationMalId = recommendationMalId;
     }
 
     @Override
     public String toString() {
         return "Recommendations{" +
-                "mal_id=" + mal_id +
-                ", recommendation_mal_id=" + recommendation_mal_id +
+                "mal_id=" + malId +
+                ", recommendation_mal_id=" + recommendationMalId +
                 '}';
     }
 
     // Composite Key Class
     public static class RecommendationsId implements Serializable {
-        private Integer mal_id;
-        private Integer recommendation_mal_id;
+        private Integer malId;
+        private Integer recommendationMalId;
 
         public RecommendationsId() {
         }
 
-        public RecommendationsId(Integer mal_id, Integer recommendation_mal_id) {
-            this.mal_id = mal_id;
-            this.recommendation_mal_id = recommendation_mal_id;
+        public RecommendationsId(Integer malId, Integer recommendationMalId) {
+            this.malId = malId;
+            this.recommendationMalId = recommendationMalId;
         }
 
-        public Integer getMal_id() {
-            return mal_id;
+        public Integer getMalId() {
+            return malId;
         }
 
-        public void setMal_id(Integer mal_id) {
-            this.mal_id = mal_id;
+        public void setMalId(Integer malId) {
+            this.malId = malId;
         }
 
-        public Integer getRecommendation_mal_id() {
-            return recommendation_mal_id;
+        public Integer getRecommendationMalId() {
+            return recommendationMalId;
         }
 
-        public void setRecommendation_mal_id(Integer recommendation_mal_id) {
-            this.recommendation_mal_id = recommendation_mal_id;
+        public void setRecommendationMalId(Integer recommendationMalId) {
+            this.recommendationMalId = recommendationMalId;
         }
 
         @Override
@@ -85,13 +85,13 @@ public class Recommendations {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             RecommendationsId that = (RecommendationsId) o;
-            return Objects.equals(mal_id, that.mal_id) && 
-                   Objects.equals(recommendation_mal_id, that.recommendation_mal_id);
+            return Objects.equals(malId, that.malId) && 
+                   Objects.equals(recommendationMalId, that.recommendationMalId);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(mal_id, recommendation_mal_id);
+            return Objects.hash(malId, recommendationMalId);
         }
     }
 }

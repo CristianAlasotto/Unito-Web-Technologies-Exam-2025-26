@@ -8,7 +8,7 @@ public class Characters {
     
     @Id
     @Column(name = "character_mal_id")
-    private Integer character_mal_id;
+    private Integer characterMalId;
     
     @Column(name = "url")
     private String url;
@@ -17,7 +17,7 @@ public class Characters {
     private String name;
     
     @Column(name = "name_kanji")
-    private String name_kanji;
+    private String nameKanji;
     
     @Column(name = "image")
     private String image;
@@ -32,24 +32,24 @@ public class Characters {
     public Characters() {
     }
 
-    public Characters(Integer character_mal_id, String url, String name, String name_kanji, 
+    public Characters(Integer characterMalId, String url, String name, String nameKanji, 
                       String image, Integer favorites, String about) {
-        this.character_mal_id = character_mal_id;
+        this.characterMalId = characterMalId;
         this.url = url;
         this.name = name;
-        this.name_kanji = name_kanji;
+        this.nameKanji = nameKanji;
         this.image = image;
         this.favorites = favorites;
         this.about = about;
     }
 
     // Getters and Setters
-    public Integer getCharacter_mal_id() {
-        return character_mal_id;
+    public Integer getCharacterMalId() {
+        return characterMalId;
     }
 
-    public void setCharacter_mal_id(Integer character_mal_id) {
-        this.character_mal_id = character_mal_id;
+    public void setCharacterMalId(Integer characterMalId) {
+        this.characterMalId = characterMalId;
     }
 
     public String getUrl() {
@@ -68,12 +68,12 @@ public class Characters {
         this.name = name;
     }
 
-    public String getName_kanji() {
-        return name_kanji;
+    public String getNameKanji() {
+        return nameKanji;
     }
 
-    public void setName_kanji(String name_kanji) {
-        this.name_kanji = name_kanji;
+    public void setNameKanji(String nameKanji) {
+        this.nameKanji = nameKanji;
     }
 
     public String getImage() {
@@ -103,9 +103,9 @@ public class Characters {
     @Override
     public String toString() {
         return "Characters{" +
-                "character_mal_id=" + character_mal_id +
+                "character_mal_id=" + characterMalId +
                 ", name='" + name + '\'' +
-                ", name_kanji='" + name_kanji + '\'' +
+                ", name_kanji='" + nameKanji + '\'' +
                 ", favorites=" + favorites +
                 '}';
     }

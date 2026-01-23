@@ -30,20 +30,20 @@ public class Profiles {
     private Integer completed;
     
     @Column(name = "on_hold")
-    private Integer on_hold;
+    private Integer onHold;
     
     @Column(name = "dropped")
     private Integer dropped;
     
     @Column(name = "plan_to_watch")
-    private Integer plan_to_watch;
+    private Integer planToWatch;
 
     // Constructors
     public Profiles() {
     }
 
     public Profiles(String username, String gender, LocalDate birthday, String location, 
-                    LocalDate joined, Integer watching, Integer completed, Integer on_hold, 
+                    LocalDate joined, Integer watching, Integer completed, Integer onHold, 
                     Integer dropped, Integer plan_to_watch) {
         this.username = username;
         this.gender = gender;
@@ -52,9 +52,9 @@ public class Profiles {
         this.joined = joined;
         this.watching = watching;
         this.completed = completed;
-        this.on_hold = on_hold;
+        this.onHold = onHold;
         this.dropped = dropped;
-        this.plan_to_watch = plan_to_watch;
+        this.planToWatch = planToWatch;
     }
 
     // Getters and Setters
@@ -114,12 +114,12 @@ public class Profiles {
         this.completed = completed;
     }
 
-    public Integer getOn_hold() {
-        return on_hold;
+    public Integer getOnHold() {
+        return onHold;
     }
 
-    public void setOn_hold(Integer on_hold) {
-        this.on_hold = on_hold;
+    public void setOnHold(Integer onHold) {
+        this.onHold = onHold;
     }
 
     public Integer getDropped() {
@@ -130,12 +130,12 @@ public class Profiles {
         this.dropped = dropped;
     }
 
-    public Integer getPlan_to_watch() {
-        return plan_to_watch;
+    public Integer getPlanToWatch() {
+        return planToWatch;
     }
 
-    public void setPlan_to_watch(Integer plan_to_watch) {
-        this.plan_to_watch = plan_to_watch;
+    public void setPlanToWatch(Integer planToWatch) {
+        this.planToWatch = planToWatch;
     }
 
     @Override
@@ -146,9 +146,9 @@ public class Profiles {
                 ", location='" + location + '\'' +
                 ", watching=" + watching +
                 ", completed=" + completed +
-                ", on_hold=" + on_hold +
+                ", on_hold=" + onHold +
                 ", dropped=" + dropped +
-                ", plan_to_watch=" + plan_to_watch +
+                ", plan_to_watch=" + planToWatch +
                 '}';
     }
 }

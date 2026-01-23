@@ -4,98 +4,95 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/**
- * Entity class for the details table (anime information)
- */
 @Entity
 @Table(name = "details")
 public class Details {
-
+    
     @Id
     @Column(name = "mal_id")
-    private Integer mal_id;
-
+    private Integer malId;
+    
     @Column(name = "title")
     private String title;
-
+    
     @Column(name = "title_japanese")
-    private String title_japanese;
-
+    private String titleJapanese;
+    
     @Column(name = "url")
     private String url;
-
+    
     @Column(name = "image_url")
-    private String image_url;
-
+    private String imageUrl;
+    
     @Column(name = "type")
     private String type;
-
+    
     @Column(name = "status")
     private String status;
-
+    
     @Column(name = "score")
     private BigDecimal score;
-
+    
     @Column(name = "scored_by")
-    private Integer scored_by;
-
+    private Integer scoredBy;
+    
     @Column(name = "start_date")
-    private LocalDate start_date;
-
+    private LocalDate startDate;
+    
     @Column(name = "end_date")
-    private LocalDate end_date;
-
+    private LocalDate endDate;
+    
     @Column(name = "synopsis")
     private String synopsis;
-
+    
     @Column(name = "rank")
     private Integer rank;
-
+    
     @Column(name = "popularity")
     private Integer popularity;
-
+    
     @Column(name = "members")
     private Integer members;
-
+    
     @Column(name = "favorites")
     private Integer favorites;
-
+    
     @Column(name = "genres")
     private String genres;
-
+    
     @Column(name = "studios")
     private String studios;
-
+    
     @Column(name = "themes")
     private String themes;
-
+    
     @Column(name = "demographics")
     private String demographics;
-
+    
     @Column(name = "source")
     private String source;
-
+    
     @Column(name = "rating")
     private String rating;
-
+    
     @Column(name = "episodes")
-    private BigDecimal episodes;
-
+    private Integer episodes;
+    
     @Column(name = "season")
     private String season;
-
+    
     @Column(name = "year")
-    private BigDecimal year;
-
+    private Integer year;
+    
     @Column(name = "producers")
     private String producers;
-
+    
     @Column(name = "explicit_genres")
-    private String explicit_genres;
-
+    private String explicitGenres;
+    
     @Column(name = "licensors")
     private String licensors;
-
+    
     @Column(name = "streaming")
     private String streaming;
 
@@ -103,23 +100,23 @@ public class Details {
     public Details() {
     }
 
-    public Details(Integer mal_id, String title, String title_japanese, String url, String image_url,
-                   String type, String status, BigDecimal score, Integer scored_by, LocalDate start_date,
-                   LocalDate end_date, String synopsis, Integer rank, Integer popularity, Integer members,
+    public Details(Integer malId, String title, String titleJapanese, String url, String imageUrl,
+                   String type, String status, BigDecimal score, Integer scoredBy, LocalDate startDate,
+                   LocalDate endDate, String synopsis, Integer rank, Integer popularity, Integer members,
                    Integer favorites, String genres, String studios, String themes, String demographics,
-                   String source, String rating, BigDecimal episodes, String season, BigDecimal year,
-                   String producers, String explicit_genres, String licensors, String streaming) {
-        this.mal_id = mal_id;
+                   String source, String rating, Integer episodes, String season, Integer year,
+                   String producers, String explicitGenres, String licensors, String streaming) {
+        this.malId = malId;
         this.title = title;
-        this.title_japanese = title_japanese;
+        this.titleJapanese = titleJapanese;
         this.url = url;
-        this.image_url = image_url;
+        this.imageUrl = imageUrl;
         this.type = type;
         this.status = status;
         this.score = score;
-        this.scored_by = scored_by;
-        this.start_date = start_date;
-        this.end_date = end_date;
+        this.scoredBy = scoredBy;
+        this.startDate = startDate;
+        this.endDate = endDate;
         this.synopsis = synopsis;
         this.rank = rank;
         this.popularity = popularity;
@@ -135,18 +132,18 @@ public class Details {
         this.season = season;
         this.year = year;
         this.producers = producers;
-        this.explicit_genres = explicit_genres;
+        this.explicitGenres = explicitGenres;
         this.licensors = licensors;
         this.streaming = streaming;
     }
 
     // Getters and Setters
-    public Integer getMal_id() {
-        return mal_id;
+    public Integer getMalId() {
+        return malId;
     }
 
-    public void setMal_id(Integer mal_id) {
-        this.mal_id = mal_id;
+    public void setMalId(Integer mal_id) {
+        this.malId = malId;
     }
 
     public String getTitle() {
@@ -157,12 +154,12 @@ public class Details {
         this.title = title;
     }
 
-    public String getTitle_japanese() {
-        return title_japanese;
+    public String getTitleJapanese() {
+        return titleJapanese;
     }
 
-    public void setTitle_japanese(String title_japanese) {
-        this.title_japanese = title_japanese;
+    public void setTitleJapanese(String title_japanese) {
+        this.titleJapanese = titleJapanese;
     }
 
     public String getUrl() {
@@ -173,12 +170,12 @@ public class Details {
         this.url = url;
     }
 
-    public String getImage_url() {
-        return image_url;
+    public String getImageUrl() {
+        return imageUrl;
     }
 
-    public void setImage_url(String image_url) {
-        this.image_url = image_url;
+    public void setImageUrl(String image_url) {
+        this.imageUrl = imageUrl;
     }
 
     public String getType() {
@@ -205,28 +202,28 @@ public class Details {
         this.score = score;
     }
 
-    public Integer getScored_by() {
-        return scored_by;
+    public Integer getScoredBy() {
+        return scoredBy;
     }
 
-    public void setScored_by(Integer scored_by) {
-        this.scored_by = scored_by;
+    public void setScoredBy(Integer scored_by) {
+        this.scoredBy = scoredBy;
     }
 
-    public LocalDate getStart_date() {
-        return start_date;
+    public LocalDate getStartDate() {
+        return startDate;
     }
 
-    public void setStart_date(LocalDate start_date) {
-        this.start_date = start_date;
+    public void setStartDate(LocalDate start_date) {
+        this.startDate = startDate;
     }
 
-    public LocalDate getEnd_date() {
-        return end_date;
+    public LocalDate getEndDate() {
+        return endDate;
     }
 
-    public void setEnd_date(LocalDate end_date) {
-        this.end_date = end_date;
+    public void setEndDate(LocalDate end_date) {
+        this.endDate = endDate;
     }
 
     public String getSynopsis() {
@@ -317,11 +314,11 @@ public class Details {
         this.rating = rating;
     }
 
-    public BigDecimal getEpisodes() {
+    public Integer getEpisodes() {
         return episodes;
     }
 
-    public void setEpisodes(BigDecimal episodes) {
+    public void setEpisodes(Integer episodes) {
         this.episodes = episodes;
     }
 
@@ -333,11 +330,11 @@ public class Details {
         this.season = season;
     }
 
-    public BigDecimal getYear() {
+    public Integer getYear() {
         return year;
     }
 
-    public void setYear(BigDecimal year) {
+    public void setYear(Integer year) {
         this.year = year;
     }
 
@@ -349,12 +346,12 @@ public class Details {
         this.producers = producers;
     }
 
-    public String getExplicit_genres() {
-        return explicit_genres;
+    public String getExplicitGenres() {
+        return explicitGenres;
     }
 
-    public void setExplicit_genres(String explicit_genres) {
-        this.explicit_genres = explicit_genres;
+    public void setExplicitGenres(String explicit_genres) {
+        this.explicitGenres = explicitGenres;
     }
 
     public String getLicensors() {
@@ -376,10 +373,10 @@ public class Details {
     @Override
     public String toString() {
         return "Details{" +
-                "mal_id=" + mal_id +
+                "mal_id=" + malId +
                 ", title='" + title + '\'' +
+                ", title_japanese='" + titleJapanese + '\'' +
                 ", type='" + type + '\'' +
-                ", status='" + status + '\'' +
                 ", score=" + score +
                 '}';
     }
