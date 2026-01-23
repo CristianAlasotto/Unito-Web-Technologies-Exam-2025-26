@@ -2,36 +2,13 @@ const favService = require("../services/favService");
 
 exports.getFavs = async (req, res) => {
     try {
-        const data = await favService.getAll(req.query);
-        res.json(data);
+        const data = await favService.fetchFavorites(req.query);
+        res.status(200).json({
+            status: "success",
+            results: data.length,
+            data: data
+        });
     } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-exports.getUserFavorites = async (req, res) => {
-    try {
-        const data = await favService.getByUser(req.params.username);
-        res.json(data);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-exports.getAnimeFavCount = async (req, res) => {
-    try {
-        const count = await favService.getCountByAnime(req.params.animeId);
-        res.json({ anime_id: req.params.animeId, favorites_count: count });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-exports.getPopularAnime = async (req, res) => {
-    try {
-        const data = await favService.getPopular(req.query.n);
-        res.json(data);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ status: "error", message: err.message });
     }
 };

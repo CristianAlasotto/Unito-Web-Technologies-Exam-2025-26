@@ -8,4 +8,6 @@ const FavSchema = new mongoose.Schema({
     collection: 'favs'
 });
 
+FavSchema.index({ username: "text", fav_type: "text" });
+
 module.exports = mongoose.model('Favs', FavSchema);
