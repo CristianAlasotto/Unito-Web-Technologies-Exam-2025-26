@@ -1,11 +1,11 @@
-const Favs = require("../models/Favs");
+const Ratings = require('../models/Ratings');
 
-exports.fetchFavorites = async (params) => {
+exports.fetchRatings = async (params) => {
     let { fields, sort, limit, offset, page, search, ...filters } = params;
 
-    let mongoQuery = { ...filters };
+    let mongoQuery = {...filters};
 
-    let query = Favs.find(mongoQuery);
+    let query = Ratings.find(mongoQuery);
 
     if (fields) {
         query = query.select(fields.split(',').join(' '));
@@ -21,4 +21,4 @@ exports.fetchFavorites = async (params) => {
     query = query.limit(finalLimit).skip(finalSkip);
 
     return await query.exec();
-};
+}
