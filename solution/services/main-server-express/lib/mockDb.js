@@ -1,4 +1,4 @@
-export const MOCK_ANIME_HOME = [
+const MOCK_ANIME_HOME = [
   {
     anime_id: 1,
     title: "Attack on Titan",
@@ -49,13 +49,14 @@ export const MOCK_ANIME_HOME = [
   },
 ];
 
-export const MOCK_ANIME_LIST = [
+const MOCK_ANIME_LIST = [
   {
     anime_id: 1,
     title: "Attack on Titan",
     image_url: "https://cdn.myanimelist.net/images/anime/10/47347.jpg",
     score: 8.5,
     type: "TV",
+    episodes: 25,
     popularity: 1,
   },
   {
@@ -64,11 +65,12 @@ export const MOCK_ANIME_LIST = [
     image_url: "https://cdn.myanimelist.net/images/anime/1223/96541.jpg",
     score: 9.1,
     type: "TV",
+    episodes: 64,
     popularity: 2,
   },
 ];
 
-export const MOCK_ANIME_DETAIL = {
+const MOCK_ANIME_DETAIL = {
   1: {
     anime_id: 1,
     title: "Attack on Titan",
@@ -100,7 +102,7 @@ export const MOCK_ANIME_DETAIL = {
   },
 };
 
-export const MOCK_CHARACTERS_LIST = [
+const MOCK_CHARACTERS_LIST = [
   {
     character_id: 1,
     name: "Monkey D. Luffy",
@@ -138,7 +140,7 @@ export const MOCK_CHARACTERS_LIST = [
   }
 ];
 
-export const MOCK_CHARACTERS_DETAIL = {
+const MOCK_CHARACTERS_DETAIL = {
   1: {
     character_id: 1,
     url: "https://myanimelist.net/character/1/Monkey_D_Luffy",
@@ -186,7 +188,7 @@ export const MOCK_CHARACTERS_DETAIL = {
   }
 };
 
-export const MOCK_FAVOURITES = {
+const MOCK_FAVOURITES = {
   // esempio: user identificato da username
   cristian: {
     username: "cristian",
@@ -195,7 +197,7 @@ export const MOCK_FAVOURITES = {
   },
 };
 
-export const MOCK_PROFILE = {
+const MOCK_PROFILE = {
   cristian: {
     username: "cristian",
     display_name: "Cristian",
@@ -218,4 +220,20 @@ export const MOCK_PROFILE = {
     completed: 67,
     plan_to_watch: 31
   }
+};
+
+const MOCK_STAFF = [
+  { id: 1, name: 'Alice Tanaka', position: 'Director', email: 'alice@studio.jp', department: 'Production' },
+  { id: 2, name: 'Marco Rossi', position: 'Animator', email: 'marco@studio.jp', department: 'Animation' }
+];
+
+module.exports = {
+  MOCK_ANIME_HOME,
+  MOCK_ANIME_LIST,
+  MOCK_ANIME_DETAIL,
+  MOCK_CHARACTERS_LIST,
+  MOCK_CHARACTERS_DETAIL,
+  MOCK_FAVOURITES,
+  MOCK_PROFILE,
+  MOCK_STAFF
 };

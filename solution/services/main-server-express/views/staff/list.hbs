@@ -1,33 +1,34 @@
-<div class="container mt-5">
-	<h1>Staff List</h1>
-	
-	{{#if staff.length}}
-		<table class="table table-striped">
-			<thead>
-				<tr>
-					<th>Name</th>
-					<th>Position</th>
-					<th>Email</th>
-					<th>Actions</th>
-				</tr>
-			</thead>
-			<tbody>
-				{{#each staff}}
-					<tr>
-						<td>{{this.name}}</td>
-						<td>{{this.position}}</td>
-						<td>{{this.email}}</td>
-						<td>
-							<a href="/staff/{{this.id}}/edit" class="btn btn-sm btn-primary">Edit</a>
-							<a href="/staff/{{this.id}}/delete" class="btn btn-sm btn-danger">Delete</a>
-						</td>
-					</tr>
-				{{/each}}
-			</tbody>
-		</table>
+{{! filepath: /Users/cristianalasotto/main-server-express/views/staff/list.hbs }}
+{{#if warning}}
+<div class="warning-banner"
+	style="background: #ff9800; color: #000; padding: 1rem; text-align: center; margin-bottom: 1rem;">
+	⚠️ {{warning}}
+</div>
+{{/if}}
+
+{{#if error}}
+<div class="error-message">{{error}}</div>
+{{/if}}
+
+<div class="staff-container">
+	<h1>Staff</h1>
+
+	{{#if staff}}
+	<section class="staff-grid">
+		{{#each staff}}
+		<article class="staff-card">
+			<a href="/staff/{{this.id}}">
+				<img src="{{this.image_url}}" alt="{{this.name}}" />
+				<h3>{{this.name}}</h3>
+				<div class="staff-info">
+					<span class="role">{{this.role}}</span>
+					<span class="language">{{this.language}}</span>
+				</div>
+			</a>
+		</article>
+		{{/each}}
+	</section>
 	{{else}}
-		<p>No staff members found.</p>
+	<p class="no-data">No staff available at the moment.</p>
 	{{/if}}
-	
-	<a href="/staff/new" class="btn btn-success mt-3">Add New Staff</a>
 </div>
