@@ -1,8 +1,8 @@
-const favService = require("../services/favService");
+const ratService = require("../services/ratService");
 
-exports.getFavs = async (req, res) => {
+exports.getRats = async (req, res) => {
     try {
-        const data = await favService.fetchFavorites(req.query);
+        const data = await ratService.fetchRatings(req.query);
         res.status(200).json({
             status: "success",
             results: data.length,
