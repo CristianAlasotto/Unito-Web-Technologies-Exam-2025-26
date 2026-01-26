@@ -1,16 +1,7 @@
-var express = require('express');
-var { MOCK_ANIME_HOME } = require('../lib/mockDb');
+const express = require('express');
+const router = express.Router();
+const homeController = require('./homeController');
 
-var router = express.Router();
-
-// Home shows the same featured anime grid as the Anime landing page
-router.get('/', function(req, res) {
-  res.render('index', {
-    title: 'Home',
-    currentPage: 'anime',
-    animes: MOCK_ANIME_HOME,
-    layout: 'layout/main'
-  });
-});
+router.get('/', homeController.preview);
 
 module.exports = router;

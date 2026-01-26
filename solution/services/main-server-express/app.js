@@ -11,9 +11,13 @@ var charactersRouter = require('./routes/characters');
 var staffRouter = require('./routes/staff');
 var profileRouter = require('./routes/profile');
 var favouritesRouter = require('./routes/favourites');
-var generalTestsRouter = require('./routes/general-tests');
+var generalTestRoutes = require('./routes/generalTest');
 
 var app = express();
+
+require('dotenv').config();
+const mockDataStatus = process.env.USE_MOCK_DATA === 'true';
+app.MockDataStatus = mockDataStatus;
 
 // view engine setup just for server start
 app.set('views', path.join(__dirname, 'views'));
@@ -40,7 +44,7 @@ app.use('/characters', charactersRouter);
 app.use('/staff', staffRouter);
 app.use('/profile', profileRouter);
 app.use('/favourites', favouritesRouter);
-app.use('/general-tests', generalTestsRouter);
+app.use('/generalTest', generalTestRoutes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

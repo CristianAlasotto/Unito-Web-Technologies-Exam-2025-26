@@ -5,7 +5,6 @@
     </p>
   </div>
 </div>
-
 {{#if warning}}
 <div class="warning-banner"
   style="background: #ff9800; color: #000; padding: 1rem; text-align: center; margin-bottom: 1rem;">
@@ -17,26 +16,50 @@
 <div class="error-message">{{error}}</div>
 {{/if}}
 
-<div class="anime-container">
-  <h1>Anime List</h1>
-
-  {{#if animes}}
-  <section class="anime-grid">
+<div class="preview-section">
+  <h3>Anime</h3>
+  <div class="card-container">
     {{#each animes}}
-    <article class="anime-card">
-      <a href="/anime/{{this.anime_id}}">
-        <img src="{{this.image_url}}" alt="{{this.title}}" />
-        <h3>{{this.title}}</h3>
-        <div class="anime-info">
-          <span class="score">⭐ {{this.score}}</span>
-          <span class="type">{{this.type}}</span>
-          <span class="episodes">{{this.episodes}} eps</span>
+    <div class="card">
+      <a href="/anime/{{this.id}}">
+        <img src="{{this.image_url}}" alt="{{this.title}}">
+        <div class="card-body">
+          <p>{{this.title}}</p>
         </div>
       </a>
-    </article>
+    </div>
     {{/each}}
-  </section>
-  {{else}}
-  <p class="no-data">No anime available at the moment.</p>
-  {{/if}}
+  </div>
+</div>
+
+<div class="preview-section">
+  <h3>Characters</h3>
+  <div class="card-container">
+    {{#each characters}}
+    <div class="card">
+      <a href="/characters/{{this.id}}">
+        <img src="{{this.image_url}}" alt="{{this.name}}">
+        <div class="card-body">
+          <p>{{this.name}}</p>
+        </div>
+      </a>
+    </div>
+    {{/each}}
+  </div>
+</div>
+
+<div class="preview-section">
+  <h3>Staff</h3>
+  <div class="card-container">
+    {{#each staff}}
+    <div class="card">
+      <a href="/staff/{{this.id}}">
+        <img src="{{this.image_url}}" alt="{{this.name}}">
+        <div class="card-body">
+          <p>{{this.name}}</p>
+        </div>
+      </a>
+    </div>
+    {{/each}}
+  </div>
 </div>

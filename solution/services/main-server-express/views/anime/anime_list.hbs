@@ -29,6 +29,8 @@
     {{/each}}
   </section>
   {{else}}
+  {{#unless warning}} {{! Mostra questo solo se non c'è già un avviso }}
   <p class="no-data">No anime available at the moment.</p>
+  {{/unless}}
   {{/if}}
 </div>
