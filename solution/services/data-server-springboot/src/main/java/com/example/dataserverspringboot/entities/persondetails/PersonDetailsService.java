@@ -12,8 +12,8 @@ public class PersonDetailsService {
     @Autowired
     private PersonDetailsRepository repository;
 
-    public Optional<PersonDetails> getById(Integer person_mal_id) {
-        return repository.findById(person_mal_id);
+    public Optional<PersonDetails> getById(Integer personMalId) {
+        return repository.findById(personMalId);
     }
 
     public long count() {

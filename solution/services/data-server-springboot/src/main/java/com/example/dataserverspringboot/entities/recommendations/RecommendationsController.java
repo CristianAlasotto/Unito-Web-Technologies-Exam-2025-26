@@ -27,8 +27,8 @@ public class RecommendationsController {
             @RequestParam(required = false) String fields,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
-            @RequestParam(required = false) Integer mal_id,
-            @RequestParam(required = false) Integer recommendation_mal_id,
+            @RequestParam(required = false) Integer malId,
+            @RequestParam(required = false) Integer recommendationMalId,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -46,7 +46,7 @@ public class RecommendationsController {
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
             Page<Recommendations> pageResult = service.findWithFilters(
                 search,
-                mal_id, recommendation_mal_id,
+                malId, recommendationMalId,
                 pageable);
             
             List<Recommendations> results = pageResult.getContent();
@@ -83,7 +83,7 @@ public class RecommendationsController {
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<Recommendations> pageResult = service.findWithFilters(
                 search,
-                mal_id, recommendation_mal_id,
+                malId, recommendationMalId,
                 pageable);
             
             List<Recommendations> results = pageResult.getContent();
@@ -117,7 +117,7 @@ public class RecommendationsController {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
             Page<Recommendations> pageResult = service.findWithFilters(
                 search,
-                mal_id, recommendation_mal_id,
+                malId, recommendationMalId,
                 pageable);
             
             List<Recommendations> results = pageResult.getContent();
@@ -142,6 +142,83 @@ public class RecommendationsController {
         Map<String, Object> stats = new HashMap<>();
         stats.put("total", service.count());
         return ResponseEntity.ok(stats);
+    }
+
+
+    /**
+     * Get single resource by composite key (using query parameters)
+     * GET /api/recommendations/single?mal_id&recommendation_mal_id
+     */
+    @GetMapping("/single")
+    public ResponseEntity<?> getSingle(
+            @RequestParam(required = false) Integer malId,
+            @RequestParam(required = false) Integer recommendationMalId,
+            @RequestParam(required = false) String fields) {
+        
+        // Check if all key fields are provided
+        if (malId == null || recommendationMalId == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "All key fields required: malId, recommendationMalId");
+            error.put("usage", "GET /api/recommendations/single?mal_id&recommendation_mal_id");
+            return ResponseEntity.status(400).body(error);
+        }
+        
+        // Create composite key
+        Recommendations.RecommendationsId id = new Recommendations.RecommendationsId(malId, recommendationMalId);
+        Optional<Recommendations> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Recommendations not found");
+            error.put("mal_id", malId); error.put("recommendation_mal_id", recommendationMalId);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        Recommendations data = entity.get();
+        
+        if (fields != null && !fields.isEmpty()) {
+            Map<String, Object> filtered = filterFields(data, fields);
+            return ResponseEntity.ok(filtered);
+        }
+        
+        return ResponseEntity.ok(toSnakeCaseMap(data));
+    }
+
+
+    /**
+     * Get summary by composite key (using query parameters)
+     * GET /api/recommendations/summary?mal_id&recommendation_mal_id
+     */
+    @GetMapping("/summary")
+    public ResponseEntity<?> getSummary(
+            @RequestParam(required = false) Integer malId,
+            @RequestParam(required = false) Integer recommendationMalId) {
+        
+        // Check if all key fields are provided
+        if (malId == null || recommendationMalId == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "All key fields required: malId, recommendationMalId");
+            error.put("usage", "GET /api/recommendations/summary?mal_id&recommendation_mal_id");
+            return ResponseEntity.status(400).body(error);
+        }
+        
+        // Create composite key
+        Recommendations.RecommendationsId id = new Recommendations.RecommendationsId(malId, recommendationMalId);
+        Optional<Recommendations> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Recommendations not found");
+            error.put("mal_id", malId); error.put("recommendation_mal_id", recommendationMalId);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        Recommendations data = entity.get();
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("mal_id", data.getMalId());
+        summary.put("recommendation_mal_id", data.getRecommendationMalId());
+        
+        return ResponseEntity.ok(summary);
     }
 
     private Map<String, Object> toSnakeCaseMap(Recommendations entity) {

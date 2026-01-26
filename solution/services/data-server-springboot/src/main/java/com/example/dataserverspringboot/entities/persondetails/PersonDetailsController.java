@@ -24,15 +24,15 @@ public class PersonDetailsController {
 
     @GetMapping("/{person_mal_id}")
     public ResponseEntity<?> getById(
-            @PathVariable Integer person_mal_id,
+            @PathVariable Integer personMalId,
             @RequestParam(required = false) String fields) {
         
-        Optional<PersonDetails> entity = service.getById(person_mal_id);
+        Optional<PersonDetails> entity = service.getById(personMalId);
         
         if (entity.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "PersonDetails not found");
-            error.put("person_mal_id", person_mal_id);
+            error.put("person_mal_id", personMalId);
             return ResponseEntity.status(404).body(error);
         }
         
@@ -48,8 +48,8 @@ public class PersonDetailsController {
     }
 
     @GetMapping("/{person_mal_id}/summary")
-    public ResponseEntity<?> getSummary(@PathVariable Integer person_mal_id) {
-        Optional<PersonDetails> entity = service.getById(person_mal_id);
+    public ResponseEntity<?> getSummary(@PathVariable Integer personMalId) {
+        Optional<PersonDetails> entity = service.getById(personMalId);
         
         if (entity.isEmpty()) {
             return ResponseEntity.status(404).build();

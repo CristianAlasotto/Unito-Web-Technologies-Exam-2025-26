@@ -86,7 +86,7 @@ public class CharacterAnimeWorks {
         public CharacterAnimeWorksId() {
         }
 
-        public CharacterAnimeWorksId(Integer characterMalId, Integer anime_mal_id) {
+        public CharacterAnimeWorksId(Integer characterMalId, Integer animeMalId) {
             this.characterMalId = characterMalId;
             this.animeMalId = animeMalId;
         }

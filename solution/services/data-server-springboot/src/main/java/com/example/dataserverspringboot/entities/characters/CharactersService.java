@@ -12,8 +12,8 @@ public class CharactersService {
     @Autowired
     private CharactersRepository repository;
 
-    public Optional<Characters> getById(Integer character_mal_id) {
-        return repository.findById(character_mal_id);
+    public Optional<Characters> getById(Integer characterMalId) {
+        return repository.findById(characterMalId);
     }
 
     public long count() {

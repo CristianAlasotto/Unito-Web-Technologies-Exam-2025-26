@@ -19,11 +19,11 @@ public interface RecommendationsRepository extends JpaRepository<Recommendations
     /**
      * Find by mal_id
      */
-    Page<Recommendations> findByMalId(Integer mal_id, Pageable pageable);
+    Page<Recommendations> findByMalId(Integer malId, Pageable pageable);
 
     /**
      * Find by recommendation_mal_id
      */
-    Page<Recommendations> findByRecommendationMalId(Integer recommendation_mal_id, Pageable pageable);
+    Page<Recommendations> findByRecommendationMalId(Integer recommendationMalId, Pageable pageable);
 
 }

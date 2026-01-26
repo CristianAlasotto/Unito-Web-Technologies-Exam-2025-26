@@ -24,11 +24,11 @@ public interface PersonAnimeWorksRepository extends JpaRepository<PersonAnimeWor
     /**
      * Find by person_mal_id
      */
-    Page<PersonAnimeWorks> findByPersonMalId(Integer person_mal_id, Pageable pageable);
+    Page<PersonAnimeWorks> findByPersonMalId(Integer personMalId, Pageable pageable);
 
     /**
      * Find by anime_mal_id
      */
-    Page<PersonAnimeWorks> findByAnimeMalId(Integer anime_mal_id, Pageable pageable);
+    Page<PersonAnimeWorks> findByAnimeMalId(Integer animeMalId, Pageable pageable);
 
 }

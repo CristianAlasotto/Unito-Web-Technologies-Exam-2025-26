@@ -20,7 +20,7 @@ public class CharacterAnimeWorksService {
         return repository.count();
     }
 
-    public Page<CharacterAnimeWorks> findWithFilters(String search, String role, Integer character_mal_id, Integer anime_mal_id, Pageable pageable) {
+    public Page<CharacterAnimeWorks> findWithFilters(String search, String role, Integer characterMalId, Integer animeMalId, Pageable pageable) {
         if (search != null && !search.isEmpty()) {
             return repository.searchByRole(search, pageable);
         }
@@ -29,12 +29,12 @@ public class CharacterAnimeWorksService {
             return repository.findByRole(role, pageable);
         }
 
-        if (character_mal_id != null) {
-            return repository.findByCharacterMalId(character_mal_id, pageable);
+        if (characterMalId != null) {
+            return repository.findByCharacterMalId(characterMalId, pageable);
         }
 
-        if (anime_mal_id != null) {
-            return repository.findByAnimeMalId(anime_mal_id, pageable);
+        if (animeMalId != null) {
+            return repository.findByAnimeMalId(animeMalId, pageable);
         }
 
         return repository.findAll(pageable);

@@ -12,8 +12,8 @@ public class DetailsService {
     @Autowired
     private DetailsRepository repository;
 
-    public Optional<Details> getById(Integer mal_id) {
-        return repository.findById(mal_id);
+    public Optional<Details> getById(Integer malId) {
+        return repository.findById(malId);
     }
 
     public long count() {

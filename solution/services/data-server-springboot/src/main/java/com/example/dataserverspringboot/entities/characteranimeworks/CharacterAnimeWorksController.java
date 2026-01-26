@@ -28,8 +28,8 @@ public class CharacterAnimeWorksController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String role,
-            @RequestParam(required = false) Integer character_mal_id,
-            @RequestParam(required = false) Integer anime_mal_id,
+            @RequestParam(required = false) Integer characterMalId,
+            @RequestParam(required = false) Integer animeMalId,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -47,7 +47,7 @@ public class CharacterAnimeWorksController {
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
             Page<CharacterAnimeWorks> pageResult = service.findWithFilters(
                 search,
-                role, character_mal_id, anime_mal_id,
+                role, characterMalId, animeMalId,
                 pageable);
             
             List<CharacterAnimeWorks> results = pageResult.getContent();
@@ -84,7 +84,7 @@ public class CharacterAnimeWorksController {
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<CharacterAnimeWorks> pageResult = service.findWithFilters(
                 search,
-                role, character_mal_id, anime_mal_id,
+                role, characterMalId, animeMalId,
                 pageable);
             
             List<CharacterAnimeWorks> results = pageResult.getContent();
@@ -118,7 +118,7 @@ public class CharacterAnimeWorksController {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
             Page<CharacterAnimeWorks> pageResult = service.findWithFilters(
                 search,
-                role, character_mal_id, anime_mal_id,
+                role, characterMalId, animeMalId,
                 pageable);
             
             List<CharacterAnimeWorks> results = pageResult.getContent();
@@ -143,6 +143,85 @@ public class CharacterAnimeWorksController {
         Map<String, Object> stats = new HashMap<>();
         stats.put("total", service.count());
         return ResponseEntity.ok(stats);
+    }
+
+
+    /**
+     * Get single resource by composite key (using query parameters)
+     * GET /api/character_anime_works/single?character_mal_id&anime_mal_id
+     */
+    @GetMapping("/single")
+    public ResponseEntity<?> getSingle(
+            @RequestParam(required = false) Integer characterMalId,
+            @RequestParam(required = false) Integer animeMalId,
+            @RequestParam(required = false) String fields) {
+        
+        // Check if all key fields are provided
+        if (characterMalId == null || animeMalId == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "All key fields required: characterMalId, animeMalId");
+            error.put("usage", "GET /api/character_anime_works/single?character_mal_id&anime_mal_id");
+            return ResponseEntity.status(400).body(error);
+        }
+        
+        // Create composite key
+        CharacterAnimeWorks.CharacterAnimeWorksId id = new CharacterAnimeWorks.CharacterAnimeWorksId(characterMalId, animeMalId);
+        Optional<CharacterAnimeWorks> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "CharacterAnimeWorks not found");
+            error.put("character_mal_id", characterMalId); error.put("anime_mal_id", animeMalId);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        CharacterAnimeWorks data = entity.get();
+        
+        if (fields != null && !fields.isEmpty()) {
+            Map<String, Object> filtered = filterFields(data, fields);
+            return ResponseEntity.ok(filtered);
+        }
+        
+        return ResponseEntity.ok(toSnakeCaseMap(data));
+    }
+
+
+    /**
+     * Get summary by composite key (using query parameters)
+     * GET /api/character_anime_works/summary?character_mal_id&anime_mal_id
+     */
+    @GetMapping("/summary")
+    public ResponseEntity<?> getSummary(
+            @RequestParam(required = false) Integer characterMalId,
+            @RequestParam(required = false) Integer animeMalId) {
+        
+        // Check if all key fields are provided
+        if (characterMalId == null || animeMalId == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "All key fields required: characterMalId, animeMalId");
+            error.put("usage", "GET /api/character_anime_works/summary?character_mal_id&anime_mal_id");
+            return ResponseEntity.status(400).body(error);
+        }
+        
+        // Create composite key
+        CharacterAnimeWorks.CharacterAnimeWorksId id = new CharacterAnimeWorks.CharacterAnimeWorksId(characterMalId, animeMalId);
+        Optional<CharacterAnimeWorks> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "CharacterAnimeWorks not found");
+            error.put("character_mal_id", characterMalId); error.put("anime_mal_id", animeMalId);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        CharacterAnimeWorks data = entity.get();
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("character_mal_id", data.getCharacterMalId());
+        summary.put("anime_mal_id", data.getAnimeMalId());
+        summary.put("character_name", data.getCharacterName());
+        summary.put("role", data.getRole());
+        
+        return ResponseEntity.ok(summary);
     }
 
     private Map<String, Object> toSnakeCaseMap(CharacterAnimeWorks entity) {

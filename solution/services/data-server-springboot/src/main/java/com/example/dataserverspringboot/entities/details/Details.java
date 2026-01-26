@@ -142,7 +142,7 @@ public class Details {
         return malId;
     }
 
-    public void setMalId(Integer mal_id) {
+    public void setMalId(Integer malId) {
         this.malId = malId;
     }
 
@@ -158,7 +158,7 @@ public class Details {
         return titleJapanese;
     }
 
-    public void setTitleJapanese(String title_japanese) {
+    public void setTitleJapanese(String titleJapanese) {
         this.titleJapanese = titleJapanese;
     }
 
@@ -174,7 +174,7 @@ public class Details {
         return imageUrl;
     }
 
-    public void setImageUrl(String image_url) {
+    public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
 
@@ -206,7 +206,7 @@ public class Details {
         return scoredBy;
     }
 
-    public void setScoredBy(Integer scored_by) {
+    public void setScoredBy(Integer scoredBy) {
         this.scoredBy = scoredBy;
     }
 
@@ -214,7 +214,7 @@ public class Details {
         return startDate;
     }
 
-    public void setStartDate(LocalDate start_date) {
+    public void setStartDate(LocalDate startDate) {
         this.startDate = startDate;
     }
 
@@ -222,7 +222,7 @@ public class Details {
         return endDate;
     }
 
-    public void setEndDate(LocalDate end_date) {
+    public void setEndDate(LocalDate endDate) {
         this.endDate = endDate;
     }
 
@@ -350,7 +350,7 @@ public class Details {
         return explicitGenres;
     }
 
-    public void setExplicitGenres(String explicit_genres) {
+    public void setExplicitGenres(String explicitGenres) {
         this.explicitGenres = explicitGenres;
     }
 
