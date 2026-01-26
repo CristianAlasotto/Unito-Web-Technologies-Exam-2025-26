@@ -9,22 +9,28 @@
 <div class="error-message">{{error}}</div>
 {{/if}}
 
-{{#if animes}}
-<section class="anime-grid">
-  {{#each animes}}
-  <article class="anime-card">
-    <a href="/anime/{{this.anime_id}}">
-      <img src="{{this.image_url}}" alt="{{this.title}}" />
-      <h3>{{this.title}}</h3>
-      <div class="anime-info">
-        <span class="score">⭐ {{this.score}}</span>
-        <span class="type">{{this.type}}</span>
-        <span class="episodes">{{this.episodes}} eps</span>
-      </div>
-    </a>
-  </article>
-  {{/each}}
-</section>
-{{else}}
-<p>No anime found.</p>
-{{/if}}
+<div class="anime-container">
+  <h1>Animes</h1>
+
+  {{#if animes}}
+  <section class="anime-grid">
+    {{#each animes}}
+    <article class="anime-card">
+      <a href="/anime/{{this.anime_id}}">
+        <img src="{{this.image_url}}" alt="{{this.title}}" />
+        <h3>{{this.title}}</h3>
+        <div class="anime-info">
+          <span class="score">⭐ {{this.score}}</span>
+          <span class="type">{{this.type}}</span>
+          <span class="episodes">{{this.episodes}} eps</span>
+        </div>
+      </a>
+    </article>
+    {{/each}}
+  </section>
+  {{else}}
+  {{#unless warning}} {{! Mostra questo solo se non c'è già un avviso }}
+  <p class="no-data">No anime available at the moment.</p>
+  {{/unless}}
+  {{/if}}
+</div>

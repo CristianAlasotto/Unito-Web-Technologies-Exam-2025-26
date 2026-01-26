@@ -1,0 +1,33 @@
+{{#if warning}}
+<div class="warning-banner"
+	style="background: #ff9800; color: #000; padding: 1rem; text-align: center; margin-bottom: 1rem;">
+	⚠️ {{warning}}
+</div>
+{{/if}}
+
+{{#if error}}
+<div class="error-message">{{error}}</div>
+{{/if}}
+
+<div class="staff-container">
+	<h1>Staff</h1>
+
+	{{#if staff}}
+	<section class="staff-grid">
+		{{#each staff}}
+		<article class="staff-card">
+			<a href="/staff/{{this.id}}">
+				<img src="{{this.image_url}}" alt="{{this.name}}" />
+				<h3>{{this.name}}</h3>
+				<div class="staff-info">
+					<span class="role">{{this.role}}</span>
+					<span class="language">{{this.language}}</span>
+				</div>
+			</a>
+		</article>
+		{{/each}}
+	</section>
+	{{else}}
+	<p class="no-data">No staff available at the moment.</p>
+	{{/if}}
+</div>
