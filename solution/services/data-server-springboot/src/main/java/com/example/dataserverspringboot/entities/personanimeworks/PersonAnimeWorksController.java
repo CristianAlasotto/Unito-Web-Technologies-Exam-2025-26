@@ -1,0 +1,277 @@
+package com.example.dataserverspringboot.entities.personanimeworks;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * REST API Controller for PersonAnimeWorks
+ * Composite key table - supports list operations only
+ */
+@RestController
+@RequestMapping("/api/person_anime_works")
+@CrossOrigin(origins = "*")
+public class PersonAnimeWorksController {
+
+    @Autowired
+    private PersonAnimeWorksService service;
+
+    @GetMapping
+    public ResponseEntity<?> getAll(
+            @RequestParam(required = false) String fields,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String position,
+            @RequestParam(required = false) Integer personMalId,
+            @RequestParam(required = false) Integer animeMalId,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer offset,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer pageSize) {
+        
+        boolean useLimitOffset = (limit != null || offset != null);
+        boolean usePageBased = (page != null || pageSize != null);
+        
+        Sort sortObj = parseSortParameter(sort);
+        
+        if (useLimitOffset) {
+            int finalLimit = (limit != null) ? limit : 10;
+            int finalOffset = (offset != null) ? offset : 0;
+            
+            Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
+            Page<PersonAnimeWorks> pageResult = service.findWithFilters(
+                search,
+                position, personMalId, animeMalId,
+                pageable);
+            
+            List<PersonAnimeWorks> results = pageResult.getContent();
+            long totalCount = pageResult.getTotalElements();
+            
+            if (fields != null && !fields.isEmpty()) {
+                List<Map<String, Object>> filteredResults = results.stream()
+                    .map(entity -> filterFields(entity, fields))
+                    .collect(Collectors.toList());
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("limit", finalLimit);
+                response.put("offset", finalOffset);
+                response.put("total", totalCount);
+                response.put("items", filteredResults);
+                return ResponseEntity.ok(response);
+            }
+            
+            List<Map<String, Object>> snakeCaseResults = results.stream()
+                .map(this::toSnakeCaseMap)
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("limit", finalLimit);
+            response.put("offset", finalOffset);
+            response.put("total", totalCount);
+            response.put("items", snakeCaseResults);
+            return ResponseEntity.ok(response);
+            
+        } else if (usePageBased) {
+            int finalPage = (page != null) ? page : 1;
+            int finalPageSize = (pageSize != null) ? pageSize : 10;
+            
+            Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
+            Page<PersonAnimeWorks> pageResult = service.findWithFilters(
+                search,
+                position, personMalId, animeMalId,
+                pageable);
+            
+            List<PersonAnimeWorks> results = pageResult.getContent();
+            long totalPages = pageResult.getTotalPages();
+            
+            if (fields != null && !fields.isEmpty()) {
+                List<Map<String, Object>> filteredResults = results.stream()
+                    .map(entity -> filterFields(entity, fields))
+                    .collect(Collectors.toList());
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("page", finalPage);
+                response.put("pageSize", finalPageSize);
+                response.put("totalPages", totalPages);
+                response.put("items", filteredResults);
+                return ResponseEntity.ok(response);
+            }
+            
+            List<Map<String, Object>> snakeCaseResults = results.stream()
+                .map(this::toSnakeCaseMap)
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("page", finalPage);
+            response.put("pageSize", finalPageSize);
+            response.put("totalPages", totalPages);
+            response.put("items", snakeCaseResults);
+            return ResponseEntity.ok(response);
+            
+        } else {
+            Pageable pageable = PageRequest.of(0, 10, sortObj);
+            Page<PersonAnimeWorks> pageResult = service.findWithFilters(
+                search,
+                position, personMalId, animeMalId,
+                pageable);
+            
+            List<PersonAnimeWorks> results = pageResult.getContent();
+            
+            if (fields != null && !fields.isEmpty()) {
+                List<Map<String, Object>> filteredResults = results.stream()
+                    .map(entity -> filterFields(entity, fields))
+                    .collect(Collectors.toList());
+                return ResponseEntity.ok(filteredResults);
+            }
+            
+            List<Map<String, Object>> snakeCaseResults = results.stream()
+                .map(this::toSnakeCaseMap)
+                .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(snakeCaseResults);
+        }
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getStats() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("total", service.count());
+        return ResponseEntity.ok(stats);
+    }
+
+
+    /**
+     * Get single resource by composite key (using query parameters)
+     * GET /api/person_anime_works/single?person_mal_id&position&anime_mal_id
+     */
+    @GetMapping("/single")
+    public ResponseEntity<?> getSingle(
+            @RequestParam(required = false) Integer personMalId,
+            @RequestParam(required = false) String position,
+            @RequestParam(required = false) Integer animeMalId,
+            @RequestParam(required = false) String fields) {
+        
+        // Check if all key fields are provided
+        if (personMalId == null || position == null || animeMalId == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "All key fields required: personMalId, position, animeMalId");
+            error.put("usage", "GET /api/person_anime_works/single?person_mal_id&position&anime_mal_id");
+            return ResponseEntity.status(400).body(error);
+        }
+        
+        // Create composite key
+        PersonAnimeWorks.PersonAnimeWorksId id = new PersonAnimeWorks.PersonAnimeWorksId(personMalId, position, animeMalId);
+        Optional<PersonAnimeWorks> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "PersonAnimeWorks not found");
+            error.put("person_mal_id", personMalId); error.put("position", position); error.put("anime_mal_id", animeMalId);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        PersonAnimeWorks data = entity.get();
+        
+        if (fields != null && !fields.isEmpty()) {
+            Map<String, Object> filtered = filterFields(data, fields);
+            return ResponseEntity.ok(filtered);
+        }
+        
+        return ResponseEntity.ok(toSnakeCaseMap(data));
+    }
+
+
+    /**
+     * Get summary by composite key (using query parameters)
+     * GET /api/person_anime_works/summary?person_mal_id&position&anime_mal_id
+     */
+    @GetMapping("/summary")
+    public ResponseEntity<?> getSummary(
+            @RequestParam(required = false) Integer personMalId,
+            @RequestParam(required = false) String position,
+            @RequestParam(required = false) Integer animeMalId) {
+        
+        // Check if all key fields are provided
+        if (personMalId == null || position == null || animeMalId == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "All key fields required: personMalId, position, animeMalId");
+            error.put("usage", "GET /api/person_anime_works/summary?person_mal_id&position&anime_mal_id");
+            return ResponseEntity.status(400).body(error);
+        }
+        
+        // Create composite key
+        PersonAnimeWorks.PersonAnimeWorksId id = new PersonAnimeWorks.PersonAnimeWorksId(personMalId, position, animeMalId);
+        Optional<PersonAnimeWorks> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "PersonAnimeWorks not found");
+            error.put("person_mal_id", personMalId); error.put("position", position); error.put("anime_mal_id", animeMalId);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        PersonAnimeWorks data = entity.get();
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("person_mal_id", data.getPersonMalId());
+        summary.put("position", data.getPosition());
+        summary.put("anime_mal_id", data.getAnimeMalId());
+        
+        return ResponseEntity.ok(summary);
+    }
+
+    private Map<String, Object> toSnakeCaseMap(PersonAnimeWorks entity) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("person_mal_id", entity.getPersonMalId());
+        result.put("position", entity.getPosition());
+        result.put("anime_mal_id", entity.getAnimeMalId());
+        return result;
+    }
+
+    private Map<String, Object> filterFields(PersonAnimeWorks entity, String fields) {
+        Map<String, Object> result = new HashMap<>();
+        String[] requestedFields = fields.split(",");
+        
+        for (String field : requestedFields) {
+            field = field.trim();
+            switch (field) {
+                case "person_mal_id":
+                    result.put("person_mal_id", entity.getPersonMalId());
+                    break;
+                case "position":
+                    result.put("position", entity.getPosition());
+                    break;
+                case "anime_mal_id":
+                    result.put("anime_mal_id", entity.getAnimeMalId());
+                    break;
+            }
+        }
+        
+        return result;
+    }
+
+    private Sort parseSortParameter(String sort) {
+        if (sort == null || sort.isEmpty()) {
+            return Sort.unsorted();
+        }
+        
+        String[] sortFields = sort.split(",");
+        List<Sort.Order> orders = new ArrayList<>();
+        
+        for (String field : sortFields) {
+            field = field.trim();
+            if (field.startsWith("-")) {
+                orders.add(Sort.Order.desc(field.substring(1)));
+            } else {
+                orders.add(Sort.Order.asc(field));
+            }
+        }
+        
+        return Sort.by(orders);
+    }
+}

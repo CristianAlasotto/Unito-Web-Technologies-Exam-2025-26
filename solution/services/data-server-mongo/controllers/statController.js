@@ -1,13 +1,14 @@
-const Stats = require("../models/Stats");
-const axios = require('axios');
+const statService = require('../services/statService');
 
 exports.getStats = async (req, res) => {
     try {
-        // CHANGE: Use Stats.find() instead of Rating.find()
-        const stats = await Stats.find().limit(10);
-
-        res.json(stats);
+        const data = await statService.fetchStats(req.query);
+        res.status(200).json({
+            status: "success",
+            result: data.length,
+            data: data
+        });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({status: "error", message: err.message});
     }
-};
+}

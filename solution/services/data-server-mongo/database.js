@@ -8,9 +8,9 @@ const connectDB = async () => {
         await mongoose.connect(`mongodb://${server}/${database}`, {
             family: 4
         });
-        console.log('MongoDB Connected successfully');
+        console.log('data-server-mongo: MongoDB Connected successfully');
     } catch (err) {
-        console.error('MongoDB Connection Error:', err);
+        console.error('data-server-mongo: MongoDB Connection Error:', err);
     }
 };
 

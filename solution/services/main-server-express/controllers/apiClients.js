@@ -16,7 +16,7 @@ const apiPostgres = axios.create({
 apiMongo.interceptors.response.use(
 	response => response,
 	error => {
-		console.error('Errore connessione MongoDB:', error.message);
+		console.error('main-server-express: Connection Error MongoDB:', error.message);
 		return Promise.reject(error);
 	}
 );
@@ -24,7 +24,7 @@ apiMongo.interceptors.response.use(
 apiPostgres.interceptors.response.use(
 	response => response,
 	error => {
-		console.error('Errore connessione Postgres:', error.message);
+		console.error('main-server-express: Connection Error Postgres:', error.message);
 		return Promise.reject(error);
 	}
 );
