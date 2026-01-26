@@ -3,7 +3,7 @@
 BEGIN;
 
 TRUNCATE TABLE
-  character_nicknames,
+    character_nicknames,
   character_anime_works,
   person_alternate_names,
   person_anime_works,
@@ -160,148 +160,148 @@ CREATE TEMP TABLE stg_recommendations (
 
 -- Import profiles
 COPY stg_profiles(username, gender, birthday, location, joined, watching, completed, on_hold, dropped, plan_to_watch)
-FROM '/import/profiles.csv'
-DELIMITER ','
-CSV HEADER;
+    FROM '/import/profiles.csv'
+    DELIMITER ','
+    CSV HEADER;
 
 -- Import details (anime)
 COPY stg_details(mal_id, title, title_japanese, url, image_url, type, status, score, scored_by, start_date, end_date, synopsis, rank, popularity, members, favorites, genres, studios, themes, demographics, source, rating, episodes, season, year, producers, explicit_genres, licensors, streaming)
-FROM '/import/details.csv'
-DELIMITER ','
-CSV HEADER;
+    FROM '/import/details.csv'
+    DELIMITER ','
+    CSV HEADER;
 
 -- Import characters (using sed to remove carriage returns)
 COPY stg_characters_raw(raw_line)
-FROM PROGRAM 'sed ''s/\r//g'' /import/characters.csv'
-DELIMITER E'\x01';
+    FROM PROGRAM 'sed ''s/\r//g'' /import/characters.csv'
+    DELIMITER E'\x01';
 
 -- Remove the header row
 DELETE FROM stg_characters_raw WHERE raw_line LIKE 'character_mal_id%';
 
 -- Parse the raw lines into proper columns using split_part
 INSERT INTO stg_characters (character_mal_id, url, name, name_kanji, image, favorites, about)
-SELECT 
-  NULLIF(TRIM(split_part(raw_line, ',', 1)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 2)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 3)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 4)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 5)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 6)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 7)), '')
+SELECT
+    NULLIF(TRIM(split_part(raw_line, ',', 1)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 2)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 3)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 4)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 5)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 6)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 7)), '')
 FROM stg_characters_raw
 WHERE raw_line IS NOT NULL AND raw_line <> '';
 
 -- Import character nicknames (using sed to remove carriage returns)
 COPY stg_character_nicknames_raw(raw_line)
-FROM PROGRAM 'sed ''s/\r//g'' /import/character_nicknames.csv'
-DELIMITER E'\x01';
+    FROM PROGRAM 'sed ''s/\r//g'' /import/character_nicknames.csv'
+    DELIMITER E'\x01';
 
 -- Remove the header row
 DELETE FROM stg_character_nicknames_raw WHERE raw_line LIKE 'character_mal_id%';
 
 -- Parse the raw lines into proper columns
 INSERT INTO stg_character_nicknames (character_mal_id, nickname)
-SELECT 
-  NULLIF(TRIM(split_part(raw_line, ',', 1)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 2)), '')
+SELECT
+    NULLIF(TRIM(split_part(raw_line, ',', 1)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 2)), '')
 FROM stg_character_nicknames_raw
 WHERE raw_line IS NOT NULL AND raw_line <> '';
 
 -- Import character anime works (using sed to remove carriage returns)
 COPY stg_character_anime_works_raw(raw_line)
-FROM PROGRAM 'sed ''s/\r//g'' /import/character_anime_works.csv'
-DELIMITER E'\x01';
+    FROM PROGRAM 'sed ''s/\r//g'' /import/character_anime_works.csv'
+    DELIMITER E'\x01';
 
 DELETE FROM stg_character_anime_works_raw WHERE raw_line LIKE 'anime_mal_id%';
 
 INSERT INTO stg_character_anime_works (anime_mal_id, character_mal_id, character_name, role)
-SELECT 
-  NULLIF(TRIM(split_part(raw_line, ',', 1)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 2)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 3)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 4)), '')
+SELECT
+    NULLIF(TRIM(split_part(raw_line, ',', 1)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 2)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 3)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 4)), '')
 FROM stg_character_anime_works_raw
 WHERE raw_line IS NOT NULL AND raw_line <> '';
 
 -- Import person details (using sed to remove carriage returns)
 COPY stg_person_details_raw(raw_line)
-FROM PROGRAM 'sed ''s/\r//g'' /import/person_details.csv'
-DELIMITER E'\x01';
+    FROM PROGRAM 'sed ''s/\r//g'' /import/person_details.csv'
+    DELIMITER E'\x01';
 
 DELETE FROM stg_person_details_raw WHERE raw_line LIKE 'person_mal_id%';
 
 INSERT INTO stg_person_details (person_mal_id, url, website_url, image_url, name, given_name, family_name, birthday, favorites, relevant_location)
-SELECT 
-  NULLIF(TRIM(split_part(raw_line, ',', 1)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 2)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 3)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 4)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 5)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 6)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 7)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 8)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 9)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 10)), '')
+SELECT
+    NULLIF(TRIM(split_part(raw_line, ',', 1)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 2)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 3)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 4)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 5)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 6)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 7)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 8)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 9)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 10)), '')
 FROM stg_person_details_raw
 WHERE raw_line IS NOT NULL AND raw_line <> '';
 
 -- Import person alternate names (using sed to remove carriage returns)
 COPY stg_person_alternate_names_raw(raw_line)
-FROM PROGRAM 'sed ''s/\r//g'' /import/person_alternate_names.csv'
-DELIMITER E'\x01';
+    FROM PROGRAM 'sed ''s/\r//g'' /import/person_alternate_names.csv'
+    DELIMITER E'\x01';
 
 DELETE FROM stg_person_alternate_names_raw WHERE raw_line LIKE 'person_mal_id%';
 
 INSERT INTO stg_person_alternate_names (person_mal_id, alt_name)
-SELECT 
-  NULLIF(TRIM(split_part(raw_line, ',', 1)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 2)), '')
+SELECT
+    NULLIF(TRIM(split_part(raw_line, ',', 1)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 2)), '')
 FROM stg_person_alternate_names_raw
 WHERE raw_line IS NOT NULL AND raw_line <> '';
 
 -- Import person anime works (using sed to remove carriage returns)
 COPY stg_person_anime_works_raw(raw_line)
-FROM PROGRAM 'sed ''s/\r//g'' /import/person_anime_works.csv'
-DELIMITER E'\x01';
+    FROM PROGRAM 'sed ''s/\r//g'' /import/person_anime_works.csv'
+    DELIMITER E'\x01';
 
 DELETE FROM stg_person_anime_works_raw WHERE raw_line LIKE 'person_mal_id%';
 
 INSERT INTO stg_person_anime_works (person_mal_id, position, anime_mal_id)
-SELECT 
-  NULLIF(TRIM(split_part(raw_line, ',', 1)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 2)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 3)), '')
+SELECT
+    NULLIF(TRIM(split_part(raw_line, ',', 1)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 2)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 3)), '')
 FROM stg_person_anime_works_raw
 WHERE raw_line IS NOT NULL AND raw_line <> '';
 
 -- Import person voice works (using sed to remove carriage returns)
 COPY stg_person_voice_works_raw(raw_line)
-FROM PROGRAM 'sed ''s/\r//g'' /import/person_voice_works.csv'
-DELIMITER E'\x01';
+    FROM PROGRAM 'sed ''s/\r//g'' /import/person_voice_works.csv'
+    DELIMITER E'\x01';
 
 DELETE FROM stg_person_voice_works_raw WHERE raw_line LIKE 'person_mal_id%';
 
 INSERT INTO stg_person_voice_works (person_mal_id, role, anime_mal_id, character_mal_id, language)
-SELECT 
-  NULLIF(TRIM(split_part(raw_line, ',', 1)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 2)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 3)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 4)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 5)), '')
+SELECT
+    NULLIF(TRIM(split_part(raw_line, ',', 1)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 2)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 3)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 4)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 5)), '')
 FROM stg_person_voice_works_raw
 WHERE raw_line IS NOT NULL AND raw_line <> '';
 
 -- Import recommendations (using sed to remove carriage returns)
 COPY stg_recommendations_raw(raw_line)
-FROM PROGRAM 'sed ''s/\r//g'' /import/recommendations.csv'
-DELIMITER E'\x01';
+    FROM PROGRAM 'sed ''s/\r//g'' /import/recommendations.csv'
+    DELIMITER E'\x01';
 
 DELETE FROM stg_recommendations_raw WHERE raw_line LIKE 'mal_id,recommendation_mal_id%' OR raw_line LIKE 'mal_id%recommendation%';
 
 INSERT INTO stg_recommendations (mal_id, recommendation_mal_id)
-SELECT 
-  NULLIF(TRIM(split_part(raw_line, ',', 1)), ''),
-  NULLIF(TRIM(split_part(raw_line, ',', 2)), '')
+SELECT
+    NULLIF(TRIM(split_part(raw_line, ',', 1)), ''),
+    NULLIF(TRIM(split_part(raw_line, ',', 2)), '')
 FROM stg_recommendations_raw
 WHERE raw_line IS NOT NULL AND raw_line <> '';
 
@@ -312,9 +312,9 @@ WHERE raw_line IS NOT NULL AND raw_line <> '';
 -- Insert profiles
 INSERT INTO profiles (username, gender, birthday, location, joined, watching, completed, on_hold, dropped, plan_to_watch)
 SELECT
-  LEFT(p.username, 255),
-  LEFT(p.gender, 50),
-  CASE WHEN LEFT(p.birthday,10) ~ '^\d{4}-\d{2}-\d{2}$' THEN LEFT(p.birthday,10)::DATE ELSE NULL END,
+    LEFT(p.username, 255),
+    LEFT(p.gender, 50),
+    CASE WHEN LEFT(p.birthday,10) ~ '^\d{4}-\d{2}-\d{2}$' THEN LEFT(p.birthday,10)::DATE ELSE NULL END,
   LEFT(p.location, 255),
   CASE WHEN LEFT(p.joined,10) ~ '^\d{4}-\d{2}-\d{2}$' THEN LEFT(p.joined,10)::DATE ELSE NULL END,
   CASE WHEN p.watching ~ '^\d+$' THEN p.watching::INT ELSE NULL END,
@@ -328,7 +328,7 @@ WHERE p.username IS NOT NULL AND p.username <> '';
 -- Insert details (anime)
 INSERT INTO details (mal_id, title, title_japanese, url, image_url, type, status, score, scored_by, start_date, end_date, synopsis, rank, popularity, members, favorites, genres, studios, themes, demographics, source, rating, episodes, season, year, producers, explicit_genres, licensors, streaming)
 SELECT
-  CASE WHEN d.mal_id ~ '^\d+$' THEN d.mal_id::INT ELSE NULL END,
+    CASE WHEN d.mal_id ~ '^\d+$' THEN d.mal_id::INT ELSE NULL END,
   LEFT(d.title, 600),
   LEFT(d.title_japanese, 550),
   LEFT(d.url, 500),
@@ -336,11 +336,11 @@ SELECT
   LEFT(d.type, 400),
   LEFT(d.status, 450),
   CASE WHEN d.score ~ '^\d+\.?\d*$' THEN d.score::DECIMAL(4,2) ELSE NULL END,
-  CASE WHEN d.scored_by ~ '^\d+$' THEN d.scored_by::INT ELSE NULL END,
+  CASE WHEN d.scored_by ~ '^\d+\.?\d*$' THEN d.scored_by::NUMERIC::INT ELSE NULL END,
   CASE WHEN LEFT(d.start_date,10) ~ '^\d{4}-\d{2}-\d{2}$' THEN LEFT(d.start_date,10)::DATE ELSE NULL END,
   CASE WHEN LEFT(d.end_date,10) ~ '^\d{4}-\d{2}-\d{2}$' THEN LEFT(d.end_date,10)::DATE ELSE NULL END,
   d.synopsis,
-  CASE WHEN d.rank ~ '^\d+$' THEN d.rank::INT ELSE NULL END,
+  CASE WHEN d.rank ~ '^\d+\.?\d*$' THEN d.rank::NUMERIC::INT ELSE NULL END,
   CASE WHEN d.popularity ~ '^\d+$' THEN d.popularity::INT ELSE NULL END,
   CASE WHEN d.members ~ '^\d+$' THEN d.members::INT ELSE NULL END,
   CASE WHEN d.favorites ~ '^\d+$' THEN d.favorites::INT ELSE NULL END,
@@ -365,7 +365,7 @@ WHERE d.mal_id ~ '^\d+$'
 -- Insert characters (drop duplicates, keep row with highest favorites)
 INSERT INTO characters (character_mal_id, url, name, name_kanji, image, favorites, about)
 SELECT DISTINCT ON (character_mal_id)
-  CASE WHEN c.character_mal_id ~ '^\d+$' THEN c.character_mal_id::INT ELSE NULL END,
+    CASE WHEN c.character_mal_id ~ '^\d+$' THEN c.character_mal_id::INT ELSE NULL END,
   LEFT(c.url, 200),
   LEFT(c.name, 150),
   LEFT(c.name_kanji, 150),
@@ -381,7 +381,7 @@ ORDER BY character_mal_id, c.favorites DESC NULLS LAST;
 -- Insert character nicknames (using character_mal_id from CSV directly)
 INSERT INTO character_nicknames (character_mal_id, nickname)
 SELECT DISTINCT
-  CASE WHEN cn.character_mal_id ~ '^\d+$' THEN cn.character_mal_id::INT ELSE NULL END,
+    CASE WHEN cn.character_mal_id ~ '^\d+$' THEN cn.character_mal_id::INT ELSE NULL END,
   LEFT(cn.nickname, 100)
 FROM stg_character_nicknames cn
 WHERE cn.character_mal_id ~ '^\d+$'
@@ -395,7 +395,7 @@ ON CONFLICT (character_mal_id, nickname) DO NOTHING;
 -- Insert character anime works (using character_mal_id from CSV directly)
 INSERT INTO character_anime_works (anime_mal_id, character_mal_id, character_name, role)
 SELECT DISTINCT
-  CASE WHEN caw.anime_mal_id ~ '^\d+$' THEN caw.anime_mal_id::INT ELSE NULL END,
+    CASE WHEN caw.anime_mal_id ~ '^\d+$' THEN caw.anime_mal_id::INT ELSE NULL END,
   CASE WHEN caw.character_mal_id ~ '^\d+$' THEN caw.character_mal_id::INT ELSE NULL END,
   LEFT(caw.character_name, 100),
   LEFT(caw.role, 100)
@@ -413,7 +413,7 @@ ON CONFLICT (character_mal_id, anime_mal_id) DO NOTHING;
 -- Insert person details (drop duplicates, keep row with highest favorites)
 INSERT INTO person_details (person_mal_id, url, website_url, image_url, name, given_name, family_name, birthday, favorites, relevant_location)
 SELECT DISTINCT ON (person_mal_id)
-  CASE WHEN pd.person_mal_id ~ '^\d+$' THEN pd.person_mal_id::INT ELSE NULL END,
+    CASE WHEN pd.person_mal_id ~ '^\d+$' THEN pd.person_mal_id::INT ELSE NULL END,
   LEFT(pd.url, 100),
   LEFT(pd.website_url, 300),
   LEFT(pd.image_url, 100),
@@ -432,7 +432,7 @@ ORDER BY person_mal_id, pd.favorites DESC NULLS LAST;
 -- Insert person alternate names (using person_mal_id from CSV directly)
 INSERT INTO person_alternate_names (person_mal_id, alt_name)
 SELECT DISTINCT
-  CASE WHEN pan.person_mal_id ~ '^\d+$' THEN pan.person_mal_id::INT ELSE NULL END,
+    CASE WHEN pan.person_mal_id ~ '^\d+$' THEN pan.person_mal_id::INT ELSE NULL END,
   LEFT(pan.alt_name, 100)
 FROM stg_person_alternate_names pan
 WHERE pan.person_mal_id ~ '^\d+$'
@@ -446,7 +446,7 @@ ON CONFLICT (person_mal_id, alt_name) DO NOTHING;
 -- Insert person anime works (using person_mal_id from CSV directly)
 INSERT INTO person_anime_works (person_mal_id, position, anime_mal_id)
 SELECT DISTINCT
-  CASE WHEN paw.person_mal_id ~ '^\d+$' THEN paw.person_mal_id::INT ELSE NULL END,
+    CASE WHEN paw.person_mal_id ~ '^\d+$' THEN paw.person_mal_id::INT ELSE NULL END,
   LEFT(paw.position, 150),
   CASE WHEN paw.anime_mal_id ~ '^\d+$' THEN paw.anime_mal_id::INT ELSE NULL END
 FROM stg_person_anime_works paw
@@ -465,7 +465,7 @@ ON CONFLICT (person_mal_id, position, anime_mal_id) DO NOTHING;
 -- Insert person voice works (using mal_id columns from CSV directly)
 INSERT INTO person_voice_works (person_mal_id, role, anime_mal_id, character_mal_id, language)
 SELECT DISTINCT
-  CASE WHEN pvw.person_mal_id ~ '^\d+$' THEN pvw.person_mal_id::INT ELSE NULL END,
+    CASE WHEN pvw.person_mal_id ~ '^\d+$' THEN pvw.person_mal_id::INT ELSE NULL END,
   pvw.role,
   CASE WHEN pvw.anime_mal_id ~ '^\d+$' THEN pvw.anime_mal_id::INT ELSE NULL END,
   CASE WHEN pvw.character_mal_id ~ '^\d+$' THEN pvw.character_mal_id::INT ELSE NULL END,
@@ -490,7 +490,7 @@ ON CONFLICT (person_mal_id, character_mal_id, anime_mal_id) DO NOTHING;
 -- Insert recommendations
 INSERT INTO recommendations (mal_id, recommendation_mal_id)
 SELECT
-  CASE WHEN r.mal_id ~ '^\d+$' THEN r.mal_id::INT ELSE NULL END,
+    CASE WHEN r.mal_id ~ '^\d+$' THEN r.mal_id::INT ELSE NULL END,
   CASE WHEN r.recommendation_mal_id ~ '^\d+$' THEN r.recommendation_mal_id::INT ELSE NULL END
 FROM stg_recommendations r
 WHERE r.mal_id ~ '^\d+$'
@@ -508,7 +508,7 @@ COMMIT;
 ---------------------------------------------------
 -- TEST QUERIES (20 queries to test all tables and keys)
 ---------------------------------------------------
-/* 
+
 -- Query 1: Test profiles table - count all users
 SELECT 'Query 1: Total users' AS test_name, COUNT(*) AS result FROM profiles;
 
@@ -555,7 +555,7 @@ INNER JOIN details d1 ON r.mal_id = d1.mal_id
 INNER JOIN details d2 ON r.recommendation_mal_id = d2.mal_id;
 
 -- Query 11: Test PRIMARY KEY on profiles
-SELECT 'Query 11: Duplicate usernames check' AS test_name, 
+SELECT 'Query 11: Duplicate usernames check' AS test_name,
        CASE WHEN COUNT(*) = COUNT(DISTINCT username) THEN 'PASS' ELSE 'FAIL' END AS result
 FROM profiles;
 
@@ -673,4 +673,4 @@ SELECT 'Query 30: Total relationship records across all tables' AS test_name,
        (SELECT COUNT(*) FROM person_alternate_names) +
        (SELECT COUNT(*) FROM person_anime_works) +
        (SELECT COUNT(*) FROM person_voice_works) +
-       (SELECT COUNT(*) FROM recommendations) AS total_relationships; */
+       (SELECT COUNT(*) FROM recommendations) AS total_relationships;

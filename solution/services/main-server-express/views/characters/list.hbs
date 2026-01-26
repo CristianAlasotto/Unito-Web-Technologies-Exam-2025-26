@@ -1,20 +1,35 @@
+{{#if warning}}
+<div class="warning-banner"
+	style="background: #ff9800; color: #000; padding: 1rem; text-align: center; margin-bottom: 1rem;">
+	⚠️ {{warning}}
+</div>
+{{/if}}
+
+{{#if error}}
+<div class="error-message">{{error}}</div>
+{{/if}}
+
 <div class="characters-container">
 	<h1>Characters</h1>
-	
+
 	{{#if characters}}
-		<div class="characters-list">
-			{{#each characters}}
-				<div class="character-card">
-					<h2>{{this.name}}</h2>
-					<p><strong>Role:</strong> {{this.role}}</p>
-					<p><strong>Status:</strong> {{this.status}}</p>
-					<a href="/characters/{{this.id}}" class="btn-view">View Details</a>
-				</div>
-			{{/each}}
-		</div>
+	<section class="characters-list">
+		{{#each characters}}
+		<article class="character-card">
+			<a href="/characters/{{this.character_id}}">
+				<img src="{{this.image_url}}" alt="{{this.name}}" class="character-image" />
+				<h3>{{this.name}}</h3>
+				{{#if this.name_kanji}}
+				<p class="kanji">{{this.name_kanji}}</p>
+				{{/if}}
+				<p class="favorites">❤️ {{this.favorites}}</p>
+			</a>
+		</article>
+		{{/each}}
+	</section>
 	{{else}}
-		<p>No characters found.</p>
+	{{#unless warning}} {{! Mostra questo solo se non c'è già un avviso }}
+	<p class="no-data">No characters available at the moment.</p>
+	{{/unless}}
 	{{/if}}
-	
-	<a href="/characters/new" class="btn-create">Add New Character</a>
 </div>

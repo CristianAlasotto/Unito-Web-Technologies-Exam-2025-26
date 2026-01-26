@@ -1,0 +1,55 @@
+{{#if warning}}
+<div class="warning-banner"
+	style="background: #ff9800; color: #000; padding: 1rem; text-align: center; margin-bottom: 1rem;">
+	⚠️ {{warning}}
+</div>
+{{/if}}
+
+<div class="profile-container">
+	<div class="profile-header">
+		<img src="{{profile.avatar_url}}" alt="{{profile.display_name}}" class="profile-avatar">
+		<div class="profile-info">
+			<h2>{{profile.display_name}}</h2>
+			<p class="username">@{{profile.username}}</p>
+			{{#if profile.email}}
+			<p class="email">📧 {{profile.email}}</p>
+			{{/if}}
+			{{#if profile.joined}}
+			<p class="joined">📅 Joined: {{profile.joined}}</p>
+			{{/if}}
+		</div>
+	</div>
+
+	{{#if profile.bio}}
+	<div class="profile-bio">
+		<h3>About</h3>
+		<p>{{profile.bio}}</p>
+	</div>
+	{{/if}}
+
+	<div class="profile-stats">
+		<h3>Anime Stats</h3>
+		<div class="stats-grid">
+			{{#if profile.watching}}
+			<div class="stat-item">
+				<span class="stat-value">{{profile.watching}}</span>
+				<span class="stat-label">Watching</span>
+			</div>
+			{{/if}}
+			{{#if profile.completed}}
+			<div class="stat-item">
+				<span class="stat-value">{{profile.completed}}</span>
+				<span class="stat-label">Completed</span>
+			</div>
+			{{/if}}
+			{{#if profile.plan_to_watch}}
+			<div class="stat-item">
+				<span class="stat-value">{{profile.plan_to_watch}}</span>
+				<span class="stat-label">Plan to Watch</span>
+			</div>
+			{{/if}}
+		</div>
+	</div>
+
+	<a href="/" class="btn btn-secondary">Back to Home</a>
+</div>
