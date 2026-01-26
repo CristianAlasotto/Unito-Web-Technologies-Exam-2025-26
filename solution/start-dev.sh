@@ -13,13 +13,14 @@ fi
 
 MAIN_EXPRESS_PORT=${MAIN_EXPRESS_PORT:-3000}
 DATA_EXPRESS_PORT=${DATA_EXPRESS_PORT:-3001}
+DATA_SPRING_PORT=${DATA_SPRING_PORT:-8080}
 
-if ! [[ "$MAIN_EXPRESS_PORT" =~ ^[0-9]+$ ]] || ! [[ "$DATA_EXPRESS_PORT" =~ ^[0-9]+$ ]]; then
-  echo "❌ Invalid port(s). MAIN_EXPRESS_PORT=$MAIN_EXPRESS_PORT DATA_EXPRESS_PORT=$DATA_EXPRESS_PORT"
+if ! [[ "$MAIN_EXPRESS_PORT" =~ ^[0-9]+$ ]] || ! [[ "$DATA_EXPRESS_PORT" =~ ^[0-9]+$ ]] || ! [[ "$DATA_SPRING_PORT" =~ ^[0-9]+$ ]]; then
+  echo "❌ Invalid port(s). MAIN_EXPRESS_PORT=$MAIN_EXPRESS_PORT, DATA_EXPRESS_PORT=$DATA_EXPRESS_PORT, DATA_SPRING_PORT=$DATA_SPRING_PORT"
   exit 1
 fi
 
-echo " MAIN_EXPRESS_PORT=$MAIN_EXPRESS_PORT, DATA_EXPRESS_PORT=$DATA_EXPRESS_PORT"
+echo " MAIN_EXPRESS_PORT=$MAIN_EXPRESS_PORT, DATA_EXPRESS_PORT=$DATA_EXPRESS_PORT, DATA_SPRING_PORT=$DATA_SPRING_PORT"
 
 # Check if Docker is running
 if ! docker info > /dev/null 2>&1; then
@@ -60,6 +61,11 @@ echo ""
 # Start MongoDB server in background
 echo "🗄️ Starting MongoDB server..."
 ./services/data-server-mongo/server_start.sh "$DATA_EXPRESS_PORT" &
+
+# Start Spring Boot server in background
+echo "🐘 Starting Spring Boot server..."
+echo "      NOT ENABLED # !"
+#(cd ./services/data-server-springboot && ./spring_start.sh "$POSTGRES_HOST" "$POSTGRES_PORT" "$POSTGRES_DB" "$POSTGRES_USER" "$POSTGRES_PASSWORD" "$DATA_SPRING_PORT") &
 
 # --- Main Express Server folder ---
 cd services/main-server-express
