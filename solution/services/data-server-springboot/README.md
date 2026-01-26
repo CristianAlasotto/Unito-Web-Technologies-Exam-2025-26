@@ -31,7 +31,7 @@ brew install jq
 
 ### Curl command example:
 ```bash
-curl "http://localhost:8080/api/anime" | jq
+curl "http://localhost:8080/api/details" | jq
 ```
 
 ### It's possible to see the JSON returned in an understandable way from browser.

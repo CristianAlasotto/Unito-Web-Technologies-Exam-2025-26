@@ -28,8 +28,8 @@ public class PersonAnimeWorksController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String position,
-            @RequestParam(required = false) Integer person_mal_id,
-            @RequestParam(required = false) Integer anime_mal_id,
+            @RequestParam(required = false) Integer personMalId,
+            @RequestParam(required = false) Integer animeMalId,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -47,7 +47,7 @@ public class PersonAnimeWorksController {
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
             Page<PersonAnimeWorks> pageResult = service.findWithFilters(
                 search,
-                position, person_mal_id, anime_mal_id,
+                position, personMalId, animeMalId,
                 pageable);
             
             List<PersonAnimeWorks> results = pageResult.getContent();
@@ -84,7 +84,7 @@ public class PersonAnimeWorksController {
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<PersonAnimeWorks> pageResult = service.findWithFilters(
                 search,
-                position, person_mal_id, anime_mal_id,
+                position, personMalId, animeMalId,
                 pageable);
             
             List<PersonAnimeWorks> results = pageResult.getContent();
@@ -118,7 +118,7 @@ public class PersonAnimeWorksController {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
             Page<PersonAnimeWorks> pageResult = service.findWithFilters(
                 search,
-                position, person_mal_id, anime_mal_id,
+                position, personMalId, animeMalId,
                 pageable);
             
             List<PersonAnimeWorks> results = pageResult.getContent();
@@ -143,6 +143,86 @@ public class PersonAnimeWorksController {
         Map<String, Object> stats = new HashMap<>();
         stats.put("total", service.count());
         return ResponseEntity.ok(stats);
+    }
+
+
+    /**
+     * Get single resource by composite key (using query parameters)
+     * GET /api/person_anime_works/single?person_mal_id&position&anime_mal_id
+     */
+    @GetMapping("/single")
+    public ResponseEntity<?> getSingle(
+            @RequestParam(required = false) Integer personMalId,
+            @RequestParam(required = false) String position,
+            @RequestParam(required = false) Integer animeMalId,
+            @RequestParam(required = false) String fields) {
+        
+        // Check if all key fields are provided
+        if (personMalId == null || position == null || animeMalId == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "All key fields required: personMalId, position, animeMalId");
+            error.put("usage", "GET /api/person_anime_works/single?person_mal_id&position&anime_mal_id");
+            return ResponseEntity.status(400).body(error);
+        }
+        
+        // Create composite key
+        PersonAnimeWorks.PersonAnimeWorksId id = new PersonAnimeWorks.PersonAnimeWorksId(personMalId, position, animeMalId);
+        Optional<PersonAnimeWorks> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "PersonAnimeWorks not found");
+            error.put("person_mal_id", personMalId); error.put("position", position); error.put("anime_mal_id", animeMalId);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        PersonAnimeWorks data = entity.get();
+        
+        if (fields != null && !fields.isEmpty()) {
+            Map<String, Object> filtered = filterFields(data, fields);
+            return ResponseEntity.ok(filtered);
+        }
+        
+        return ResponseEntity.ok(toSnakeCaseMap(data));
+    }
+
+
+    /**
+     * Get summary by composite key (using query parameters)
+     * GET /api/person_anime_works/summary?person_mal_id&position&anime_mal_id
+     */
+    @GetMapping("/summary")
+    public ResponseEntity<?> getSummary(
+            @RequestParam(required = false) Integer personMalId,
+            @RequestParam(required = false) String position,
+            @RequestParam(required = false) Integer animeMalId) {
+        
+        // Check if all key fields are provided
+        if (personMalId == null || position == null || animeMalId == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "All key fields required: personMalId, position, animeMalId");
+            error.put("usage", "GET /api/person_anime_works/summary?person_mal_id&position&anime_mal_id");
+            return ResponseEntity.status(400).body(error);
+        }
+        
+        // Create composite key
+        PersonAnimeWorks.PersonAnimeWorksId id = new PersonAnimeWorks.PersonAnimeWorksId(personMalId, position, animeMalId);
+        Optional<PersonAnimeWorks> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "PersonAnimeWorks not found");
+            error.put("person_mal_id", personMalId); error.put("position", position); error.put("anime_mal_id", animeMalId);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        PersonAnimeWorks data = entity.get();
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("person_mal_id", data.getPersonMalId());
+        summary.put("position", data.getPosition());
+        summary.put("anime_mal_id", data.getAnimeMalId());
+        
+        return ResponseEntity.ok(summary);
     }
 
     private Map<String, Object> toSnakeCaseMap(PersonAnimeWorks entity) {

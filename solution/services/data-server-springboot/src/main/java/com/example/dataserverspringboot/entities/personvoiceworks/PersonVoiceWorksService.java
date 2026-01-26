@@ -20,7 +20,7 @@ public class PersonVoiceWorksService {
         return repository.count();
     }
 
-    public Page<PersonVoiceWorks> findWithFilters(String search, String language, String role, Integer person_mal_id, Integer character_mal_id, Integer anime_mal_id, Pageable pageable) {
+    public Page<PersonVoiceWorks> findWithFilters(String search, String language, String role, Integer personMalId, Integer characterMalId, Integer animeMalId, Pageable pageable) {
         if (search != null && !search.isEmpty()) {
             return repository.searchByLanguage(search, pageable);
         }
@@ -33,16 +33,16 @@ public class PersonVoiceWorksService {
             return repository.findByRole(role, pageable);
         }
 
-        if (person_mal_id != null) {
-            return repository.findByPersonMalId(person_mal_id, pageable);
+        if (personMalId != null) {
+            return repository.findByPersonMalId(personMalId, pageable);
         }
 
-        if (character_mal_id != null) {
-            return repository.findByCharacterMalId(character_mal_id, pageable);
+        if (characterMalId != null) {
+            return repository.findByCharacterMalId(characterMalId, pageable);
         }
 
-        if (anime_mal_id != null) {
-            return repository.findByAnimeMalId(anime_mal_id, pageable);
+        if (animeMalId != null) {
+            return repository.findByAnimeMalId(animeMalId, pageable);
         }
 
         return repository.findAll(pageable);

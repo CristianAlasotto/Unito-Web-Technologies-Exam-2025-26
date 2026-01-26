@@ -24,11 +24,11 @@ public interface CharacterAnimeWorksRepository extends JpaRepository<CharacterAn
     /**
      * Find by character_mal_id
      */
-    Page<CharacterAnimeWorks> findByCharacterMalId(Integer character_mal_id, Pageable pageable);
+    Page<CharacterAnimeWorks> findByCharacterMalId(Integer characterMalId, Pageable pageable);
 
     /**
      * Find by anime_mal_id
      */
-    Page<CharacterAnimeWorks> findByAnimeMalId(Integer anime_mal_id, Pageable pageable);
+    Page<CharacterAnimeWorks> findByAnimeMalId(Integer animeMalId, Pageable pageable);
 
 }

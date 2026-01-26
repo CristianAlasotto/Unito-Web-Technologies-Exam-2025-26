@@ -25,7 +25,7 @@ public class PersonAnimeWorks {
     public PersonAnimeWorks() {
     }
 
-    public PersonAnimeWorks(Integer personMalId, String position, Integer anime_mal_id) {
+    public PersonAnimeWorks(Integer personMalId, String position, Integer animeMalId) {
         this.personMalId = personMalId;
         this.position = position;
         this.animeMalId = animeMalId;
@@ -74,7 +74,7 @@ public class PersonAnimeWorks {
         public PersonAnimeWorksId() {
         }
 
-        public PersonAnimeWorksId(Integer personMalId, String position, Integer anime_mal_id) {
+        public PersonAnimeWorksId(Integer personMalId, String position, Integer animeMalId) {
             this.personMalId = personMalId;
             this.position = position;
             this.animeMalId = animeMalId;

@@ -20,7 +20,7 @@ public class PersonAnimeWorksService {
         return repository.count();
     }
 
-    public Page<PersonAnimeWorks> findWithFilters(String search, String position, Integer person_mal_id, Integer anime_mal_id, Pageable pageable) {
+    public Page<PersonAnimeWorks> findWithFilters(String search, String position, Integer personMalId, Integer animeMalId, Pageable pageable) {
         if (search != null && !search.isEmpty()) {
             return repository.searchByPosition(search, pageable);
         }
@@ -29,12 +29,12 @@ public class PersonAnimeWorksService {
             return repository.findByPosition(position, pageable);
         }
 
-        if (person_mal_id != null) {
-            return repository.findByPersonMalId(person_mal_id, pageable);
+        if (personMalId != null) {
+            return repository.findByPersonMalId(personMalId, pageable);
         }
 
-        if (anime_mal_id != null) {
-            return repository.findByAnimeMalId(anime_mal_id, pageable);
+        if (animeMalId != null) {
+            return repository.findByAnimeMalId(animeMalId, pageable);
         }
 
         return repository.findAll(pageable);

@@ -19,6 +19,6 @@ public interface PersonAlternateNamesRepository extends JpaRepository<PersonAlte
     /**
      * Find by person_mal_id
      */
-    Page<PersonAlternateNames> findByPersonMalId(Integer person_mal_id, Pageable pageable);
+    Page<PersonAlternateNames> findByPersonMalId(Integer personMalId, Pageable pageable);
 
 }

@@ -29,16 +29,16 @@ public interface PersonVoiceWorksRepository extends JpaRepository<PersonVoiceWor
     /**
      * Find by person_mal_id
      */
-    Page<PersonVoiceWorks> findByPersonMalId(Integer person_mal_id, Pageable pageable);
+    Page<PersonVoiceWorks> findByPersonMalId(Integer personMalId, Pageable pageable);
 
     /**
      * Find by character_mal_id
      */
-    Page<PersonVoiceWorks> findByCharacterMalId(Integer character_mal_id, Pageable pageable);
+    Page<PersonVoiceWorks> findByCharacterMalId(Integer characterMalId, Pageable pageable);
 
     /**
      * Find by anime_mal_id
      */
-    Page<PersonVoiceWorks> findByAnimeMalId(Integer anime_mal_id, Pageable pageable);
+    Page<PersonVoiceWorks> findByAnimeMalId(Integer animeMalId, Pageable pageable);
 
 }

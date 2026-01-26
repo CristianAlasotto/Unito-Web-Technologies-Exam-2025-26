@@ -24,15 +24,15 @@ public class CharactersController {
 
     @GetMapping("/{character_mal_id}")
     public ResponseEntity<?> getById(
-            @PathVariable Integer character_mal_id,
+            @PathVariable Integer characterMalId,
             @RequestParam(required = false) String fields) {
         
-        Optional<Characters> entity = service.getById(character_mal_id);
+        Optional<Characters> entity = service.getById(characterMalId);
         
         if (entity.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "Characters not found");
-            error.put("character_mal_id", character_mal_id);
+            error.put("character_mal_id", characterMalId);
             return ResponseEntity.status(404).body(error);
         }
         
@@ -48,8 +48,8 @@ public class CharactersController {
     }
 
     @GetMapping("/{character_mal_id}/summary")
-    public ResponseEntity<?> getSummary(@PathVariable Integer character_mal_id) {
-        Optional<Characters> entity = service.getById(character_mal_id);
+    public ResponseEntity<?> getSummary(@PathVariable Integer characterMalId) {
+        Optional<Characters> entity = service.getById(characterMalId);
         
         if (entity.isEmpty()) {
             return ResponseEntity.status(404).build();

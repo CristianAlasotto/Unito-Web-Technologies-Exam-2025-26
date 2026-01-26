@@ -45,16 +45,16 @@ public class DetailsController {
 
     @GetMapping("/{mal_id}")
     public ResponseEntity<?> getById(
-            @PathVariable Integer mal_id,
+            @PathVariable Integer malId,
             @RequestParam(required = false) String fields,
             @RequestParam(required = false) String include) {
         
-        Optional<Details> entity = service.getById(mal_id);
+        Optional<Details> entity = service.getById(malId);
         
         if (entity.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "Details not found");
-            error.put("mal_id", mal_id);
+            error.put("mal_id", malId);
             return ResponseEntity.status(404).body(error);
         }
         
@@ -63,7 +63,7 @@ public class DetailsController {
         // Handle relation expansion
         if (include != null && !include.isEmpty()) {
             Map<String, Object> result = toSnakeCaseMap(data);
-            expandRelations(mal_id, include, result);
+            expandRelations(malId, include, result);
             
             // Apply field selection if requested
             if (fields != null && !fields.isEmpty()) {
@@ -83,8 +83,8 @@ public class DetailsController {
     }
 
     @GetMapping("/{mal_id}/summary")
-    public ResponseEntity<?> getSummary(@PathVariable Integer mal_id) {
-        Optional<Details> entity = service.getById(mal_id);
+    public ResponseEntity<?> getSummary(@PathVariable Integer malId) {
+        Optional<Details> entity = service.getById(malId);
         
         if (entity.isEmpty()) {
             return ResponseEntity.status(404).build();
@@ -244,18 +244,18 @@ public class DetailsController {
      * Expand relations based on include parameter
      * Supports: characters, staff
      */
-    private void expandRelations(Integer mal_id, String include, Map<String, Object> result) {
+    private void expandRelations(Integer malId, String include, Map<String, Object> result) {
         String[] relations = include.split(",");
         
         for (String relation : relations) {
             relation = relation.trim();
             
             if ("characters".equals(relation)) {
-                List<Map<String, Object>> characters = getCharactersForAnime(mal_id);
+                List<Map<String, Object>> characters = getCharactersForAnime(malId);
                 result.put("characters", characters);
             }
             else if ("staff".equals(relation)) {
-                List<Map<String, Object>> staff = getStaffForAnime(mal_id);
+                List<Map<String, Object>> staff = getStaffForAnime(malId);
                 result.put("staff", staff);
             }
         }
@@ -264,12 +264,12 @@ public class DetailsController {
     /**
      * Get all characters for an anime
      */
-    private List<Map<String, Object>> getCharactersForAnime(Integer mal_id) {
+    private List<Map<String, Object>> getCharactersForAnime(Integer malId) {
         List<Map<String, Object>> characters = new ArrayList<>();
         
         // Find all character_anime_works entries for this anime
         List<CharacterAnimeWorks> works = characterAnimeWorksRepository
-            .findByAnimeMalId(mal_id, Pageable.unpaged())
+            .findByAnimeMalId(malId, Pageable.unpaged())
             .getContent();
         
         for (CharacterAnimeWorks work : works) {
@@ -293,12 +293,12 @@ public class DetailsController {
     /**
      * Get all staff for an anime
      */
-    private List<Map<String, Object>> getStaffForAnime(Integer mal_id) {
+    private List<Map<String, Object>> getStaffForAnime(Integer malId) {
         List<Map<String, Object>> staff = new ArrayList<>();
         
         // Find all person_anime_works entries for this anime
         List<PersonAnimeWorks> works = personAnimeWorksRepository
-            .findByAnimeMalId(mal_id, Pageable.unpaged())
+            .findByAnimeMalId(malId, Pageable.unpaged())
             .getContent();
         
         for (PersonAnimeWorks work : works) {

@@ -27,7 +27,7 @@ public class CharacterNicknamesController {
             @RequestParam(required = false) String fields,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
-            @RequestParam(required = false) Integer character_mal_id,
+            @RequestParam(required = false) Integer characterMalId,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -45,7 +45,7 @@ public class CharacterNicknamesController {
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
             Page<CharacterNicknames> pageResult = service.findWithFilters(
                 search,
-                character_mal_id,
+                characterMalId,
                 pageable);
             
             List<CharacterNicknames> results = pageResult.getContent();
@@ -82,7 +82,7 @@ public class CharacterNicknamesController {
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<CharacterNicknames> pageResult = service.findWithFilters(
                 search,
-                character_mal_id,
+                characterMalId,
                 pageable);
             
             List<CharacterNicknames> results = pageResult.getContent();
@@ -116,7 +116,7 @@ public class CharacterNicknamesController {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
             Page<CharacterNicknames> pageResult = service.findWithFilters(
                 search,
-                character_mal_id,
+                characterMalId,
                 pageable);
             
             List<CharacterNicknames> results = pageResult.getContent();
@@ -141,6 +141,83 @@ public class CharacterNicknamesController {
         Map<String, Object> stats = new HashMap<>();
         stats.put("total", service.count());
         return ResponseEntity.ok(stats);
+    }
+
+
+    /**
+     * Get single resource by composite key (using query parameters)
+     * GET /api/character_nicknames/single?character_mal_id&nickname
+     */
+    @GetMapping("/single")
+    public ResponseEntity<?> getSingle(
+            @RequestParam(required = false) Integer characterMalId,
+            @RequestParam(required = false) String nickname,
+            @RequestParam(required = false) String fields) {
+        
+        // Check if all key fields are provided
+        if (characterMalId == null || nickname == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "All key fields required: characterMalId, nickname");
+            error.put("usage", "GET /api/character_nicknames/single?character_mal_id&nickname");
+            return ResponseEntity.status(400).body(error);
+        }
+        
+        // Create composite key
+        CharacterNicknames.CharacterNicknamesId id = new CharacterNicknames.CharacterNicknamesId(characterMalId, nickname);
+        Optional<CharacterNicknames> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "CharacterNicknames not found");
+            error.put("character_mal_id", characterMalId); error.put("nickname", nickname);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        CharacterNicknames data = entity.get();
+        
+        if (fields != null && !fields.isEmpty()) {
+            Map<String, Object> filtered = filterFields(data, fields);
+            return ResponseEntity.ok(filtered);
+        }
+        
+        return ResponseEntity.ok(toSnakeCaseMap(data));
+    }
+
+
+    /**
+     * Get summary by composite key (using query parameters)
+     * GET /api/character_nicknames/summary?character_mal_id&nickname
+     */
+    @GetMapping("/summary")
+    public ResponseEntity<?> getSummary(
+            @RequestParam(required = false) Integer characterMalId,
+            @RequestParam(required = false) String nickname) {
+        
+        // Check if all key fields are provided
+        if (characterMalId == null || nickname == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "All key fields required: characterMalId, nickname");
+            error.put("usage", "GET /api/character_nicknames/summary?character_mal_id&nickname");
+            return ResponseEntity.status(400).body(error);
+        }
+        
+        // Create composite key
+        CharacterNicknames.CharacterNicknamesId id = new CharacterNicknames.CharacterNicknamesId(characterMalId, nickname);
+        Optional<CharacterNicknames> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "CharacterNicknames not found");
+            error.put("character_mal_id", characterMalId); error.put("nickname", nickname);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        CharacterNicknames data = entity.get();
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("character_mal_id", data.getCharacterMalId());
+        summary.put("nickname", data.getNickname());
+        
+        return ResponseEntity.ok(summary);
     }
 
     private Map<String, Object> toSnakeCaseMap(CharacterNicknames entity) {

@@ -20,17 +20,17 @@ public class RecommendationsService {
         return repository.count();
     }
 
-    public Page<Recommendations> findWithFilters(String search, Integer mal_id, Integer recommendation_mal_id, Pageable pageable) {
+    public Page<Recommendations> findWithFilters(String search, Integer malId, Integer recommendationMalId, Pageable pageable) {
         if (search != null && !search.isEmpty()) {
             return repository.searchByMalId(search, pageable);
         }
 
-        if (mal_id != null) {
-            return repository.findByMalId(mal_id, pageable);
+        if (malId != null) {
+            return repository.findByMalId(malId, pageable);
         }
 
-        if (recommendation_mal_id != null) {
-            return repository.findByRecommendationMalId(recommendation_mal_id, pageable);
+        if (recommendationMalId != null) {
+            return repository.findByRecommendationMalId(recommendationMalId, pageable);
         }
 
         return repository.findAll(pageable);

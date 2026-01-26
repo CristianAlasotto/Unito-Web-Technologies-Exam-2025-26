@@ -29,9 +29,9 @@ public class PersonVoiceWorksController {
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String language,
             @RequestParam(required = false) String role,
-            @RequestParam(required = false) Integer person_mal_id,
-            @RequestParam(required = false) Integer character_mal_id,
-            @RequestParam(required = false) Integer anime_mal_id,
+            @RequestParam(required = false) Integer personMalId,
+            @RequestParam(required = false) Integer characterMalId,
+            @RequestParam(required = false) Integer animeMalId,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -49,7 +49,7 @@ public class PersonVoiceWorksController {
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
             Page<PersonVoiceWorks> pageResult = service.findWithFilters(
                 search,
-                language, role, person_mal_id, character_mal_id, anime_mal_id,
+                language, role, personMalId, characterMalId, animeMalId,
                 pageable);
             
             List<PersonVoiceWorks> results = pageResult.getContent();
@@ -86,7 +86,7 @@ public class PersonVoiceWorksController {
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<PersonVoiceWorks> pageResult = service.findWithFilters(
                 search,
-                language, role, person_mal_id, character_mal_id, anime_mal_id,
+                language, role, personMalId, characterMalId, animeMalId,
                 pageable);
             
             List<PersonVoiceWorks> results = pageResult.getContent();
@@ -120,7 +120,7 @@ public class PersonVoiceWorksController {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
             Page<PersonVoiceWorks> pageResult = service.findWithFilters(
                 search,
-                language, role, person_mal_id, character_mal_id, anime_mal_id,
+                language, role, personMalId, characterMalId, animeMalId,
                 pageable);
             
             List<PersonVoiceWorks> results = pageResult.getContent();
@@ -145,6 +145,90 @@ public class PersonVoiceWorksController {
         Map<String, Object> stats = new HashMap<>();
         stats.put("total", service.count());
         return ResponseEntity.ok(stats);
+    }
+
+
+    /**
+     * Get single resource by composite key (using query parameters)
+     * GET /api/person_voice_works/single?person_mal_id&character_mal_id&anime_mal_id&language
+     */
+    @GetMapping("/single")
+    public ResponseEntity<?> getSingle(
+            @RequestParam(required = false) Integer personMalId,
+            @RequestParam(required = false) Integer characterMalId,
+            @RequestParam(required = false) Integer animeMalId,
+            @RequestParam(required = false) String language,
+            @RequestParam(required = false) String fields) {
+        
+        // Check if all key fields are provided
+        if (personMalId == null || characterMalId == null || animeMalId == null || language == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "All key fields required: person_mal_id, character_mal_id, anime_mal_id, language");
+            error.put("usage", "GET /api/person_voice_works/single?person_mal_id&character_mal_id&anime_mal_id&language");
+            return ResponseEntity.status(400).body(error);
+        }
+        
+        // Create composite key
+        PersonVoiceWorks.PersonVoiceWorksId id = new PersonVoiceWorks.PersonVoiceWorksId(personMalId, characterMalId, animeMalId, language);
+        Optional<PersonVoiceWorks> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "PersonVoiceWorks not found");
+            error.put("person_mal_id", personMalId); error.put("character_mal_id", characterMalId); error.put("anime_mal_id", animeMalId); error.put("language", language);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        PersonVoiceWorks data = entity.get();
+        
+        if (fields != null && !fields.isEmpty()) {
+            Map<String, Object> filtered = filterFields(data, fields);
+            return ResponseEntity.ok(filtered);
+        }
+        
+        return ResponseEntity.ok(toSnakeCaseMap(data));
+    }
+
+
+    /**
+     * Get summary by composite key (using query parameters)
+     * GET /api/person_voice_works/summary?person_mal_id&character_mal_id&anime_mal_id&language
+     */
+    @GetMapping("/summary")
+    public ResponseEntity<?> getSummary(
+            @RequestParam(required = false) Integer personMalId,
+            @RequestParam(required = false) Integer characterMalId,
+            @RequestParam(required = false) Integer animeMalId,
+            @RequestParam(required = false) String language) {
+        
+        // Check if all key fields are provided
+        if (personMalId == null || characterMalId == null || animeMalId == null || language == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "All key fields required: person_mal_id, character_mal_id, anime_mal_id, language");
+            error.put("usage", "GET /api/person_voice_works/summary?person_mal_id&character_mal_id&anime_mal_id&language");
+            return ResponseEntity.status(400).body(error);
+        }
+        
+        // Create composite key
+        PersonVoiceWorks.PersonVoiceWorksId id = new PersonVoiceWorks.PersonVoiceWorksId(personMalId, characterMalId, animeMalId, language);
+        Optional<PersonVoiceWorks> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "PersonVoiceWorks not found");
+            error.put("person_mal_id", personMalId); error.put("character_mal_id", characterMalId); error.put("anime_mal_id", animeMalId); error.put("language", language);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        PersonVoiceWorks data = entity.get();
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("person_mal_id", data.getPersonMalId());
+        summary.put("character_mal_id", data.getCharacterMalId());
+        summary.put("anime_mal_id", data.getAnimeMalId());
+        summary.put("role", data.getRole());
+        summary.put("language", data.getLanguage());
+        
+        return ResponseEntity.ok(summary);
     }
 
     private Map<String, Object> toSnakeCaseMap(PersonVoiceWorks entity) {
