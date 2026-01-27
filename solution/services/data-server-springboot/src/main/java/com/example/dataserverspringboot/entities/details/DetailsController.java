@@ -45,7 +45,7 @@ public class DetailsController {
 
     @GetMapping("/{mal_id}")
     public ResponseEntity<?> getById(
-            @PathVariable Integer malId,
+            @PathVariable("mal_id") Integer malId,
             @RequestParam(required = false) String fields,
             @RequestParam(required = false) String include) {
         
@@ -83,7 +83,7 @@ public class DetailsController {
     }
 
     @GetMapping("/{mal_id}/summary")
-    public ResponseEntity<?> getSummary(@PathVariable Integer malId) {
+    public ResponseEntity<?> getSummary(@PathVariable("mal_id") Integer malId) {
         Optional<Details> entity = service.getById(malId);
         
         if (entity.isEmpty()) {
@@ -115,8 +115,8 @@ public class DetailsController {
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer pageSize) {
         
-        boolean useLimitOffset = (limit != null || offset != null);
         boolean usePageBased = (page != null || pageSize != null);
+        boolean useLimitOffset = (limit != null || offset != null) && !usePageBased;
         
         Sort sortObj = parseSortParameter(sort);
         
@@ -164,7 +164,7 @@ public class DetailsController {
             
         } else if (usePageBased) {
             int finalPage = (page != null) ? page : 1;
-            int finalPageSize = (pageSize != null) ? pageSize : 10;
+            int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
             
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<Details> pageResult = service.findWithFilters(
