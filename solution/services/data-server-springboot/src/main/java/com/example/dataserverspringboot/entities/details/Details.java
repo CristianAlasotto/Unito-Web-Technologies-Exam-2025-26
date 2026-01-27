@@ -100,43 +100,6 @@ public class Details {
     public Details() {
     }
 
-    public Details(Integer malId, String title, String titleJapanese, String url, String imageUrl,
-                   String type, String status, BigDecimal score, Integer scoredBy, LocalDate startDate,
-                   LocalDate endDate, String synopsis, Integer rank, Integer popularity, Integer members,
-                   Integer favorites, String genres, String studios, String themes, String demographics,
-                   String source, String rating, Integer episodes, String season, Integer year,
-                   String producers, String explicitGenres, String licensors, String streaming) {
-        this.malId = malId;
-        this.title = title;
-        this.titleJapanese = titleJapanese;
-        this.url = url;
-        this.imageUrl = imageUrl;
-        this.type = type;
-        this.status = status;
-        this.score = score;
-        this.scoredBy = scoredBy;
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.synopsis = synopsis;
-        this.rank = rank;
-        this.popularity = popularity;
-        this.members = members;
-        this.favorites = favorites;
-        this.genres = genres;
-        this.studios = studios;
-        this.themes = themes;
-        this.demographics = demographics;
-        this.source = source;
-        this.rating = rating;
-        this.episodes = episodes;
-        this.season = season;
-        this.year = year;
-        this.producers = producers;
-        this.explicitGenres = explicitGenres;
-        this.licensors = licensors;
-        this.streaming = streaming;
-    }
-
     // Getters and Setters
     public Integer getMalId() {
         return malId;
@@ -174,7 +137,7 @@ public class Details {
         return imageUrl;
     }
 
-    public void setImageUrl(String imageUrl) {
+    public void setImageUrl(String image_url) {
         this.imageUrl = imageUrl;
     }
 

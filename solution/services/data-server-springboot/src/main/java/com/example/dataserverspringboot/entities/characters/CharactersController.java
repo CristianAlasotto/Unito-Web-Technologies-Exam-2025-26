@@ -24,7 +24,7 @@ public class CharactersController {
 
     @GetMapping("/{character_mal_id}")
     public ResponseEntity<?> getById(
-            @PathVariable Integer characterMalId,
+            @PathVariable("character_mal_id") Integer characterMalId,
             @RequestParam(required = false) String fields) {
         
         Optional<Characters> entity = service.getById(characterMalId);
@@ -48,7 +48,7 @@ public class CharactersController {
     }
 
     @GetMapping("/{character_mal_id}/summary")
-    public ResponseEntity<?> getSummary(@PathVariable Integer characterMalId) {
+    public ResponseEntity<?> getSummary(@PathVariable("character_mal_id") Integer characterMalId) {
         Optional<Characters> entity = service.getById(characterMalId);
         
         if (entity.isEmpty()) {
@@ -76,8 +76,8 @@ public class CharactersController {
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer pageSize) {
         
-        boolean useLimitOffset = (limit != null || offset != null);
         boolean usePageBased = (page != null || pageSize != null);
+        boolean useLimitOffset = (limit != null || offset != null) && !usePageBased;
         
         Sort sortObj = parseSortParameter(sort);
         
@@ -121,7 +121,7 @@ public class CharactersController {
             
         } else if (usePageBased) {
             int finalPage = (page != null) ? page : 1;
-            int finalPageSize = (pageSize != null) ? pageSize : 10;
+            int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
             
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<Characters> pageResult = service.findWithFilters(
