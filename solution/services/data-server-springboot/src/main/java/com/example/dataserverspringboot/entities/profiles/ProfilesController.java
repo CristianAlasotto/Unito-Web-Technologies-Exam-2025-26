@@ -24,7 +24,7 @@ public class ProfilesController {
 
     @GetMapping("/{username}")
     public ResponseEntity<?> getById(
-            @PathVariable("username") String username,
+            @PathVariable String username,
             @RequestParam(required = false) String fields) {
         
         Optional<Profiles> entity = service.getById(username);
@@ -48,7 +48,7 @@ public class ProfilesController {
     }
 
     @GetMapping("/{username}/summary")
-    public ResponseEntity<?> getSummary(@PathVariable("username") String username) {
+    public ResponseEntity<?> getSummary(@PathVariable String username) {
         Optional<Profiles> entity = service.getById(username);
         
         if (entity.isEmpty()) {
@@ -78,8 +78,8 @@ public class ProfilesController {
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer pageSize) {
         
+        boolean useLimitOffset = (limit != null || offset != null);
         boolean usePageBased = (page != null || pageSize != null);
-        boolean useLimitOffset = (limit != null || offset != null) && !usePageBased;
         
         Sort sortObj = parseSortParameter(sort);
         
@@ -124,7 +124,7 @@ public class ProfilesController {
             
         } else if (usePageBased) {
             int finalPage = (page != null) ? page : 1;
-            int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
+            int finalPageSize = (pageSize != null) ? pageSize : 10;
             
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<Profiles> pageResult = service.findWithFilters(
