@@ -28,7 +28,9 @@ const StatSchema = new mongoose.Schema({
     score_9_votes: Number,
     score_9_percentage: Number,
     score_10_votes: Number,
-    score_10_percentage: Number
+    score_10_percentage: Number,
+
+    createdAt: { type: Date, default: Date.now }
 }, {
     collection: 'stats'
 });
