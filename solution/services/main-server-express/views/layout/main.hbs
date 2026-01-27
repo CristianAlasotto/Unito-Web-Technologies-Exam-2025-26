@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{title}} - Anime DB</title>
+  <link rel="icon" href="/images/logo.png" type="image/png">
   <link rel="stylesheet" href="/css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +17,7 @@
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/navbar.css">
   <link rel="stylesheet" href="/css/hero.css">
+  <link rel="stylesheet" href="/css/carousels.css">
   <link rel="stylesheet" href="/css/footer.css">
 
   <!-- CSS for reusable components -->
@@ -25,14 +27,24 @@
   <!-- Page-specific CSS (optional, if different for each route) -->
   <link rel="stylesheet" href="/css/pages/anime.css">
   <link rel="stylesheet" href="/css/pages/characters.css">
+  <link rel="stylesheet" href="/css/pages/staff.css">
   {{#if currentPage}}
   <link rel="stylesheet" href="/css/pages/{{currentPage}}.css">
   {{/if}}
 
+</head>
+
 <body>
   <nav class="navbar">
     <div class="container">
-      <h1 class="logo">Anime Database</h1>
+      <div class="logo-container">
+        <div>
+          <img src="/images/logo.png" alt="Logo" class="logo-img">
+        </div>
+        <div>
+          <h1 class="logo_title">Anime Database</h1>
+        </div>
+      </div>
       <ul class="nav-links">
         <li><a href="/">home</a></li>
         <li><a href="/anime">anime</a></li>
@@ -53,7 +65,8 @@
     <p>&copy; 2025 Anime Database. All rights reserved.</p>
   </footer>
 
-  {{!-- <script src="/js/main.js"></script> --}}
+  {{!--
+  <script src="/js/main.js"></script> --}}
 </body>
 
 </html>

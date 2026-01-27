@@ -16,20 +16,34 @@
   <section class="anime-grid">
     {{#each animes}}
     <article class="anime-card">
-      <a href="/anime/{{this.anime_id}}">
+      <a href="/anime/{{this.id}}">
         <img src="{{this.image_url}}" alt="{{this.title}}" />
-        <h3>{{this.title}}</h3>
-        <div class="anime-info">
-          <span class="score">⭐ {{this.score}}</span>
-          <span class="type">{{this.type}}</span>
-          <span class="episodes">{{this.episodes}} eps</span>
+        <div class="anime-card-content">
+          <h3>{{this.title}}</h3>
+          <div class="anime-info">
+            {{#if this.score}}<span>Score {{this.score}}</span>{{/if}}
+            {{#if this.type}}<span>{{this.type}}</span>{{/if}}
+            {{#if this.episodes}}<span>{{this.episodes}} eps</span>{{/if}}
+          </div>
         </div>
       </a>
     </article>
     {{/each}}
   </section>
+
+  {{#if pagination}}
+  <nav class="pagination" aria-label="Pagination">
+    {{#if pagination.hasPrev}}
+    <a href="/anime?page={{pagination.prevPage}}" class="pagination-btn">← Previous</a>
+    {{/if}}
+    <span class="page-info">Page {{pagination.currentPage}} of {{pagination.totalPages}}</span>
+    {{#if pagination.hasNext}}
+    <a href="/anime?page={{pagination.nextPage}}" class="pagination-btn">Next →</a>
+    {{/if}}
+  </nav>
+  {{/if}}
   {{else}}
-  {{#unless warning}} {{! Mostra questo solo se non c'è già un avviso }}
+  {{#unless warning}}
   <p class="no-data">No anime available at the moment.</p>
   {{/unless}}
   {{/if}}
