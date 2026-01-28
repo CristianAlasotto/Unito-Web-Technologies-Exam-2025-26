@@ -117,6 +117,16 @@
 			{{/if}}
 		</div>
 
+		<br>
+		<section class="recommendations">
+			<h3>Recommended Animes</h3>
+			{{#if character.recommendations}}
+			{{> anime_carousel_items items=character.recommendations}}
+			{{else}}
+			<p>No recommendations available.</p>
+			{{/if}}
+		</section>
+
 		{{#if anime.url}}
 		<a href="{{anime.url}}" target="_blank" class="mal-link">
 			View on MyAnimeList

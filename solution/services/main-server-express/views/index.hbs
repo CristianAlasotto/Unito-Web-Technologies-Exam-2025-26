@@ -27,16 +27,7 @@
   {{/if}}
 
   <div class="carousel-container">
-    {{#each popularAnimes}}
-    <div class="card">
-      <a href="/anime/{{this.mal_id}}">
-        <img src="{{this.image_url}}" alt="{{this.title}}">
-        <div class="card-body">
-          <p>{{this.title}}</p>
-        </div>
-      </a>
-    </div>
-    {{/each}}
+    {{> anime_carousel_items items=popularAnimes}}
   </div>
 
   {{#if animeCarousel.hasNext}}
@@ -57,16 +48,7 @@
   {{/if}}
 
   <div class="carousel-container">
-    {{#each popularCharacters}}
-    <div class="card">
-      <a href="/characters/{{this.character_mal_id}}">
-        <img src="{{this.image}}" alt="{{this.name}}">
-        <div class="card-body">
-          <p>{{this.name}}</p>
-        </div>
-      </a>
-    </div>
-    {{/each}}
+    {{> characters_carousel_items items=popularCharacters}}
   </div>
 
   {{#if characterCarousel.hasNext}}
@@ -87,16 +69,7 @@
   {{/if}}
 
   <div class="carousel-container">
-    {{#each popularStaff}}
-    <div class="card">
-      <a href="/staff/{{this.mal_id}}">
-        <img src="{{this.image_url}}" alt="{{this.name}}">
-        <div class="card-body">
-          <p>{{this.name}}</p>
-        </div>
-      </a>
-    </div>
-    {{/each}}
+    {{> staff_carousel_items items=popularStaff}}
   </div>
 
   {{#if staffCarousel.hasNext}}
@@ -112,82 +85,84 @@
 
     carousels.forEach(carousel => {
       const carouselId = carousel.id;
-      const prevButton = carousel.querySelector('.btn-left');
-      const nextButton = carousel.querySelector('.btn-right');
 
-      if (prevButton) {
-        prevButton.addEventListener('click', () => {
-          const page = prevButton.dataset.prevPage;
-          fetchCarouselData(carouselId, page);
-        });
-      }
-
-      if (nextButton) {
-        nextButton.addEventListener('click', () => {
-          const page = nextButton.dataset.nextPage;
-          fetchCarouselData(carouselId, page);
-        });
-      }
-    });
-
-    async function fetchCarouselData(carouselId, page) {
-      const carousel = document.getElementById(carouselId);
-      const pageSize = carousel.dataset.pageSize;
-      const type = carouselId.split('-')[0]; // anime, character, or staff
-
-      try {
-        const response = await fetch(`/carousel/${type}?page=${page}&pageSize=${pageSize}`);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-
-        const carouselContainer = carousel.querySelector('.carousel-container');
-        carouselContainer.innerHTML = data.html;
-
-        carousel.dataset.currentPage = data.currentPage;
-
+      const updateButtons = () => {
         const prevButton = carousel.querySelector('.btn-left');
-        if (data.hasPrev) {
-          if (prevButton) {
+        const nextButton = carousel.querySelector('.btn-right');
+
+        if (prevButton) {
+          prevButton.addEventListener('click', () => {
+            const page = prevButton.dataset.prevPage;
+            fetchCarouselData(carouselId, page);
+          }, { once: true }); // Avoid multiple clicks
+        }
+
+        if (nextButton) {
+          nextButton.addEventListener('click', () => {
+            const page = nextButton.dataset.nextPage;
+            fetchCarouselData(carouselId, page);
+          }, { once: true }); // Avoid multiple clicks
+        }
+      }
+
+      updateButtons();
+
+      async function fetchCarouselData(carouselId, page) {
+        const carousel = document.getElementById(carouselId);
+        const pageSize = carousel.dataset.pageSize;
+        const type = carouselId.split('-')[0]; // anime, character, or staff
+
+        try {
+          const response = await fetch(`/?carouselType=${type}&page=${page}&pageSize=${pageSize}`);
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const data = await response.json();
+
+          const carouselContainer = carousel.querySelector('.carousel-container');
+          carouselContainer.innerHTML = data.html;
+
+          carousel.dataset.currentPage = data.currentPage;
+
+          // Update or create prev button
+          let prevButton = carousel.querySelector('.btn-left');
+          if (data.hasPrev) {
+            if (!prevButton) {
+              prevButton = document.createElement('button');
+              prevButton.className = 'btn-left';
+              carousel.insertBefore(prevButton, carouselContainer);
+            }
+            prevButton.innerHTML = '←';
             prevButton.dataset.prevPage = data.prevPage;
             prevButton.style.display = 'block';
-          } else {
-            const newPrevButton = document.createElement('button');
-            newPrevButton.className = 'btn-left';
-            newPrevButton.dataset.prevPage = data.prevPage;
-            newPrevButton.innerHTML = '←';
-            newPrevButton.addEventListener('click', () => fetchCarouselData(carouselId, data.prevPage));
-            carousel.insertBefore(newPrevButton, carouselContainer);
-          }
-        } else {
-          if (prevButton) {
+          } else if (prevButton) {
             prevButton.style.display = 'none';
           }
-        }
 
-        const nextButton = carousel.querySelector('.btn-right');
-        if (data.hasNext) {
-          if (nextButton) {
+          // Update or create next button
+          let nextButton = carousel.querySelector('.btn-right');
+          if (data.hasNext) {
+            if (!nextButton) {
+              nextButton = document.createElement('button');
+              nextButton.className = 'btn-right';
+              carousel.appendChild(nextButton);
+            }
+            nextButton.innerHTML = '→';
             nextButton.dataset.nextPage = data.nextPage;
             nextButton.style.display = 'block';
-          } else {
-            const newNextButton = document.createElement('button');
-            newNextButton.className = 'btn-right';
-            newNextButton.dataset.nextPage = data.nextPage;
-            newNextButton.innerHTML = '→';
-            newNextButton.addEventListener('click', () => fetchCarouselData(carouselId, data.nextPage));
-            carousel.appendChild(newNextButton);
-          }
-        } else {
-          if (nextButton) {
+          } else if (nextButton) {
             nextButton.style.display = 'none';
           }
-        }
 
-      } catch (error) {
-        console.error('Failed to fetch carousel data:', error);
+          // Re-attach event listeners to the new/updated buttons
+          updateButtons();
+
+        } catch (error) {
+          console.error('Failed to fetch carousel data:', error);
+          const carouselContainer = carousel.querySelector('.carousel-container');
+          carouselContainer.innerHTML = '<p class="error-message">Error loading items.</p>';
+        }
       }
-    }
+    });
   });
 </script>

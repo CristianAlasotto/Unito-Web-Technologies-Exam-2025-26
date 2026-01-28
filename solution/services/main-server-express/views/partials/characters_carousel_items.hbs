@@ -1,0 +1,10 @@
+{{#each items}}
+<div class="card">
+  <a href="/characters/{{this.character_mal_id}}">
+    <img src="{{this.image}}" alt="{{this.name}}">
+    <div class="card-body">
+      <p>{{this.name}}</p>
+    </div>
+  </a>
+</div>
+{{/each}}

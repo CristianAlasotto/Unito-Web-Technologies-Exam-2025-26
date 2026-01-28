@@ -1,6 +1,5 @@
 const { apiPostgres } = require('./apiClients.js');
 
-// Lista di tutti i personaggi
 exports.list = async (req, res, next) => {
 	try {
 		const page = req.query.page || 1;
@@ -32,7 +31,6 @@ exports.list = async (req, res, next) => {
 	}
 };
 
-// Dettaglio di un personaggio
 exports.detail = async (req, res, next) => {
 	try {
 		const { id } = req.params;

@@ -2,7 +2,6 @@ const { apiPostgres } = require('./apiClients');
 
 // NB anime = "details"
 
-// details?page for anime
 exports.list = async (req, res, next) => {
   try {
     const page = req.query.page || 1;
@@ -25,7 +24,6 @@ exports.list = async (req, res, next) => {
       warning: !animes || animes.length === 0 ? 'Nessun anime trovato nel database.' : null
     });
   } catch (err) {
-    // Se c'è un errore (es. il server non risponde), puoi mostrare un messaggio di errore
     res.render('anime/anime_list', {
       title: 'Anime',
       animes: [],
@@ -35,7 +33,6 @@ exports.list = async (req, res, next) => {
   }
 };
 
-// Dettaglio di un anime
 exports.detail = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -50,6 +47,25 @@ exports.detail = async (req, res, next) => {
       title: 'Anime Detail',
       anime: null,
       error: 'Impossibile caricare i dettagli dell\'anime. Il server potrebbe non essere disponibile.'
+    });
+  }
+};
+
+exports.reccomendations = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const response = await apiPostgres.get(`/api/details/${id}/recommendations`);
+    //const response = await apiPostgres.get(`/api/details/${id}/recommendations`);
+    res.render('anime/anime_recommendations', {
+      title: `Recommendations for ${response.data.title}`,
+      recommendations: response.data.recommendations,
+      currentPage: 'anime'
+    });
+  } catch (err) {
+    res.render('anime/anime_recommendations', {
+      title: 'Recommendations',
+      recommendations: null,
+      error: 'Impossibile caricare i consigli dell\'anime. Il server potrebbe non essere disponibile.'
     });
   }
 };

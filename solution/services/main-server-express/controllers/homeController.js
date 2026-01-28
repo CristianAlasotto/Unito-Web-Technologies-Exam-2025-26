@@ -1,11 +1,58 @@
 const { apiPostgres } = require('./apiClients');
 
+const getApiEndpoint = (type) => {
+  switch (type) {
+    case 'anime':
+      return '/api/details';
+    case 'character':
+      return '/api/characters';
+    case 'staff':
+      return '/api/person_details';
+    default:
+      return null;
+  }
+};
+
 exports.preview = async (req, res, next) => {
   try {
+    const { carouselType, page, pageSize: pageSizeQuery } = req.query;
+    const pageSize = parseInt(pageSizeQuery || "7", 10);
+
+    // Handle AJAX request for a single carousel
+    if (carouselType) {
+      const endpoint = getApiEndpoint(carouselType);
+      if (!endpoint) {
+        return res.status(400).json({ error: 'Invalid carousel type' });
+      }
+
+      const currentPage = parseInt(page || '1', 10);
+      const response = await apiPostgres.get(`${endpoint}?page=${currentPage}&pageSize=${pageSize}`);
+      const items = response.data.items || [];
+      const totalPages = response.data.totalPages || 1;
+
+      const partialName = carouselType === 'character' ? 'characters' : carouselType;
+
+      return res.render(`partials/${partialName}_carousel_items`, { layout: false, items }, (err, html) => {
+        if (err) {
+          console.error('Error rendering partial:', err);
+          return next(err);
+        }
+        res.json({
+          html,
+          currentPage,
+          totalPages,
+          hasPrev: currentPage > 1,
+          prevPage: currentPage - 1,
+          hasNext: currentPage < totalPages,
+          nextPage: currentPage + 1,
+        });
+      });
+    }
+
+    // Handle initial page load
     const animesPage = parseInt(req.query.animesPage || "1", 10);
     const charactersPage = parseInt(req.query.charactersPage || "1", 10);
     const staffPage = parseInt(req.query.staffPage || "1", 10);
-    const pageSize = parseInt(req.query.pageSize || "7", 10);
 
     const popularAnimesPromise = apiPostgres.get(
       `/api/details?page=${animesPage}&pageSize=${pageSize}`
@@ -72,6 +119,10 @@ exports.preview = async (req, res, next) => {
     });
   } catch (err) {
     console.error(err);
+    // Check if it was an AJAX request to send appropriate error
+    if (req.query.carouselType) {
+        return res.status(500).json({ error: 'Could not fetch data for carousel.' });
+    }
     res.render("index", {
       title: "Home",
       popularAnimes: [],

@@ -32,6 +32,6 @@ brew install jq
 ### Curl command example:
 ```bash
 curl "http://localhost:8080/api/details" | jq
-```
+```./spring_start.sh localhost 5432 anime_db anime_user anime_pass 8080./spring_start.sh localhost 5432 anime_db anime_user anime_pass 8080./spring_start.sh localhost 5432 anime_db anime_user anime_pass 8080
 
 ### It's possible to see the JSON returned in an understandable way from browser.

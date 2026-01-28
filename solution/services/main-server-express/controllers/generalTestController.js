@@ -25,10 +25,10 @@ exports.favsWithoutId = {
 };
 
 // Ratings without ID
-exports.ragtingsWithoutId = {
+exports.ratingsWithoutId = {
 	list: async (req, res, next) => {
 		try {
-			//const endpoint = '/api/ragtings';
+			//const endpoint = '/api/ratings';
 			const endpoint = 'getRatings';
 			const response = await apiPostgres.get(endpoint);
 			res.render('generalTest/ragtings', {
@@ -84,7 +84,7 @@ exports.ragtings = {
 	list: async (req, res, next) => {
 		try {
 			const { id } = req.params;
-			const endpoint = id ? `/api/ragtings/${id}` : '/api/ragtings';
+			const endpoint = id ? `/api/ratings/${id}` : '/api/ratings';
 			const response = await apiPostgres.get(endpoint);
 			res.render('generalTest/ragtings', {
 				title: 'Ratings',
