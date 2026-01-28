@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * Composite key table - supports list operations only
  */
 @RestController
-@RequestMapping("/api/person-alternate-names")
+@RequestMapping("/api/person_alternate_names")
 @CrossOrigin(origins = "*")
 public class PersonAlternateNamesController {
 
@@ -146,7 +146,7 @@ public class PersonAlternateNamesController {
 
     /**
      * Get single resource by composite key (using query parameters)
-     * GET /api/person-alternate-names/single?person_mal_id&alt_name
+     * GET /api/person_alternate_names/single?person_mal_id&alt_name
      */
     @GetMapping("/single")
     public ResponseEntity<?> getSingle(
@@ -158,7 +158,7 @@ public class PersonAlternateNamesController {
         if (personMalId == null || altName == null) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "All key fields required: personMalId, altName");
-            error.put("usage", "GET /api/person-alternate-names/single?person_mal_id&alt_name");
+            error.put("usage", "GET /api/person_alternate_names/single?person_mal_id&alt_name");
             return ResponseEntity.status(400).body(error);
         }
         
@@ -186,7 +186,7 @@ public class PersonAlternateNamesController {
 
     /**
      * Get summary by composite key (using query parameters)
-     * GET /api/person-alternate-names/summary?person_mal_id&alt_name
+     * GET /api/person_alternate_names/summary?person_mal_id&alt_name
      */
     @GetMapping("/summary")
     public ResponseEntity<?> getSummary(
@@ -197,7 +197,7 @@ public class PersonAlternateNamesController {
         if (personMalId == null || altName == null) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "All key fields required: personMalId, altName");
-            error.put("usage", "GET /api/person-alternate-names/summary?person_mal_id&alt_name");
+            error.put("usage", "GET /api/person_alternate_names/summary?person_mal_id&alt_name");
             return ResponseEntity.status(400).body(error);
         }
         

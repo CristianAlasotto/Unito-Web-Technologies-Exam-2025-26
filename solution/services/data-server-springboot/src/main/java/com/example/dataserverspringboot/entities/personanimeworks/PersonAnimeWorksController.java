@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * Composite key table - supports list operations only
  */
 @RestController
-@RequestMapping("/api/person-anime-works")
+@RequestMapping("/api/person_anime_works")
 @CrossOrigin(origins = "*")
 public class PersonAnimeWorksController {
 
@@ -148,7 +148,7 @@ public class PersonAnimeWorksController {
 
     /**
      * Get single resource by composite key (using query parameters)
-     * GET /api/person-anime-works/single?person_mal_id&position&anime_mal_id
+     * GET /api/person_anime_works/single?person_mal_id&position&anime_mal_id
      */
     @GetMapping("/single")
     public ResponseEntity<?> getSingle(
@@ -161,7 +161,7 @@ public class PersonAnimeWorksController {
         if (personMalId == null || position == null || animeMalId == null) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "All key fields required: personMalId, position, animeMalId");
-            error.put("usage", "GET /api/person-anime-works/single?person_mal_id&position&anime_mal_id");
+            error.put("usage", "GET /api/person_anime_works/single?person_mal_id&position&anime_mal_id");
             return ResponseEntity.status(400).body(error);
         }
         
@@ -189,7 +189,7 @@ public class PersonAnimeWorksController {
 
     /**
      * Get summary by composite key (using query parameters)
-     * GET /api/person-anime-works/summary?person_mal_id&position&anime_mal_id
+     * GET /api/person_anime_works/summary?person_mal_id&position&anime_mal_id
      */
     @GetMapping("/summary")
     public ResponseEntity<?> getSummary(
@@ -201,7 +201,7 @@ public class PersonAnimeWorksController {
         if (personMalId == null || position == null || animeMalId == null) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "All key fields required: personMalId, position, animeMalId");
-            error.put("usage", "GET /api/person-anime-works/summary?person_mal_id&position&anime_mal_id");
+            error.put("usage", "GET /api/person_anime_works/summary?person_mal_id&position&anime_mal_id");
             return ResponseEntity.status(400).body(error);
         }
         

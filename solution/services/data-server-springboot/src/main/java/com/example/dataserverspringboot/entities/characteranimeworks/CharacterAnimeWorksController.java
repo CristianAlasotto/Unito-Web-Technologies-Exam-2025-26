@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * Composite key table - supports list operations only
  */
 @RestController
-@RequestMapping("/api/character-anime-works")
+@RequestMapping("/api/character_anime_works")
 @CrossOrigin(origins = "*")
 public class CharacterAnimeWorksController {
 
@@ -148,7 +148,7 @@ public class CharacterAnimeWorksController {
 
     /**
      * Get single resource by composite key (using query parameters)
-     * GET /api/character-anime-works/single?character_mal_id&anime_mal_id
+     * GET /api/character_anime_works/single?character_mal_id&anime_mal_id
      */
     @GetMapping("/single")
     public ResponseEntity<?> getSingle(
@@ -160,7 +160,7 @@ public class CharacterAnimeWorksController {
         if (characterMalId == null || animeMalId == null) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "All key fields required: characterMalId, animeMalId");
-            error.put("usage", "GET /api/character-anime-works/single?character_mal_id&anime_mal_id");
+            error.put("usage", "GET /api/character_anime_works/single?character_mal_id&anime_mal_id");
             return ResponseEntity.status(400).body(error);
         }
         
@@ -188,7 +188,7 @@ public class CharacterAnimeWorksController {
 
     /**
      * Get summary by composite key (using query parameters)
-     * GET /api/character-anime-works/summary?character_mal_id&anime_mal_id
+     * GET /api/character_anime_works/summary?character_mal_id&anime_mal_id
      */
     @GetMapping("/summary")
     public ResponseEntity<?> getSummary(
@@ -199,7 +199,7 @@ public class CharacterAnimeWorksController {
         if (characterMalId == null || animeMalId == null) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "All key fields required: characterMalId, animeMalId");
-            error.put("usage", "GET /api/character-anime-works/summary?character_mal_id&anime_mal_id");
+            error.put("usage", "GET /api/character_anime_works/summary?character_mal_id&anime_mal_id");
             return ResponseEntity.status(400).body(error);
         }
         
