@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * Composite key table - supports list operations only
  */
 @RestController
-@RequestMapping("/api/character_anime_works")
+@RequestMapping("/api/character-anime-works")
 @CrossOrigin(origins = "*")
 public class CharacterAnimeWorksController {
 
@@ -28,8 +28,8 @@ public class CharacterAnimeWorksController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String role,
-            @RequestParam(required = false) Integer characterMalId,
-            @RequestParam(required = false) Integer animeMalId,
+            @RequestParam(value = "character_mal_id", required = false) Integer characterMalId,
+            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -148,19 +148,19 @@ public class CharacterAnimeWorksController {
 
     /**
      * Get single resource by composite key (using query parameters)
-     * GET /api/character_anime_works/single?character_mal_id&anime_mal_id
+     * GET /api/character-anime-works/single?character_mal_id&anime_mal_id
      */
     @GetMapping("/single")
     public ResponseEntity<?> getSingle(
-            @RequestParam(required = false) Integer characterMalId,
-            @RequestParam(required = false) Integer animeMalId,
+            @RequestParam(value = "character_mal_id", required = false) Integer characterMalId,
+            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId,
             @RequestParam(required = false) String fields) {
         
         // Check if all key fields are provided
         if (characterMalId == null || animeMalId == null) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "All key fields required: characterMalId, animeMalId");
-            error.put("usage", "GET /api/character_anime_works/single?character_mal_id&anime_mal_id");
+            error.put("usage", "GET /api/character-anime-works/single?character_mal_id&anime_mal_id");
             return ResponseEntity.status(400).body(error);
         }
         
@@ -188,18 +188,18 @@ public class CharacterAnimeWorksController {
 
     /**
      * Get summary by composite key (using query parameters)
-     * GET /api/character_anime_works/summary?character_mal_id&anime_mal_id
+     * GET /api/character-anime-works/summary?character_mal_id&anime_mal_id
      */
     @GetMapping("/summary")
     public ResponseEntity<?> getSummary(
-            @RequestParam(required = false) Integer characterMalId,
-            @RequestParam(required = false) Integer animeMalId) {
+            @RequestParam(value = "character_mal_id", required = false) Integer characterMalId,
+            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId) {
         
         // Check if all key fields are provided
         if (characterMalId == null || animeMalId == null) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "All key fields required: characterMalId, animeMalId");
-            error.put("usage", "GET /api/character_anime_works/summary?character_mal_id&anime_mal_id");
+            error.put("usage", "GET /api/character-anime-works/summary?character_mal_id&anime_mal_id");
             return ResponseEntity.status(400).body(error);
         }
         

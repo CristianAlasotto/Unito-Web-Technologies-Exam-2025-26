@@ -27,8 +27,8 @@ public class RecommendationsController {
             @RequestParam(required = false) String fields,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
-            @RequestParam(required = false) Integer malId,
-            @RequestParam(required = false) Integer recommendationMalId,
+            @RequestParam(value = "mal_id", required = false) Integer malId,
+            @RequestParam(value = "recommendation_mal_id", required = false) Integer recommendationMalId,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -151,8 +151,8 @@ public class RecommendationsController {
      */
     @GetMapping("/single")
     public ResponseEntity<?> getSingle(
-            @RequestParam(required = false) Integer malId,
-            @RequestParam(required = false) Integer recommendationMalId,
+            @RequestParam(value = "mal_id", required = false) Integer malId,
+            @RequestParam(value = "recommendation_mal_id", required = false) Integer recommendationMalId,
             @RequestParam(required = false) String fields) {
         
         // Check if all key fields are provided
@@ -191,8 +191,8 @@ public class RecommendationsController {
      */
     @GetMapping("/summary")
     public ResponseEntity<?> getSummary(
-            @RequestParam(required = false) Integer malId,
-            @RequestParam(required = false) Integer recommendationMalId) {
+            @RequestParam(value = "mal_id", required = false) Integer malId,
+            @RequestParam(value = "recommendation_mal_id", required = false) Integer recommendationMalId) {
         
         // Check if all key fields are provided
         if (malId == null || recommendationMalId == null) {

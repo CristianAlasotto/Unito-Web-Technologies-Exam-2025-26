@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * Composite key table - supports list operations only
  */
 @RestController
-@RequestMapping("/api/person_voice_works")
+@RequestMapping("/api/person-voice-works")
 @CrossOrigin(origins = "*")
 public class PersonVoiceWorksController {
 
@@ -29,9 +29,9 @@ public class PersonVoiceWorksController {
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String language,
             @RequestParam(required = false) String role,
-            @RequestParam(required = false) Integer personMalId,
-            @RequestParam(required = false) Integer characterMalId,
-            @RequestParam(required = false) Integer animeMalId,
+            @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
+            @RequestParam(value = "character_mal_id", required = false) Integer characterMalId,
+            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -150,13 +150,13 @@ public class PersonVoiceWorksController {
 
     /**
      * Get single resource by composite key (using query parameters)
-     * GET /api/person_voice_works/single?person_mal_id&character_mal_id&anime_mal_id&language
+     * GET /api/person-voice-works/single?person_mal_id&character_mal_id&anime_mal_id&language
      */
     @GetMapping("/single")
     public ResponseEntity<?> getSingle(
-            @RequestParam(required = false) Integer personMalId,
-            @RequestParam(required = false) Integer characterMalId,
-            @RequestParam(required = false) Integer animeMalId,
+            @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
+            @RequestParam(value = "character_mal_id", required = false) Integer characterMalId,
+            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId,
             @RequestParam(required = false) String language,
             @RequestParam(required = false) String fields) {
         
@@ -164,7 +164,7 @@ public class PersonVoiceWorksController {
         if (personMalId == null || characterMalId == null || animeMalId == null || language == null) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "All key fields required: person_mal_id, character_mal_id, anime_mal_id, language");
-            error.put("usage", "GET /api/person_voice_works/single?person_mal_id&character_mal_id&anime_mal_id&language");
+            error.put("usage", "GET /api/person-voice-works/single?person_mal_id&character_mal_id&anime_mal_id&language");
             return ResponseEntity.status(400).body(error);
         }
         
@@ -192,20 +192,20 @@ public class PersonVoiceWorksController {
 
     /**
      * Get summary by composite key (using query parameters)
-     * GET /api/person_voice_works/summary?person_mal_id&character_mal_id&anime_mal_id&language
+     * GET /api/person-voice-works/summary?person_mal_id&character_mal_id&anime_mal_id&language
      */
     @GetMapping("/summary")
     public ResponseEntity<?> getSummary(
-            @RequestParam(required = false) Integer personMalId,
-            @RequestParam(required = false) Integer characterMalId,
-            @RequestParam(required = false) Integer animeMalId,
+            @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
+            @RequestParam(value = "character_mal_id", required = false) Integer characterMalId,
+            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId,
             @RequestParam(required = false) String language) {
         
         // Check if all key fields are provided
         if (personMalId == null || characterMalId == null || animeMalId == null || language == null) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "All key fields required: person_mal_id, character_mal_id, anime_mal_id, language");
-            error.put("usage", "GET /api/person_voice_works/summary?person_mal_id&character_mal_id&anime_mal_id&language");
+            error.put("usage", "GET /api/person-voice-works/summary?person_mal_id&character_mal_id&anime_mal_id&language");
             return ResponseEntity.status(400).body(error);
         }
         
