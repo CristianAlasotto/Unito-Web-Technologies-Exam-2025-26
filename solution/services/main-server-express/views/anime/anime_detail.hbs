@@ -1,0 +1,141 @@
+{{#if warning}}
+<div class="warning-banner"
+	style="background: #ff9800; color: #000; padding: 1rem; text-align: center; margin-bottom: 1rem;">
+	⚠️ {{warning}}
+</div>
+{{/if}}
+
+{{#if error}}
+<div class="error-message">{{error}}</div>
+{{/if}}
+
+<div class="anime-container">
+	<h1>Anime Details</h1>
+
+	{{#if anime}}
+	<article class="anime-detail">
+		<div class="anime-header">
+			<img src="{{anime.image_url}}" alt="{{anime.title}}" class="anime-poster">
+			<div class="anime-main-info">
+				<h3>{{anime.title}}</h3>
+				{{#if anime.title_japanese}}
+				<h4 class="japanese-title">{{anime.title_japanese}}</h4>
+				{{/if}}
+
+				<div class="anime-meta">
+					<span class="score">⭐ {{anime.score}}</span>
+					<span class="type">{{anime.type}}</span>
+					<span class="status">{{anime.status}}</span>
+					<span class="episodes">{{anime.episodes}} episodes</span>
+				</div>
+
+				{{#if anime.start_date}}
+				<p class="dates">
+					<strong>Period:</strong>
+					{{anime.start_date}}
+					{{#if anime.end_date}}
+					- {{anime.end_date}}
+					{{/if}}
+				</p>
+				{{/if}}
+			</div>
+		</div>
+
+		{{#if anime.synopsis}}
+		<section class="synopsis">
+			<h3>Synopsis</h3>
+			<p>{{anime.synopsis}}</p>
+		</section>
+		{{/if}}
+
+		<div class="anime-details-grid">
+			{{#if anime.genres}}
+			<section class="detail-section">
+				<h3>Genres</h3>
+				<div class="tags">
+					{{#each anime.genres}}
+					<span class="tag">{{this}}</span>
+					{{/each}}
+				</div>
+			</section>
+			{{/if}}
+
+			{{#if anime.themes}}
+			<section class="detail-section">
+				<h3>Themes</h3>
+				<div class="tags">
+					{{#each anime.themes}}
+					<span class="tag">{{this}}</span>
+					{{/each}}
+				</div>
+			</section>
+			{{/if}}
+
+			{{#if anime.studios}}
+			<section class="detail-section">
+				<h3>Studios</h3>
+				<div class="tags">
+					{{#each anime.studios}}
+					<span class="tag">{{this}}</span>
+					{{/each}}
+				</div>
+			</section>
+			{{/if}}
+
+			{{#if anime.demographics}}
+			<section class="detail-section">
+				<h3>Demographics</h3>
+				<div class="tags">
+					{{#each anime.demographics}}
+					<span class="tag">{{this}}</span>
+					{{/each}}
+				</div>
+			</section>
+			{{/if}}
+		</div>
+
+		<div class="anime-stats">
+			{{#if anime.rank}}
+			<div class="stat">
+				<strong>Rank:</strong> #{{anime.rank}}
+			</div>
+			{{/if}}
+			{{#if anime.popularity}}
+			<div class="stat">
+				<strong>Popularity:</strong> #{{anime.popularity}}
+			</div>
+			{{/if}}
+			{{#if anime.members}}
+			<div class="stat">
+				<strong>Members:</strong> {{anime.members}}
+			</div>
+			{{/if}}
+			{{#if anime.favorites}}
+			<div class="stat">
+				<strong>Favorites:</strong> {{anime.favorites}}
+			</div>
+			{{/if}}
+		</div>
+
+		<br>
+		<section class="recommendations">
+			<h3>Recommended Animes</h3>
+			{{#if character.recommendations}}
+			{{> anime_carousel_items items=character.recommendations}}
+			{{else}}
+			<p>No recommendations available.</p>
+			{{/if}}
+		</section>
+
+		{{#if anime.url}}
+		<a href="{{anime.url}}" target="_blank" class="mal-link">
+			View on MyAnimeList
+		</a>
+		{{/if}}
+	</article>
+	{{else}}
+	{{#unless warning}}
+	<p class="no-data">No anime available at the moment.</p>
+	{{/unless}}
+	{{/if}}
+</div>

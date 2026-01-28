@@ -1,18 +1,28 @@
 const { apiPostgres } = require('./apiClients.js');
 
-// Lista di tutti i personaggi
 exports.list = async (req, res, next) => {
 	try {
-		const response = await apiPostgres.get('/api/characters');
-		const characters = response.data;
-		res.render('characters/list', {
+		const page = req.query.page || 1;
+		const pageSize = req.query.pageSize || 45;
+		const response = await apiPostgres.get(`/api/characters?page=${page}&pageSize=${pageSize}`);
+		const characters = response.data.items;
+		const totalPages = response.data.totalPages;
+
+		res.render('characters/characters_list', {
 			title: 'Personaggi',
 			characters: characters,
-			currentPage: 'characters',
+			pagination: {
+				currentPage: page,
+				totalPages: totalPages,
+				hasPrev: page > 1,
+				prevPage: page - 1,
+				hasNext: page < totalPages,
+				nextPage: parseInt(page) + 1
+			},
 			warning: !characters || characters.length === 0 ? 'Nessun personaggio trovato nel database.' : null
 		});
 	} catch (err) {
-		res.render('characters/list', {
+		res.render('characters/characters_list', {
 			title: 'Personaggi',
 			characters: [],
 			currentPage: 'characters',
@@ -21,7 +31,6 @@ exports.list = async (req, res, next) => {
 	}
 };
 
-// Dettaglio di un personaggio
 exports.detail = async (req, res, next) => {
 	try {
 		const { id } = req.params;

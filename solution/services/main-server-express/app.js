@@ -26,8 +26,21 @@ app.set('view options', { layout: 'layout/main' });
 
 // Register custom handlebars helpers
 const hbs = require('hbs');
+hbs.registerPartials(path.join(__dirname, 'views/partials'));
 hbs.registerHelper('json', function(obj) {
   return JSON.stringify(obj, null, 2);
+});
+
+
+hbs.registerHelper('any', function() {
+  const args = Array.prototype.slice.call(arguments);
+  const options = args.pop();
+  for (let i = 0; i < args.length; i++) {
+    if (args[i]) {
+      return options.fn(this);
+    }
+  }
+  return options.inverse(this);
 });
 
 // middleware -> pipeline richieste
