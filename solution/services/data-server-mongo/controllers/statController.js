@@ -1,14 +1,15 @@
 const statService = require('../services/statService');
 
-exports.getStats = async (req, res) => {
-    try {
-        const data = await statService.fetchStats(req.query);
-        res.status(200).json({
-            status: "success",
-            result: data.length,
-            data: data
-        });
-    } catch (err) {
-        res.status(500).json({status: "error", message: err.message});
-    }
-}
+exports.getStats = async (params, maxAgeMs) => {
+    const data = await statService.fetchStats(params);
+    if (!data || data.length === 0) return null;
+
+    const ageMs = Date.now() - new Date(data[0].createdAt).getTime();
+    if (ageMs > maxAgeMs) return null;
+
+    return data;
+};
+
+exports.saveStats = async (dataList) => {
+    return await statService.saveStats(dataList);
+};
