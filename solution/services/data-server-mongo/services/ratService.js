@@ -1,11 +1,9 @@
 const Ratings = require('../models/Ratings');
 
 exports.fetchRatings = async (params) => {
-    let { fields, sort, limit, offset, page, search, ...filters } = params;
+    let { fields, sort, limit, pageSize, offset, page, ...filters } = params;
 
-    let mongoQuery = {...filters};
-
-    let query = Ratings.find(mongoQuery);
+    let query = Ratings.find(filters);
 
     if (fields) {
         query = query.select(fields.split(',').join(' '));
@@ -15,10 +13,17 @@ exports.fetchRatings = async (params) => {
         query = query.sort(sort.split(',').join(' '));
     }
 
-    const finalLimit = parseInt(limit || 20);
+    const finalLimit = parseInt(pageSize || limit || 20);
     const finalSkip = page ? (parseInt(page) - 1) * finalLimit : parseInt(offset || 0);
 
     query = query.limit(finalLimit).skip(finalSkip);
 
-    return await query.exec();
-}
+    return await query.lean().exec();
+};
+
+exports.saveRatings = async (dataList) => {
+    if (!Array.isArray(dataList)) {
+        dataList = [dataList];
+    }
+    return await Ratings.insertMany(dataList);
+};

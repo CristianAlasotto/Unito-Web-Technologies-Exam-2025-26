@@ -1,11 +1,9 @@
-const Favs = require("../models/Favs");
+const Favs = require('../models/Favs'); // Import the correct model
 
 exports.fetchFavorites = async (params) => {
-    let { fields, sort, limit, offset, page, search, ...filters } = params;
+    let { fields, sort, limit, pageSize, offset, page, ...filters } = params;
 
-    let mongoQuery = { ...filters };
-
-    let query = Favs.find(mongoQuery);
+    let query = Favs.find(filters);
 
     if (fields) {
         query = query.select(fields.split(',').join(' '));
@@ -15,10 +13,19 @@ exports.fetchFavorites = async (params) => {
         query = query.sort(sort.split(',').join(' '));
     }
 
-    const finalLimit = parseInt(limit || 20);
+    const finalLimit = parseInt(pageSize || limit || 20);
     const finalSkip = page ? (parseInt(page) - 1) * finalLimit : parseInt(offset || 0);
 
     query = query.limit(finalLimit).skip(finalSkip);
 
-    return await query.exec();
+    return await query.lean().exec();
+};
+
+exports.saveFavorites = async (dataList) => {
+
+    if (!Array.isArray(dataList)) {
+        dataList = [dataList];
+    }
+
+    return await Favs.insertMany(dataList);
 };

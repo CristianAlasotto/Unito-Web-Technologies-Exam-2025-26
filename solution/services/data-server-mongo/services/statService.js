@@ -1,23 +1,29 @@
-const Stats = require('../models/Stats');
+const Stats = require('../models/Stats'); //
 
 exports.fetchStats = async (params) => {
-    let { fields, sort, limit, offset, page, search, ...filters } = params;
+    let { fields, sort, limit, pageSize, offset, page, ...filters } = params;
 
-    let mongoQuery = { ...filters };
+    let query = Stats.find(filters);
 
-    let query = Stats.find(mongoQuery);
-
-    if(fields) {
+    if (fields) {
         query = query.select(fields.split(',').join(' '));
     }
 
-    if (sort)
-        query = query.select(sort.split(',').join(' '));
+    if (sort) {
+        query = query.sort(sort.split(',').join(' ')); //
+    }
 
-    limit = parseInt(limit || 20);
-    const skip = page ? (parseInt(page) - 1) * limit : parseInt(offset || 0);
+    const finalLimit = parseInt(pageSize || limit || 20);
+    const skip = page ? (parseInt(page) - 1) * finalLimit : parseInt(offset || 0);
 
-    query = query.limit(limit).skip(skip);
+    query = query.limit(finalLimit).skip(skip);
 
-    return await query.exec();
-}
+    return await query.lean().exec();
+};
+
+exports.saveStats = async (dataList) => {
+    if (!Array.isArray(dataList)) {
+        dataList = [dataList];
+    }
+    return await Stats.insertMany(dataList);
+};

@@ -1,14 +1,15 @@
 const ratService = require("../services/ratService");
 
-exports.getRats = async (req, res) => {
-    try {
-        const data = await ratService.fetchRatings(req.query);
-        res.status(200).json({
-            status: "success",
-            results: data.length,
-            data: data
-        });
-    } catch (err) {
-        res.status(500).json({ status: "error", message: err.message });
-    }
+exports.getRats = async (params, maxAgeMs) => {
+    const data = await ratService.fetchRatings(params);
+    if (!data || data.length === 0) return null;
+
+    const ageMs = Date.now() - new Date(data[0].createdAt).getTime();
+    if (ageMs > maxAgeMs) return null;
+
+    return data;
+};
+
+exports.saveRats = async (dataList) => {
+    return await ratService.saveRatings(dataList);
 };

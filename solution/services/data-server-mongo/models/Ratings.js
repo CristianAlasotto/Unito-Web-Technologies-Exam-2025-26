@@ -6,7 +6,9 @@ const RatingSchema = new mongoose.Schema({
     status: Number,
     score: Number,
     is_rewatching: Number,
-    num_watched_episodes: Number
+    num_watched_episodes: Number,
+
+    createdAt: { type: Date, default: Date.now }
 }, {
     collection: 'ratings'
 });
