@@ -1,0 +1,32 @@
+{{!-- views/profile/login.hbs --}}
+
+<div class="anime-container" style="max-width: 500px; margin: 0 auto; padding-top: 2rem;">
+    <h1 style="text-align: center;">Login</h1>
+
+    {{!-- Error handling using your existing styles --}}
+    {{#if error}}
+        <div class="error-message" style="margin-bottom: 1.5rem;">
+            {{error}}
+        </div>
+    {{/if}}
+
+    <form action="/users/login" method="POST" class="login-form"
+          style="background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label for="username" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Username</label>
+            <input type="text" id="username" name="username" required placeholder="Enter your username"
+                   value="{{username}}"
+                   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+            <small style="color: #666; display: block; margin-top: 5px;">
+                (Demo: Enter your profile username)
+            </small>
+        </div>
+
+        {{!-- Reusing your 'pagination-btn' class for consistency --}}
+        <button type="submit" class="pagination-btn"
+                style="width: 100%; justify-content: center; margin-top: 1rem; font-size: 1.1rem;">
+            Sign In
+        </button>
+    </form>
+</div>
