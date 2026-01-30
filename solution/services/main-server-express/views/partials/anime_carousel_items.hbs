@@ -1,10 +1,12 @@
 {{#each items}}
-<div class="card">
-  <a href="/anime/{{this.mal_id}}">
-    <img src="{{this.image_url}}" alt="{{this.title}}">
-    <div class="card-body">
-      <p>{{this.title}}</p>
-    </div>
-  </a>
+<div class="cardsContainer">
+  <div class="card">
+    <a href="/anime/{{this.mal_id}}">
+      <img src="{{this.image_url}}" alt="{{this.title}}">
+      <div class="card-body">
+        <p>{{this.title}}</p>
+      </div>
+    </a>
+  </div>
 </div>
 {{/each}}

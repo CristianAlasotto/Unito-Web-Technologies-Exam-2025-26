@@ -4,6 +4,13 @@
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch; /* Per uno scorrimento fluido su iOS */
     padding-bottom: 1rem;
+
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: center;
+	align-items: center;
+	align-content: stretch;
 }
 
 .carousel-container::-webkit-scrollbar {
@@ -19,6 +26,15 @@
     background: #f1f1f1;
 }
 
+.cardsContainer {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: center;
+	align-items: center;
+	align-content: stretch;
+}
+
 .card {
     flex: 0 0 auto;
     scroll-snap-align: start;
@@ -32,7 +48,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    margin-right: 1rem;
+    margin: 0.7rem;
 }
 
 .card:hover {

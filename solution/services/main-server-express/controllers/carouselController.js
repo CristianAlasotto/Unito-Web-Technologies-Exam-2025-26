@@ -1,13 +1,29 @@
 const { apiPostgres } = require('./apiClients');
 
-const getApiEndpoint = (type) => {
+const getApiRequestConfig = (type) => {
     switch (type) {
         case 'anime':
-            return '/api/details';
+            return {
+                path: '/api/details',
+                params: {
+                    fields: 'anime_id,title,title_english,title_japanese,image_url',
+                    sort: '-popularity',
+                },
+            };
         case 'character':
-            return '/api/characters';
+            return {
+                path: '/api/characters',
+                params: {
+                    sort: '-favorites',
+                },
+            };
         case 'staff':
-            return '/api/person_details';
+            return {
+                path: '/api/person_details',
+                params: {
+                    sort: '-favorites',
+                },
+            };
         default:
             return null;
     }
@@ -19,12 +35,17 @@ exports.getCarouselData = async (req, res, next) => {
         const page = parseInt(req.query.page || '1', 10);
         const pageSize = parseInt(req.query.pageSize || '7', 10);
 
-        const endpoint = getApiEndpoint(type);
-        if (!endpoint) {
+        const requestConfig = getApiRequestConfig(type);
+        if (!requestConfig) {
             return res.status(400).json({ error: 'Invalid carousel type' });
         }
 
-        const response = await apiPostgres.get(`${endpoint}?page=${page}&pageSize=${pageSize}`);
+        const query = new URLSearchParams({
+            ...requestConfig.params,
+            page: String(page),
+            pageSize: String(pageSize),
+        }).toString();
+        const response = await apiPostgres.get(`${requestConfig.path}?${query}`);
         const items = response.data.items || [];
         const totalPages = response.data.totalPages || 1;
 
