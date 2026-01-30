@@ -3,6 +3,9 @@ const Ratings = require('../models/Ratings');
 exports.fetchRatings = async (params) => {
     let { fields, sort, limit, pageSize, offset, page, ...filters } = params;
 
+    // 1. Get Total Count for Pagination
+    const total = await Ratings.countDocuments(filters);
+
     let query = Ratings.find(filters);
 
     if (fields) {
@@ -18,7 +21,14 @@ exports.fetchRatings = async (params) => {
 
     query = query.limit(finalLimit).skip(finalSkip);
 
-    return await query.lean().exec();
+    const items = await query.lean().exec();
+
+    // 2. Return Object with Items and Metadata
+    return {
+        items: items,
+        total: total,
+        totalPages: Math.ceil(total / finalLimit)
+    };
 };
 
 exports.saveRatings = async (dataList) => {

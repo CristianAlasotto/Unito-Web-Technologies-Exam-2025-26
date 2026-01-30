@@ -1,10 +1,14 @@
 const ratService = require("../services/ratService");
 
 exports.getRats = async (params, maxAgeMs) => {
+    // data is { items, total, totalPages }
     const data = await ratService.fetchRatings(params);
-    if (!data || data.length === 0) return null;
+    
+    // Check if items exist inside the data object
+    if (!data || !data.items || data.items.length === 0) return null;
 
-    const ageMs = Date.now() - new Date(data[0].createdAt).getTime();
+    // Check cache age
+    const ageMs = Date.now() - new Date(data.items[0].createdAt).getTime();
     if (ageMs > maxAgeMs) return null;
 
     return data;
