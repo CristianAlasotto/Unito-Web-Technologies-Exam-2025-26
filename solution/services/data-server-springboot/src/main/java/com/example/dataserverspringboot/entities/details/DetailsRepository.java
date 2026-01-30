@@ -41,4 +41,17 @@ public interface DetailsRepository extends JpaRepository<Details, Integer> {
      */
     Page<Details> findBySource(String source, Pageable pageable);
 
+    /**
+     * Find recommendations for a specific anime using subquery
+     */
+    @Query("SELECT d FROM Details d WHERE d.malId IN " +
+           "(SELECT r.recommendationMalId FROM com.example.dataserverspringboot.entities.recommendations.Recommendations r WHERE r.malId = :malId) " +
+           "ORDER BY d.score DESC")
+    Page<Details> findRecommendationsForAnime(@Param("malId") Integer malId, Pageable pageable);
+
+    /**
+     * Count recommendations for a specific anime
+     */
+    @Query("SELECT COUNT(r) FROM com.example.dataserverspringboot.entities.recommendations.Recommendations r WHERE r.malId = :malId")
+    long countRecommendationsForAnime(@Param("malId") Integer malId);
 }

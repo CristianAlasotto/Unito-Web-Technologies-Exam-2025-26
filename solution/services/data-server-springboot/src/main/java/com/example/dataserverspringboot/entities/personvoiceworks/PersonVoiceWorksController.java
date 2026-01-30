@@ -29,9 +29,9 @@ public class PersonVoiceWorksController {
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String language,
             @RequestParam(required = false) String role,
-            @RequestParam(required = false) Integer personMalId,
-            @RequestParam(required = false) Integer characterMalId,
-            @RequestParam(required = false) Integer animeMalId,
+            @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
+            @RequestParam(value = "character_mal_id", required = false) Integer characterMalId,
+            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -154,9 +154,9 @@ public class PersonVoiceWorksController {
      */
     @GetMapping("/single")
     public ResponseEntity<?> getSingle(
-            @RequestParam(required = false) Integer personMalId,
-            @RequestParam(required = false) Integer characterMalId,
-            @RequestParam(required = false) Integer animeMalId,
+            @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
+            @RequestParam(value = "character_mal_id", required = false) Integer characterMalId,
+            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId,
             @RequestParam(required = false) String language,
             @RequestParam(required = false) String fields) {
         
@@ -196,9 +196,9 @@ public class PersonVoiceWorksController {
      */
     @GetMapping("/summary")
     public ResponseEntity<?> getSummary(
-            @RequestParam(required = false) Integer personMalId,
-            @RequestParam(required = false) Integer characterMalId,
-            @RequestParam(required = false) Integer animeMalId,
+            @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
+            @RequestParam(value = "character_mal_id", required = false) Integer characterMalId,
+            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId,
             @RequestParam(required = false) String language) {
         
         // Check if all key fields are provided
