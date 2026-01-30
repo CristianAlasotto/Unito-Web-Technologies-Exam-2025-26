@@ -20,12 +20,3 @@ exports.fetchFavorites = async (params) => {
 
     return await query.lean().exec();
 };
-
-exports.saveFavorites = async (dataList) => {
-
-    if (!Array.isArray(dataList)) {
-        dataList = [dataList];
-    }
-
-    return await Favs.insertMany(dataList);
-};
