@@ -26,4 +26,17 @@ public interface RecommendationsRepository extends JpaRepository<Recommendations
      */
     Page<Recommendations> findByRecommendationMalId(Integer recommendationMalId, Pageable pageable);
 
+    /**
+     * Find by both mal_id and recommendation_mal_id
+     */
+    Page<Recommendations> findByMalIdAndRecommendationMalId(Integer malId, Integer recommendationMalId, Pageable pageable);
+
+    /**
+     * Count recommendations with filters
+     */
+    @Query("SELECT COUNT(r) FROM Recommendations r " +
+           "WHERE (:malId IS NULL OR r.malId = :malId) " +
+           "AND (:recommendationMalId IS NULL OR r.recommendationMalId = :recommendationMalId)")
+    long countWithFilters(@Param("malId") Integer malId, 
+                         @Param("recommendationMalId") Integer recommendationMalId);
 }

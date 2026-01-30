@@ -28,7 +28,7 @@ public class CharacterAnimeWorks {
     }
 
     public CharacterAnimeWorks(Integer characterMalId, Integer animeMalId,
-                                 String character_name, String role) {
+                                 String characterName, String role) {
         this.characterMalId = characterMalId;
         this.animeMalId = animeMalId;
         this.characterName = characterName;

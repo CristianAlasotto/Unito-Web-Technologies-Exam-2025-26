@@ -22,13 +22,16 @@ public class RecommendationsController {
     @Autowired
     private RecommendationsService service;
 
+    @Autowired
+    private RecommendationsRepository recommendationsRepository;
+
     @GetMapping
     public ResponseEntity<?> getAll(
             @RequestParam(required = false) String fields,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
-            @RequestParam(required = false) Integer malId,
-            @RequestParam(required = false) Integer recommendationMalId,
+            @RequestParam(value = "mal_id", required = false) Integer malId,
+            @RequestParam(value = "recommendation_mal_id", required = false) Integer recommendationMalId,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -151,8 +154,8 @@ public class RecommendationsController {
      */
     @GetMapping("/single")
     public ResponseEntity<?> getSingle(
-            @RequestParam(required = false) Integer malId,
-            @RequestParam(required = false) Integer recommendationMalId,
+            @RequestParam(value = "mal_id", required = false) Integer malId,
+            @RequestParam(value = "recommendation_mal_id", required = false) Integer recommendationMalId,
             @RequestParam(required = false) String fields) {
         
         // Check if all key fields are provided
@@ -191,8 +194,8 @@ public class RecommendationsController {
      */
     @GetMapping("/summary")
     public ResponseEntity<?> getSummary(
-            @RequestParam(required = false) Integer malId,
-            @RequestParam(required = false) Integer recommendationMalId) {
+            @RequestParam(value = "mal_id", required = false) Integer malId,
+            @RequestParam(value = "recommendation_mal_id", required = false) Integer recommendationMalId) {
         
         // Check if all key fields are provided
         if (malId == null || recommendationMalId == null) {
@@ -266,4 +269,102 @@ public class RecommendationsController {
         
         return Sort.by(orders);
     }
+
+    /**
+     * Get all recommendations with full anime details (JPA version)
+     * GET /api/recommendations/details
+     */
+    @GetMapping("/details")
+    public ResponseEntity<?> getAllWithDetails(
+            @RequestParam(value = "mal_id", required = false) Integer malId,
+            @RequestParam(value = "recommendation_mal_id", required = false) Integer recommendationMalId,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer offset,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer pageSize) {
+        
+        boolean usePageBased = (page != null || pageSize != null);
+        
+        if (usePageBased) {
+            int finalPage = (page != null) ? page : 1;
+            int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
+            
+            Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize);
+            Page<RecommendationWithDetails> results = service.findAllWithDetails(malId, recommendationMalId, pageable);
+            
+            // Convert to response format
+            List<Map<String, Object>> items = results.getContent().stream()
+                .map(this::convertToDetailsMap)
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("page", finalPage);
+            response.put("pageSize", finalPageSize);
+            response.put("totalPages", results.getTotalPages());
+            response.put("total", results.getTotalElements());
+            response.put("items", items);
+            return ResponseEntity.ok(response);
+            
+        } else {
+            int finalLimit = (limit != null) ? limit : 10;
+            int finalOffset = (offset != null) ? offset : 0;
+            int pageNum = finalOffset / finalLimit;
+            
+            Pageable pageable = PageRequest.of(pageNum, finalLimit);
+            Page<RecommendationWithDetails> results = service.findAllWithDetails(malId, recommendationMalId, pageable);
+            
+            List<Map<String, Object>> items = results.getContent().stream()
+                .map(this::convertToDetailsMap)
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            
+            if (limit != null || offset != null) {
+                response.put("limit", finalLimit);
+                response.put("offset", finalOffset);
+            }
+            
+            response.put("total", results.getTotalElements());
+            response.put("items", items);
+            return ResponseEntity.ok(response);
+        }
+    }
+    
+    /**
+     * Helper method to convert RecommendationWithDetails to Map with snake_case and flattened structure
+     */
+    private Map<String, Object> convertToDetailsMap(RecommendationWithDetails dto) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("mal_id", dto.getMalId());
+        result.put("recommendation_mal_id", dto.getRecommendationMalId());
+        
+        // Add source anime details with "source_" prefix
+        if (dto.getSourceAnime() != null) {
+            com.example.dataserverspringboot.entities.details.Details source = dto.getSourceAnime();
+            result.put("source_title", source.getTitle());
+            result.put("source_title_japanese", source.getTitleJapanese());
+            result.put("source_type", source.getType());
+            result.put("source_score", source.getScore());
+            result.put("source_image_url", source.getImageUrl());
+            result.put("source_episodes", source.getEpisodes());
+            result.put("source_year", source.getYear());
+            result.put("source_status", source.getStatus());
+        }
+        
+        // Add recommended anime details with "recommendation_" prefix
+        if (dto.getRecommendedAnime() != null) {
+            com.example.dataserverspringboot.entities.details.Details recommended = dto.getRecommendedAnime();
+            result.put("recommendation_title", recommended.getTitle());
+            result.put("recommendation_title_japanese", recommended.getTitleJapanese());
+            result.put("recommendation_type", recommended.getType());
+            result.put("recommendation_score", recommended.getScore());
+            result.put("recommendation_image_url", recommended.getImageUrl());
+            result.put("recommendation_episodes", recommended.getEpisodes());
+            result.put("recommendation_year", recommended.getYear());
+            result.put("recommendation_status", recommended.getStatus());
+        }
+        
+        return result;
+    }
+
 }
