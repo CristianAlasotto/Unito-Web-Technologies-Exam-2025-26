@@ -1,4 +1,4 @@
-const Stats = require('../models/Stats'); //
+const Stats = require('../models/Stats');
 
 exports.fetchStats = async (params) => {
     let { fields, sort, limit, pageSize, offset, page, ...filters } = params;
@@ -10,20 +10,13 @@ exports.fetchStats = async (params) => {
     }
 
     if (sort) {
-        query = query.sort(sort.split(',').join(' ')); //
+        query = query.sort(sort.split(',').join(' '));
     }
 
     const finalLimit = parseInt(pageSize || limit || 20);
-    const skip = page ? (parseInt(page) - 1) * finalLimit : parseInt(offset || 0);
+    const finalSkip = page ? (parseInt(page) - 1) * finalLimit : parseInt(offset || 0);
 
-    query = query.limit(finalLimit).skip(skip);
+    query = query.limit(finalLimit).skip(finalSkip);
 
     return await query.lean().exec();
-};
-
-exports.saveStats = async (dataList) => {
-    if (!Array.isArray(dataList)) {
-        dataList = [dataList];
-    }
-    return await Stats.insertMany(dataList);
 };
