@@ -135,69 +135,279 @@
 
             <hr style="border-color: #333; margin: 2rem 0;">
 
-            {{!-- SIMPLE RATINGS SECTION --}}
+            {{!-- RATINGS SECTION --}}
             <section class="ratings-section">
                 <h3 style="margin-bottom: 1rem;">User Ratings</h3>
 
-                {{#if ratings}}
-                    <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; background: #1a1a1a; border-radius: 8px; overflow: hidden; margin-bottom: 2rem;">
-                            <thead>
-                            <tr style="background: #333; color: #fff; text-align: left;">
-                                <th style="padding: 12px 15px;">User</th>
-                                <th style="padding: 12px 15px;">Score</th>
-                                <th style="padding: 12px 15px;">Status</th>
-                                <th style="padding: 12px 15px;">Is Rewatching</th>
-                                <th style="padding: 12px 15px;">Watched Episodes</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {{#each ratings}}
-                                <tr style="border-bottom: 1px solid #2d2d2d; color: #ccc;">
-                                    <td style="padding: 12px 15px;">
-                                        <span style="font-weight: bold; color: #fff;">{{this.username}}</span>
-                                    </td>
-                                    <td style="padding: 12px 15px;">
-                                        <span style="color: #ff9800; font-weight: bold;">⭐ {{this.score}}</span>
-                                    </td>
-                                    <td style="padding: 12px 15px; text-transform: capitalize;">
-                                        {{this.status}}
-                                    </td>
-                                    <td style="padding: 12px 15px;">
-                                        {{#if this.is_rewatching}}
-                                            <span style="color: #4caf50; font-weight: bold;">Yes</span>
-                                        {{else}}
-                                            <span style="color: #888;">No</span>
-                                        {{/if}}
-                                    </td>
-                                    <td style="padding: 12px 15px;">
-                                        {{this.num_watched_episodes}}
-                                    </td>
-                                </tr>
-                            {{/each}}
-                            </tbody>
-                        </table>
-                    </div>
+                {{!-- ADD RATING FORM --}}
+                <div class="add-rating-section" style="background: #1a1a1a; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <h4 style="margin-bottom: 1rem; color: #fff;">Add Your Rating</h4>
 
-                    {{!-- PAGINATION --}}
-                    {{#if ratingsPagination}}
-                        <div class="pagination" style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1rem;">
-                            {{#if ratingsPagination.hasPrev}}
-                                <a href="?page={{ratingsPagination.prevPage}}" class="pagination-btn" style="padding: 0.5rem 1rem; background: #333; color: #fff; text-decoration: none; border-radius: 4px;">← Previous</a>
-                            {{/if}}
+                    <div id="rating-message" style="display: none; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem;"></div>
 
-                            <span class="page-info" style="color: #ccc;">
-                                Page {{ratingsPagination.currentPage}} of {{ratingsPagination.totalPages}}
-                            </span>
+                    <form id="add-rating-form" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end;">
 
-                            {{#if ratingsPagination.hasNext}}
-                                <a href="?page={{ratingsPagination.nextPage}}" class="pagination-btn" style="padding: 0.5rem 1rem; background: #333; color: #fff; text-decoration: none; border-radius: 4px;">Next →</a>
-                            {{/if}}
+                        {{!-- Username --}}
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Username*</label>
+                            <input
+                                    type="text"
+                                    id="rating-username"
+                                    name="username"
+                                    required
+                                    placeholder="Enter your username"
+                                    style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
                         </div>
+
+                        {{!-- Score --}}
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Score* (1-10)</label>
+                            <input
+                                    type="number"
+                                    id="rating-score"
+                                    name="score"
+                                    min="1"
+                                    max="10"
+                                    required
+                                    placeholder="1-10"
+                                    style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                        </div>
+
+                        {{!-- Status --}}
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Status*</label>
+                            <select
+                                    id="rating-status"
+                                    name="status"
+                                    required
+                                    style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                                <option value="">Select status</option>
+                                <option value="watching">Watching</option>
+                                <option value="completed">Completed</option>
+                                <option value="on_hold">On Hold</option>
+                                <option value="dropped">Dropped</option>
+                                <option value="plan_to_watch">Plan to Watch</option>
+                            </select>
+                        </div>
+
+                        {{!-- Episodes Watched --}}
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Episodes Watched*</label>
+                            <input
+                                    type="number"
+                                    id="rating-episodes"
+                                    name="num_watched_episodes"
+                                    min="0"
+                                    required
+                                    placeholder="0"
+                                    style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                        </div>
+
+                        {{!-- Is Rewatching --}}
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Rewatching?</label>
+                            <select
+                                    id="rating-rewatching"
+                                    name="is_rewatching"
+                                    style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                                <option value="0">No</option>
+                                <option value="1">Yes</option>
+                            </select>
+                        </div>
+
+                        {{!-- Submit Button --}}
+                        <div>
+                            <button
+                                    type="submit"
+                                    id="submit-rating-btn"
+                                    style="width: 100%; padding: 0.5rem 1rem; background: #4caf50; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.3s;">
+                                Submit Rating
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                {{!-- FILTER SECTION --}}
+                <div class="ratings-filters" style="background: #1a1a1a; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end;">
+
+                        {{!-- Score Range Filter --}}
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Min Score</label>
+                            <select id="filter-minScore" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                                <option value="">Any</option>
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Max Score</label>
+                            <select id="filter-maxScore" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                                <option value="">Any</option>
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                            </select>
+                        </div>
+
+                        {{!-- Status Filter --}}
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Status</label>
+                            <select id="filter-status" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                                <option value="">All</option>
+                                <option value="watching">Watching</option>
+                                <option value="completed">Completed</option>
+                                <option value="on_hold">On Hold</option>
+                                <option value="dropped">Dropped</option>
+                                <option value="plan_to_watch">Plan to Watch</option>
+                            </select>
+                        </div>
+
+                        {{!-- Rewatching Filter --}}
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Rewatching</label>
+                            <select id="filter-rewatching" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                                <option value="">All</option>
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+
+                        {{!-- Sort By --}}
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Sort By</label>
+                            <select id="filter-sortBy" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                                <option value="score">Score</option>
+                                <option value="username">Username</option>
+                                <option value="status">Status</option>
+                                <option value="num_watched_episodes">Episodes Watched</option>
+                            </select>
+                        </div>
+
+                        {{!-- Sort Order --}}
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Order</label>
+                            <select id="filter-sortOrder" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                                <option value="desc">Descending</option>
+                                <option value="asc">Ascending</option>
+                            </select>
+                        </div>
+
+                        {{!-- Filter Buttons --}}
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button id="apply-filters-btn" style="flex: 1; padding: 0.5rem 1rem; background: #2196f3; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                                Apply
+                            </button>
+                            <button id="clear-filters-btn" style="flex: 1; padding: 0.5rem 1rem; background: #555; color: #fff; border: none; border-radius: 4px; cursor: pointer;">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {{!-- RATINGS TABLE (Dynamically Updated) --}}
+                <div id="ratings-container">
+                    {{#if ratings}}
+                        {{#if ratings.length}}
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse; background: #1a1a1a; border-radius: 8px; overflow: hidden; margin-bottom: 2rem;">
+                                    <thead>
+                                    <tr style="background: #333; color: #fff; text-align: left;">
+                                        <th style="padding: 12px 15px;">User</th>
+                                        <th style="padding: 12px 15px;">Score</th>
+                                        <th style="padding: 12px 15px;">Status</th>
+                                        <th style="padding: 12px 15px;">Is Rewatching</th>
+                                        <th style="padding: 12px 15px;">Watched Episodes</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {{#each ratings}}
+                                        <tr style="border-bottom: 1px solid #2d2d2d; color: #ccc;">
+                                            <td style="padding: 12px 15px;">
+                                                <span style="font-weight: bold; color: #fff;">{{this.username}}</span>
+                                            </td>
+                                            <td style="padding: 12px 15px;">
+                                                <span style="color: #ff9800; font-weight: bold;">⭐ {{this.score}}</span>
+                                            </td>
+                                            <td style="padding: 12px 15px; text-transform: capitalize;">
+                                                {{this.status}}
+                                            </td>
+                                            <td style="padding: 12px 15px;">
+                                                {{#if this.is_rewatching}}
+                                                    <span style="color: #4caf50; font-weight: bold;">Yes</span>
+                                                {{else}}
+                                                    <span style="color: #888;">No</span>
+                                                {{/if}}
+                                            </td>
+                                            <td style="padding: 12px 15px;">
+                                                {{this.num_watched_episodes}}
+                                            </td>
+                                        </tr>
+                                    {{/each}}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {{!-- PAGINATION --}}
+                            {{#if ratingsPagination}}
+                                {{#if ratingsPagination.hasNext}}
+                                    <div class="pagination" style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1rem;">
+                                        {{#if ratingsPagination.hasPrev}}
+                                            <a href="{{ratingsPagination.prevUrl}}" style="padding: 0.5rem 1rem; background: #333; color: #fff; text-decoration: none; border-radius: 4px;">
+                                                ← Previous
+                                            </a>
+                                        {{/if}}
+
+                                        <span class="page-info" style="color: #ccc;">
+                                            Page {{ratingsPagination.currentPage}} of {{ratingsPagination.totalPages}}
+                                        </span>
+
+                                        {{#if ratingsPagination.hasNext}}
+                                            <a href="{{ratingsPagination.nextUrl}}" style="padding: 0.5rem 1rem; background: #333; color: #fff; text-decoration: none; border-radius: 4px;">
+                                                Next →
+                                            </a>
+                                        {{/if}}
+                                    </div>
+                                {{else}}
+                                    {{#if ratingsPagination.hasPrev}}
+                                        <div class="pagination" style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1rem;">
+                                            <a href="{{ratingsPagination.prevUrl}}" style="padding: 0.5rem 1rem; background: #333; color: #fff; text-decoration: none; border-radius: 4px;">
+                                                ← Previous
+                                            </a>
+
+                                            <span class="page-info" style="color: #ccc;">
+                                                Page {{ratingsPagination.currentPage}} of {{ratingsPagination.totalPages}}
+                                            </span>
+                                        </div>
+                                    {{/if}}
+                                {{/if}}
+                            {{/if}}
+                        {{/if}}
+                    {{else}}
+                        <p style="color: #888; font-style: italic; margin-bottom: 2rem;">No ratings available for this anime yet.</p>
                     {{/if}}
-                {{else}}
-                    <p style="color: #888; font-style: italic; margin-bottom: 2rem;">No ratings available for this anime yet.</p>
-                {{/if}}
+                </div>{{!-- End ratings-container --}}
+
+                {{!-- Include external JavaScript for ratings functionality --}}
+                <script src="/js/anime_detail.js"></script>
             </section>
 
         </article>
