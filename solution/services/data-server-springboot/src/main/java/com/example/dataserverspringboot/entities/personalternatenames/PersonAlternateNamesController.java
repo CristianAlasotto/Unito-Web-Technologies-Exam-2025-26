@@ -27,7 +27,7 @@ public class PersonAlternateNamesController {
             @RequestParam(required = false) String fields,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
-            @RequestParam(required = false) Integer personMalId,
+            @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -150,7 +150,7 @@ public class PersonAlternateNamesController {
      */
     @GetMapping("/single")
     public ResponseEntity<?> getSingle(
-            @RequestParam(required = false) Integer personMalId,
+            @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
             @RequestParam(required = false) String altName,
             @RequestParam(required = false) String fields) {
         
@@ -190,7 +190,7 @@ public class PersonAlternateNamesController {
      */
     @GetMapping("/summary")
     public ResponseEntity<?> getSummary(
-            @RequestParam(required = false) Integer personMalId,
+            @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
             @RequestParam(required = false) String altName) {
         
         // Check if all key fields are provided

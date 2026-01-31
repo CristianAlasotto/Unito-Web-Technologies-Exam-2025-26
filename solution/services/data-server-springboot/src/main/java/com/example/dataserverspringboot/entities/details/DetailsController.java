@@ -30,6 +30,9 @@ public class DetailsController {
 
     @Autowired
     private DetailsService service;
+
+    @Autowired
+    private DetailsRepository detailsRepository;
     
     @Autowired
     private CharacterAnimeWorksRepository characterAnimeWorksRepository;
@@ -496,4 +499,76 @@ public class DetailsController {
         
         return Sort.by(orders);
     }
+
+    /**
+     * Get recommendations for a specific anime (JPA version)
+     * GET /api/details/{mal_id}/recommendations
+     */
+    @GetMapping("/{mal_id}/recommendations")
+    public ResponseEntity<?> getRecommendations(
+            @PathVariable("mal_id") Integer malId,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer offset,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer pageSize) {
+        
+        // Check if anime exists
+        Optional<Details> anime = service.getById(malId);
+        if (anime.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Anime not found");
+            error.put("mal_id", malId);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        // Pagination setup
+        boolean usePageBased = (page != null || pageSize != null);
+        
+        if (usePageBased) {
+            int finalPage = (page != null) ? page : 1;
+            int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
+            
+            Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, Sort.by("score").descending());
+            Page<Details> recommendationsPage = detailsRepository.findRecommendationsForAnime(malId, pageable);
+            
+            List<Map<String, Object>> recommendations = recommendationsPage.getContent().stream()
+                .map(this::toSnakeCaseMap)
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("anime", toSnakeCaseMap(anime.get()));
+            response.put("page", finalPage);
+            response.put("pageSize", finalPageSize);
+            response.put("totalPages", recommendationsPage.getTotalPages());
+            response.put("total", recommendationsPage.getTotalElements());
+            response.put("recommendations", recommendations);
+            return ResponseEntity.ok(response);
+            
+        } else {
+            // Offset-based or default
+            int finalLimit = (limit != null) ? limit : 10;
+            int finalOffset = (offset != null) ? offset : 0;
+            int pageNum = finalOffset / finalLimit;
+            
+            Pageable pageable = PageRequest.of(pageNum, finalLimit, Sort.by("score").descending());
+            Page<Details> recommendationsPage = detailsRepository.findRecommendationsForAnime(malId, pageable);
+            
+            List<Map<String, Object>> recommendations = recommendationsPage.getContent().stream()
+                .map(this::toSnakeCaseMap)
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("anime", toSnakeCaseMap(anime.get()));
+            
+            if (limit != null || offset != null) {
+                response.put("limit", finalLimit);
+                response.put("offset", finalOffset);
+            }
+            
+            response.put("total", recommendationsPage.getTotalElements());
+            response.put("recommendations", recommendations);
+            return ResponseEntity.ok(response);
+        }
+    }
+
 }

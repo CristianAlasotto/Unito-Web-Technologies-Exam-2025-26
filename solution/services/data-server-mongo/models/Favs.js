@@ -4,11 +4,6 @@ const FavSchema = new mongoose.Schema({
     username: String,
     fav_type: String,
     id: Number,
-
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
 }, {
     collection: 'favs'
 });

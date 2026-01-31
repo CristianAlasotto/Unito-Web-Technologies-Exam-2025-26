@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * Composite key table - supports list operations only
  */
 @RestController
-@RequestMapping("/api/character_nicknames")
+@RequestMapping("/api/character-nicknames")
 @CrossOrigin(origins = "*")
 public class CharacterNicknamesController {
 
@@ -27,7 +27,7 @@ public class CharacterNicknamesController {
             @RequestParam(required = false) String fields,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
-            @RequestParam(required = false) Integer characterMalId,
+            @RequestParam(value = "character_mal_id", required = false) Integer characterMalId,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -146,11 +146,11 @@ public class CharacterNicknamesController {
 
     /**
      * Get single resource by composite key (using query parameters)
-     * GET /api/character_nicknames/single?character_mal_id&nickname
+     * GET /api/character-nicknames/single?character_mal_id&nickname
      */
     @GetMapping("/single")
     public ResponseEntity<?> getSingle(
-            @RequestParam(required = false) Integer characterMalId,
+            @RequestParam(value = "character_mal_id", required = false) Integer characterMalId,
             @RequestParam(required = false) String nickname,
             @RequestParam(required = false) String fields) {
         
@@ -158,7 +158,7 @@ public class CharacterNicknamesController {
         if (characterMalId == null || nickname == null) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "All key fields required: characterMalId, nickname");
-            error.put("usage", "GET /api/character_nicknames/single?character_mal_id&nickname");
+            error.put("usage", "GET /api/character-nicknames/single?character_mal_id&nickname");
             return ResponseEntity.status(400).body(error);
         }
         
@@ -186,18 +186,18 @@ public class CharacterNicknamesController {
 
     /**
      * Get summary by composite key (using query parameters)
-     * GET /api/character_nicknames/summary?character_mal_id&nickname
+     * GET /api/character-nicknames/summary?character_mal_id&nickname
      */
     @GetMapping("/summary")
     public ResponseEntity<?> getSummary(
-            @RequestParam(required = false) Integer characterMalId,
+            @RequestParam(value = "character_mal_id", required = false) Integer characterMalId,
             @RequestParam(required = false) String nickname) {
         
         // Check if all key fields are provided
         if (characterMalId == null || nickname == null) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "All key fields required: characterMalId, nickname");
-            error.put("usage", "GET /api/character_nicknames/summary?character_mal_id&nickname");
+            error.put("usage", "GET /api/character-nicknames/summary?character_mal_id&nickname");
             return ResponseEntity.status(400).body(error);
         }
         

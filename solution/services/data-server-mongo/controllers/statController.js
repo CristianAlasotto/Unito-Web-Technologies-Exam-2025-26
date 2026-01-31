@@ -1,27 +1,34 @@
-const statService = require('../services/statService'); //
+const statService = require('../services/statService');
 
-exports.getStats = async (params, maxAgeMs) => {
-    const data = await statService.fetchStats(params);
-    if (!data || data.length === 0) return null;
+exports.getStats = async (req, res) => {
+    try {
+        const params = req.query;
+        const data = await statService.fetchStats(params);
 
-    const ageMs = Date.now() - new Date(data[0].createdAt).getTime();
-    if (ageMs > maxAgeMs) return null;
+        if (!data || data.length === 0) {
+            return res.status(404).json({ message: "No statistics found" });
+        }
 
-    return data;
+        return res.json(data);
+    } catch (error) {
+        console.error("Error fetching stats:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
 };
 
-exports.getStatById = async (id, maxAgeMs) => {
+exports.getStatById = async (req, res) => {
+    try {
+        const { id } = req.params;
 
-    const data = await statService.fetchStats({ mal_id: id });
+        const data = await statService.fetchStats({ mal_id: id });
 
-    if (!data || data.length === 0) return null;
+        if (!data || data.length === 0) {
+            return res.status(404).json({ message: "Statistic not found" });
+        }
 
-    const ageMs = Date.now() - new Date(data[0].createdAt).getTime();
-    if (ageMs > maxAgeMs) return null;
-
-    return data[0];
-};
-
-exports.saveStats = async (dataList) => {
-    return await statService.saveStats(dataList);
+        return res.json(data[0]);
+    } catch (error) {
+        console.error("Error fetching stat by ID:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
 };

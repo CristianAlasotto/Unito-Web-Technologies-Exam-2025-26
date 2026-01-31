@@ -28,8 +28,8 @@ public class PersonAnimeWorksController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String position,
-            @RequestParam(required = false) Integer personMalId,
-            @RequestParam(required = false) Integer animeMalId,
+            @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
+            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -152,9 +152,9 @@ public class PersonAnimeWorksController {
      */
     @GetMapping("/single")
     public ResponseEntity<?> getSingle(
-            @RequestParam(required = false) Integer personMalId,
+            @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
             @RequestParam(required = false) String position,
-            @RequestParam(required = false) Integer animeMalId,
+            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId,
             @RequestParam(required = false) String fields) {
         
         // Check if all key fields are provided
@@ -193,9 +193,9 @@ public class PersonAnimeWorksController {
      */
     @GetMapping("/summary")
     public ResponseEntity<?> getSummary(
-            @RequestParam(required = false) Integer personMalId,
+            @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
             @RequestParam(required = false) String position,
-            @RequestParam(required = false) Integer animeMalId) {
+            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId) {
         
         // Check if all key fields are provided
         if (personMalId == null || position == null || animeMalId == null) {
