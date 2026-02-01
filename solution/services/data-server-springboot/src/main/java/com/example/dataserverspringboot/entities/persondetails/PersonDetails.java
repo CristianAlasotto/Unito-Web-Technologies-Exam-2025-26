@@ -141,10 +141,10 @@ public class PersonDetails {
     @Override
     public String toString() {
         return "PersonDetails{" +
-                "person_mal_id=" + personMalId +
+                "personMalId=" + personMalId +
                 ", name='" + name + '\'' +
-                ", given_name='" + givenName + '\'' +
-                ", family_name='" + familyName + '\'' +
+                ", givenName='" + givenName + '\'' +
+                ", familyName='" + familyName + '\'' +
                 ", birthday=" + birthday +
                 ", favorites=" + favorites +
                 '}';

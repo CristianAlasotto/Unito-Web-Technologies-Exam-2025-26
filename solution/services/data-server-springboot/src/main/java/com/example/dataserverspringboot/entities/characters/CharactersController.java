@@ -1,5 +1,7 @@
 package com.example.dataserverspringboot.entities.characters;
 
+import com.example.dataserverspringboot.entities.details.Details;
+import com.example.dataserverspringboot.entities.persondetails.PersonDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,6 +23,9 @@ public class CharactersController {
 
     @Autowired
     private CharactersService service;
+
+    @Autowired
+    private CharactersRepository charactersRepository;
 
     @GetMapping("/{character_mal_id}")
     public ResponseEntity<?> getById(
@@ -65,11 +70,153 @@ public class CharactersController {
         return ResponseEntity.ok(summary);
     }
 
+    /**
+     * JOIN 3: Get all anime where this character appears
+     * GET /api/characters/{character_mal_id}/anime
+     */
+    @GetMapping("/{character_mal_id}/anime")
+    public ResponseEntity<?> getAnimeAppearances(
+            @PathVariable("character_mal_id") Integer characterMalId,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer offset,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer pageSize) {
+        
+        // Check if character exists
+        Optional<Characters> character = service.getById(characterMalId);
+        if (character.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Character not found");
+            error.put("character_mal_id", characterMalId);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        // Pagination setup
+        boolean usePageBased = (page != null || pageSize != null);
+        
+        if (usePageBased) {
+            int finalPage = (page != null) ? page : 1;
+            int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
+            
+            Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize);
+            Page<Details> animePage = charactersRepository.findAnimeAppearances(characterMalId, pageable);
+            
+            List<Map<String, Object>> animeList = animePage.getContent().stream()
+                .map(this::toDetailsSnakeCaseMap)
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("character", toSnakeCaseMap(character.get()));
+            response.put("page", finalPage);
+            response.put("pageSize", finalPageSize);
+            response.put("totalPages", animePage.getTotalPages());
+            response.put("total", animePage.getTotalElements());
+            response.put("anime", animeList);
+            return ResponseEntity.ok(response);
+            
+        } else {
+            int finalLimit = (limit != null) ? limit : 10;
+            int finalOffset = (offset != null) ? offset : 0;
+            int pageNum = finalOffset / finalLimit;
+            
+            Pageable pageable = PageRequest.of(pageNum, finalLimit);
+            Page<Details> animePage = charactersRepository.findAnimeAppearances(characterMalId, pageable);
+            
+            List<Map<String, Object>> animeList = animePage.getContent().stream()
+                .map(this::toDetailsSnakeCaseMap)
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("character", toSnakeCaseMap(character.get()));
+            
+            if (limit != null || offset != null) {
+                response.put("limit", finalLimit);
+                response.put("offset", finalOffset);
+            }
+            
+            response.put("total", animePage.getTotalElements());
+            response.put("anime", animeList);
+            return ResponseEntity.ok(response);
+        }
+    }
+
+    /**
+     * JOIN 4: Get all voice actors for this character
+     * GET /api/characters/{character_mal_id}/voice_actors
+     */
+    @GetMapping("/{character_mal_id}/voice_actors")
+    public ResponseEntity<?> getVoiceActors(
+            @PathVariable("character_mal_id") Integer characterMalId,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer offset,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer pageSize) {
+        
+        // Check if character exists
+        Optional<Characters> character = service.getById(characterMalId);
+        if (character.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Character not found");
+            error.put("character_mal_id", characterMalId);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        // Pagination setup
+        boolean usePageBased = (page != null || pageSize != null);
+        
+        if (usePageBased) {
+            int finalPage = (page != null) ? page : 1;
+            int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
+            
+            Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize);
+            Page<PersonDetails> voiceActorsPage = charactersRepository.findVoiceActors(characterMalId, pageable);
+            
+            List<Map<String, Object>> voiceActors = voiceActorsPage.getContent().stream()
+                .map(this::toPersonDetailsSnakeCaseMap)
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("character", toSnakeCaseMap(character.get()));
+            response.put("page", finalPage);
+            response.put("pageSize", finalPageSize);
+            response.put("totalPages", voiceActorsPage.getTotalPages());
+            response.put("total", voiceActorsPage.getTotalElements());
+            response.put("voice_actors", voiceActors);
+            return ResponseEntity.ok(response);
+            
+        } else {
+            int finalLimit = (limit != null) ? limit : 10;
+            int finalOffset = (offset != null) ? offset : 0;
+            int pageNum = finalOffset / finalLimit;
+            
+            Pageable pageable = PageRequest.of(pageNum, finalLimit);
+            Page<PersonDetails> voiceActorsPage = charactersRepository.findVoiceActors(characterMalId, pageable);
+            
+            List<Map<String, Object>> voiceActors = voiceActorsPage.getContent().stream()
+                .map(this::toPersonDetailsSnakeCaseMap)
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("character", toSnakeCaseMap(character.get()));
+            
+            if (limit != null || offset != null) {
+                response.put("limit", finalLimit);
+                response.put("offset", finalOffset);
+            }
+            
+            response.put("total", voiceActorsPage.getTotalElements());
+            response.put("voice_actors", voiceActors);
+            return ResponseEntity.ok(response);
+        }
+    }
+
     @GetMapping
     public ResponseEntity<?> getAll(
             @RequestParam(required = false) String fields,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String nullFilter,      // NEW
+            @RequestParam(required = false) String notNullFilter,   // NEW
             
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
@@ -86,10 +233,7 @@ public class CharactersController {
             int finalOffset = (offset != null) ? offset : 0;
             
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
-            Page<Characters> pageResult = service.findWithFilters(
-                search,
-                
-                pageable);
+            Page<Characters> pageResult = service.findWithFilters(search, nullFilter, notNullFilter, pageable);
             
             List<Characters> results = pageResult.getContent();
             long totalCount = pageResult.getTotalElements();
@@ -107,7 +251,6 @@ public class CharactersController {
                 return ResponseEntity.ok(response);
             }
             
-            // Convert all entities to snake_case
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
@@ -124,10 +267,7 @@ public class CharactersController {
             int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
             
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
-            Page<Characters> pageResult = service.findWithFilters(
-                search,
-                
-                pageable);
+            Page<Characters> pageResult = service.findWithFilters(search, nullFilter, notNullFilter, pageable);
             
             List<Characters> results = pageResult.getContent();
             long totalPages = pageResult.getTotalPages();
@@ -145,7 +285,6 @@ public class CharactersController {
                 return ResponseEntity.ok(response);
             }
             
-            // Convert all entities to snake_case
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
@@ -159,10 +298,7 @@ public class CharactersController {
             
         } else {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
-            Page<Characters> pageResult = service.findWithFilters(
-                search,
-                
-                pageable);
+            Page<Characters> pageResult = service.findWithFilters(search, nullFilter, notNullFilter, pageable);
             
             List<Characters> results = pageResult.getContent();
             
@@ -173,7 +309,6 @@ public class CharactersController {
                 return ResponseEntity.ok(filteredResults);
             }
             
-            // Convert all entities to snake_case
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
@@ -190,7 +325,22 @@ public class CharactersController {
     }
 
     /**
-     * Convert entity to Map with snake_case field names
+     * Get statistics on NULL values for various fields
+     * GET /api/characters/stats/null_counts
+     */
+    @GetMapping("/stats/null_counts")
+    public ResponseEntity<Map<String, Object>> getNullCounts() {
+        Map<String, Long> nullCounts = service.getNullCounts();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("null_counts", nullCounts);
+        response.put("total_records", service.count());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Convert Characters entity to Map with snake_case field names
      */
     private Map<String, Object> toSnakeCaseMap(Characters entity) {
         Map<String, Object> result = new HashMap<>();
@@ -205,8 +355,39 @@ public class CharactersController {
     }
 
     /**
+     * Convert Details entity to Map with snake_case field names
+     */
+    private Map<String, Object> toDetailsSnakeCaseMap(Details entity) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("mal_id", entity.getMalId());
+        result.put("title", entity.getTitle());
+        result.put("title_japanese", entity.getTitleJapanese());
+        result.put("type", entity.getType());
+        result.put("score", entity.getScore());
+        result.put("image_url", entity.getImageUrl());
+        result.put("episodes", entity.getEpisodes());
+        result.put("year", entity.getYear());
+        result.put("status", entity.getStatus());
+        return result;
+    }
+
+    /**
+     * Convert PersonDetails entity to Map with snake_case field names
+     */
+    private Map<String, Object> toPersonDetailsSnakeCaseMap(PersonDetails entity) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("person_mal_id", entity.getPersonMalId());
+        result.put("name", entity.getName());
+        result.put("given_name", entity.getGivenName());
+        result.put("family_name", entity.getFamilyName());
+        result.put("image_url", entity.getImageUrl());
+        result.put("favorites", entity.getFavorites());
+        result.put("birthday", entity.getBirthday());
+        return result;
+    }
+
+    /**
      * Filter fields based on comma-separated field list
-     * Field names use snake_case
      */
     private Map<String, Object> filterFields(Characters entity, String fields) {
         Map<String, Object> result = new HashMap<>();
@@ -243,22 +424,23 @@ public class CharactersController {
     }
 
     private Sort parseSortParameter(String sort) {
-        if (sort == null || sort.isEmpty()) {
-            return Sort.unsorted();
-        }
-        
-        String[] sortFields = sort.split(",");
         List<Sort.Order> orders = new ArrayList<>();
-        
-        for (String field : sortFields) {
-            field = field.trim();
-            if (field.startsWith("-")) {
-                orders.add(Sort.Order.desc(field.substring(1)));
-            } else {
-                orders.add(Sort.Order.asc(field));
+
+        if (sort != null && !sort.isEmpty()) {
+            String[] sortFields = sort.split(",");
+            for (String field : sortFields) {
+                field = field.trim();
+                if (field.startsWith("-")) {
+                    orders.add(Sort.Order.desc(field.substring(1)));
+                } else {
+                    orders.add(Sort.Order.asc(field));
+                }
             }
         }
-        
-        return Sort.by(orders);
+
+        // CRITICAL FIX: Always add primaryKeys as tiebreaker
+        orders.add(Sort.Order.asc("characterMalId"));
+
+        return Sort.by(orders);  // ← Now ALWAYS consistent!
     }
 }

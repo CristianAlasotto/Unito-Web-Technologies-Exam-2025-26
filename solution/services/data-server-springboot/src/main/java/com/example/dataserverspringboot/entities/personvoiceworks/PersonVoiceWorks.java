@@ -21,24 +21,23 @@ public class PersonVoiceWorks {
     @Column(name = "anime_mal_id")
     private Integer animeMalId;
     
-    @Id
-    @Column(name = "language")
-    private String language;
-    
     @Column(name = "role")
     private String role;
+    
+    @Column(name = "language")
+    private String language;
 
     // Constructors
     public PersonVoiceWorks() {
     }
 
     public PersonVoiceWorks(Integer personMalId, Integer characterMalId, 
-                              Integer animeMalId, String language, String role) {
+                              Integer animeMalId, String role, String language) {
         this.personMalId = personMalId;
         this.characterMalId = characterMalId;
         this.animeMalId = animeMalId;
-        this.language = language;
         this.role = role;
+        this.language = language;
     }
 
     // Getters and Setters
@@ -66,14 +65,6 @@ public class PersonVoiceWorks {
         this.animeMalId = animeMalId;
     }
 
-    public String getLanguage() {
-        return language;
-    }
-
-    public void setLanguage(String language) {
-        this.language = language;
-    }
-
     public String getRole() {
         return role;
     }
@@ -82,14 +73,22 @@ public class PersonVoiceWorks {
         this.role = role;
     }
 
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
     @Override
     public String toString() {
         return "PersonVoiceWorks{" +
                 "personMalId=" + personMalId +
                 ", characterMalId=" + characterMalId +
                 ", animeMalId=" + animeMalId +
-                ", language='" + language + '\'' +
                 ", role='" + role + '\'' +
+                ", language='" + language + '\'' +
                 '}';
     }
 
@@ -98,16 +97,14 @@ public class PersonVoiceWorks {
         private Integer personMalId;
         private Integer characterMalId;
         private Integer animeMalId;
-        private String language;
 
         public PersonVoiceWorksId() {
         }
 
-        public PersonVoiceWorksId(Integer personMalId, Integer characterMalId, Integer animeMalId, String language) {
+        public PersonVoiceWorksId(Integer personMalId, Integer characterMalId, Integer animeMalId) {
             this.personMalId = personMalId;
             this.characterMalId = characterMalId;
             this.animeMalId = animeMalId;
-            this.language = language;
         }
 
         public Integer getPersonMalId() {
@@ -134,14 +131,6 @@ public class PersonVoiceWorks {
             this.animeMalId = animeMalId;
         }
 
-        public String getLanguage() {
-            return language;
-        }
-
-        public void setLanguage(String language) {
-            this.language = language;
-        }
-
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -149,13 +138,12 @@ public class PersonVoiceWorks {
             PersonVoiceWorksId that = (PersonVoiceWorksId) o;
             return Objects.equals(personMalId, that.personMalId) && 
                    Objects.equals(characterMalId, that.characterMalId) && 
-                   Objects.equals(animeMalId, that.animeMalId) &&
-                   Objects.equals(language, that.language);
+                   Objects.equals(animeMalId, that.animeMalId);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(personMalId, characterMalId, animeMalId, language);
+            return Objects.hash(personMalId, characterMalId, animeMalId);
         }
     }
 }
