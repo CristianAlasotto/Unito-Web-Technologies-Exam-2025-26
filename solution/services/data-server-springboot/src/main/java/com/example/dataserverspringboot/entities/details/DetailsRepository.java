@@ -54,4 +54,85 @@ public interface DetailsRepository extends JpaRepository<Details, Integer> {
      */
     @Query("SELECT COUNT(r) FROM com.example.dataserverspringboot.entities.recommendations.Recommendations r WHERE r.malId = :malId")
     long countRecommendationsForAnime(@Param("malId") Integer malId);
+
+    // ============================================================
+    // NULL FILTERING METHODS
+    // ============================================================
+
+    /**
+     * Find all anime where synopsis IS NULL
+     */
+    Page<Details> findBySynopsisIsNull(Pageable pageable);
+
+    /**
+     * Find all anime where synopsis IS NOT NULL
+     */
+    Page<Details> findBySynopsisIsNotNull(Pageable pageable);
+
+    /**
+     * Find all anime where score IS NULL (unrated)
+     */
+    Page<Details> findByScoreIsNull(Pageable pageable);
+
+    /**
+     * Find all anime where score IS NOT NULL (rated)
+     */
+    Page<Details> findByScoreIsNotNull(Pageable pageable);
+
+    /**
+     * Find all anime where end_date IS NULL (currently airing or unknown)
+     */
+    Page<Details> findByEndDateIsNull(Pageable pageable);
+
+    /**
+     * Find all anime where end_date IS NOT NULL (finished airing)
+     */
+    Page<Details> findByEndDateIsNotNull(Pageable pageable);
+
+    /**
+     * Find all anime where title_japanese IS NULL
+     */
+    Page<Details> findByTitleJapaneseIsNull(Pageable pageable);
+
+    /**
+     * Find all anime where title_japanese IS NOT NULL
+     */
+    Page<Details> findByTitleJapaneseIsNotNull(Pageable pageable);
+
+    /**
+     * Find all anime where season IS NULL (movies, OVAs, etc.)
+     */
+    Page<Details> findBySeasonIsNull(Pageable pageable);
+
+    /**
+     * Find all anime where season IS NOT NULL (seasonal anime)
+     */
+    Page<Details> findBySeasonIsNotNull(Pageable pageable);
+
+    // Count methods for statistics
+
+    /**
+     * Count anime with null synopsis
+     */
+    long countBySynopsisIsNull();
+
+    /**
+     * Count anime with null score
+     */
+    long countByScoreIsNull();
+
+    /**
+     * Count anime with null end_date
+     */
+    long countByEndDateIsNull();
+
+    /**
+     * Count anime with null title_japanese
+     */
+    long countByTitleJapaneseIsNull();
+
+    /**
+     * Count anime with null season
+     */
+    long countBySeasonIsNull();
 }

@@ -4,7 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -50,21 +51,69 @@ public class DetailsService {
     }
 
     /**
-     * Update the score for a specific anime
-     * @param malId The anime MAL ID
-     * @param newScore The new score value
-     * @return The updated Details object, or empty if not found
+     * Find records with filters including NULL/NOT NULL filters
      */
-    public Optional<Details> updateScore(Integer malId, BigDecimal newScore) {
-        Optional<Details> detailsOpt = repository.findById(malId);
+    public Page<Details> findWithFilters(String search, String type, Integer year, String status, 
+                                        String rating, String source, 
+                                        String nullFilter, String notNullFilter, 
+                                        Pageable pageable) {
         
-        if (detailsOpt.isPresent()) {
-            Details details = detailsOpt.get();
-            details.setScore(newScore);
-            Details updated = repository.save(details);
-            return Optional.of(updated);
+        // Handle NULL filter first (takes precedence)
+        if (nullFilter != null && !nullFilter.isEmpty()) {
+            return handleNullFilter(nullFilter, pageable);
         }
         
-        return Optional.empty();
+        // Handle NOT NULL filter
+        if (notNullFilter != null && !notNullFilter.isEmpty()) {
+            return handleNotNullFilter(notNullFilter, pageable);
+        }
+        
+        // Fall back to regular filters
+        return findWithFilters(search, type, year, status, rating, source, pageable);
+    }
+
+    /**
+     * Handle NULL filtering for specific field
+     */
+    private Page<Details> handleNullFilter(String field, Pageable pageable) {
+        return switch (field.toLowerCase()) {
+            case "synopsis" -> repository.findBySynopsisIsNull(pageable);
+            case "score" -> repository.findByScoreIsNull(pageable);
+            case "end_date", "enddate" -> repository.findByEndDateIsNull(pageable);
+            case "title_japanese", "titlejapanese" -> repository.findByTitleJapaneseIsNull(pageable);
+            case "season" -> repository.findBySeasonIsNull(pageable);
+            default ->
+                // Invalid field name, return all records
+                    repository.findAll(pageable);
+        };
+    }
+
+    /**
+     * Handle NOT NULL filtering for specific field
+     */
+    private Page<Details> handleNotNullFilter(String field, Pageable pageable) {
+        return switch (field.toLowerCase()) {
+            case "synopsis" -> repository.findBySynopsisIsNotNull(pageable);
+            case "score" -> repository.findByScoreIsNotNull(pageable);
+            case "end_date", "enddate" -> repository.findByEndDateIsNotNull(pageable);
+            case "title_japanese", "titlejapanese" -> repository.findByTitleJapaneseIsNotNull(pageable);
+            case "season" -> repository.findBySeasonIsNotNull(pageable);
+            default ->
+                // Invalid field name, return all records
+                    repository.findAll(pageable);
+        };
+    }
+
+    /**
+     * Get statistics on NULL values
+     */
+    public Map<String, Long> getNullCounts() {
+        Map<String, Long> counts = new HashMap<>();
+        counts.put("synopsis", repository.countBySynopsisIsNull());
+        counts.put("score", repository.countByScoreIsNull());
+        counts.put("end_date", repository.countByEndDateIsNull());
+        counts.put("title_japanese", repository.countByTitleJapaneseIsNull());
+        counts.put("season", repository.countBySeasonIsNull());
+        return counts;
     }
 }

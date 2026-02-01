@@ -51,4 +51,55 @@ public interface CharactersRepository extends JpaRepository<Characters, Integer>
     @Query("SELECT COUNT(DISTINCT pvw.personMalId) FROM com.example.dataserverspringboot.entities.personvoiceworks.PersonVoiceWorks pvw " +
            "WHERE pvw.characterMalId = :characterMalId")
     long countVoiceActors(@Param("characterMalId") Integer characterMalId);
+
+    // ============================================================
+    // NULL FILTERING METHODS
+    // ============================================================
+
+    /**
+     * Find all characters where nameKanji IS NULL
+     */
+    Page<Characters> findByNameKanjiIsNull(Pageable pageable);
+
+    /**
+     * Find all characters where nameKanji IS NOT NULL
+     */
+    Page<Characters> findByNameKanjiIsNotNull(Pageable pageable);
+
+    /**
+     * Find all characters where image IS NULL
+     */
+    Page<Characters> findByImageIsNull(Pageable pageable);
+
+    /**
+     * Find all characters where image IS NOT NULL
+     */
+    Page<Characters> findByImageIsNotNull(Pageable pageable);
+
+    /**
+     * Find all characters where about IS NULL
+     */
+    Page<Characters> findByAboutIsNull(Pageable pageable);
+
+    /**
+     * Find all characters where about IS NOT NULL
+     */
+    Page<Characters> findByAboutIsNotNull(Pageable pageable);
+
+    // Count methods for statistics
+
+    /**
+     * Count characters with null nameKanji
+     */
+    long countByNameKanjiIsNull();
+
+    /**
+     * Count characters with null image
+     */
+    long countByImageIsNull();
+
+    /**
+     * Count characters with null about
+     */
+    long countByAboutIsNull();
 }

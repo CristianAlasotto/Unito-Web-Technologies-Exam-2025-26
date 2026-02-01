@@ -74,7 +74,7 @@ public class CharactersController {
      * JOIN 3: Get all anime where this character appears
      * GET /api/characters/{character_mal_id}/anime
      */
-    @GetMapping("/{character_mal_id}/details")
+    @GetMapping("/{character_mal_id}/anime")
     public ResponseEntity<?> getAnimeAppearances(
             @PathVariable("character_mal_id") Integer characterMalId,
             @RequestParam(required = false) Integer limit,
@@ -215,6 +215,8 @@ public class CharactersController {
             @RequestParam(required = false) String fields,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String nullFilter,      // NEW
+            @RequestParam(required = false) String notNullFilter,   // NEW
             
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
@@ -231,7 +233,7 @@ public class CharactersController {
             int finalOffset = (offset != null) ? offset : 0;
             
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
-            Page<Characters> pageResult = service.findWithFilters(search, pageable);
+            Page<Characters> pageResult = service.findWithFilters(search, nullFilter, notNullFilter, pageable);
             
             List<Characters> results = pageResult.getContent();
             long totalCount = pageResult.getTotalElements();
@@ -265,7 +267,7 @@ public class CharactersController {
             int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
             
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
-            Page<Characters> pageResult = service.findWithFilters(search, pageable);
+            Page<Characters> pageResult = service.findWithFilters(search, nullFilter, notNullFilter, pageable);
             
             List<Characters> results = pageResult.getContent();
             long totalPages = pageResult.getTotalPages();
@@ -296,7 +298,7 @@ public class CharactersController {
             
         } else {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
-            Page<Characters> pageResult = service.findWithFilters(search, pageable);
+            Page<Characters> pageResult = service.findWithFilters(search, nullFilter, notNullFilter, pageable);
             
             List<Characters> results = pageResult.getContent();
             
@@ -320,6 +322,21 @@ public class CharactersController {
         Map<String, Object> stats = new HashMap<>();
         stats.put("total", service.count());
         return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Get statistics on NULL values for various fields
+     * GET /api/characters/stats/null_counts
+     */
+    @GetMapping("/stats/null_counts")
+    public ResponseEntity<Map<String, Object>> getNullCounts() {
+        Map<String, Long> nullCounts = service.getNullCounts();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("null_counts", nullCounts);
+        response.put("total_records", service.count());
+        
+        return ResponseEntity.ok(response);
     }
 
     /**

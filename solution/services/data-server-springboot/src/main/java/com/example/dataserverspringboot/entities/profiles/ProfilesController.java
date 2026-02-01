@@ -73,6 +73,8 @@ public class ProfilesController {
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String gender,
             @RequestParam(required = false) String location,
+            @RequestParam(required = false) String nullFilter,      // NEW: Filter for NULL values
+            @RequestParam(required = false) String notNullFilter,   // NEW: Filter for NOT NULL values
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -92,6 +94,8 @@ public class ProfilesController {
                 search,
                 gender,
                 location,
+                nullFilter,       // NEW
+                notNullFilter,    // NEW
                 pageable);
             
             List<Profiles> results = pageResult.getContent();
@@ -131,6 +135,8 @@ public class ProfilesController {
                 search,
                 gender,
                 location,
+                nullFilter,       // NEW
+                notNullFilter,    // NEW
                 pageable);
             
             List<Profiles> results = pageResult.getContent();
@@ -167,6 +173,8 @@ public class ProfilesController {
                 search,
                 gender,
                 location,
+                nullFilter,       // NEW
+                notNullFilter,    // NEW
                 pageable);
             
             List<Profiles> results = pageResult.getContent();
@@ -192,6 +200,21 @@ public class ProfilesController {
         Map<String, Object> stats = new HashMap<>();
         stats.put("total", service.count());
         return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Get statistics on NULL values for various fields
+     * GET /api/profiles/stats/null_counts
+     */
+    @GetMapping("/stats/null_counts")
+    public ResponseEntity<Map<String, Object>> getNullCounts() {
+        Map<String, Long> nullCounts = service.getNullCounts();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("null_counts", nullCounts);
+        response.put("total_records", service.count());
+        
+        return ResponseEntity.ok(response);
     }
 
     /**

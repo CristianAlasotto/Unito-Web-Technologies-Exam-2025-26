@@ -1,6 +1,5 @@
 package com.example.dataserverspringboot.entities.persondetails;
 
-import com.example.dataserverspringboot.entities.details.Details;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,14 +17,14 @@ public interface PersonDetailsRepository extends JpaRepository<PersonDetails, In
     Page<PersonDetails> searchByName(@Param("search") String search, Pageable pageable);
 
     /**
-     * JOIN 2: Find all anime this person worked on
+     * JOIN 2: Find all anime works for this person
      * person_details → person_voice_works → details
      */
-    @Query("SELECT d FROM Details d WHERE d.malId IN " +
-           "(SELECT DISTINCT pvw.animeMalId FROM com.example.dataserverspringboot.entities.personvoiceworks.PersonVoiceWorks pvw " +
+    @Query("SELECT DISTINCT d FROM com.example.dataserverspringboot.entities.details.Details d WHERE d.malId IN " +
+           "(SELECT pvw.animeMalId FROM com.example.dataserverspringboot.entities.personvoiceworks.PersonVoiceWorks pvw " +
            "WHERE pvw.personMalId = :personMalId) " +
            "ORDER BY d.score DESC")
-    Page<Details> findAnimeWorks(@Param("personMalId") Integer personMalId, Pageable pageable);
+    Page<com.example.dataserverspringboot.entities.details.Details> findAnimeWorks(@Param("personMalId") Integer personMalId, Pageable pageable);
 
     /**
      * COUNT for JOIN 2
@@ -33,4 +32,86 @@ public interface PersonDetailsRepository extends JpaRepository<PersonDetails, In
     @Query("SELECT COUNT(DISTINCT pvw.animeMalId) FROM com.example.dataserverspringboot.entities.personvoiceworks.PersonVoiceWorks pvw " +
            "WHERE pvw.personMalId = :personMalId")
     long countAnimeWorks(@Param("personMalId") Integer personMalId);
+
+    // ============================================================
+    // NULL FILTERING METHODS
+    // ============================================================
+
+    /**
+     * Find all where website_url IS NULL
+     */
+    Page<PersonDetails> findByWebsiteUrlIsNull(Pageable pageable);
+
+    /**
+     * Find all where website_url IS NOT NULL
+     */
+    Page<PersonDetails> findByWebsiteUrlIsNotNull(Pageable pageable);
+
+    /**
+     * Find all where given_name IS NULL
+     */
+    Page<PersonDetails> findByGivenNameIsNull(Pageable pageable);
+
+    /**
+     * Find all where given_name IS NOT NULL
+     */
+    Page<PersonDetails> findByGivenNameIsNotNull(Pageable pageable);
+
+    /**
+     * Find all where family_name IS NULL
+     */
+    Page<PersonDetails> findByFamilyNameIsNull(Pageable pageable);
+
+    /**
+     * Find all where family_name IS NOT NULL
+     */
+    Page<PersonDetails> findByFamilyNameIsNotNull(Pageable pageable);
+
+    /**
+     * Find all where birthday IS NULL
+     */
+    Page<PersonDetails> findByBirthdayIsNull(Pageable pageable);
+
+    /**
+     * Find all where birthday IS NOT NULL
+     */
+    Page<PersonDetails> findByBirthdayIsNotNull(Pageable pageable);
+
+    /**
+     * Find all where relevant_location IS NULL
+     */
+    Page<PersonDetails> findByRelevantLocationIsNull(Pageable pageable);
+
+    /**
+     * Find all where relevant_location IS NOT NULL
+     */
+    Page<PersonDetails> findByRelevantLocationIsNotNull(Pageable pageable);
+
+    // Count methods for statistics
+
+    /**
+     * Count records with null website_url
+     */
+    long countByWebsiteUrlIsNull();
+
+    /**
+     * Count records with null given_name
+     */
+    long countByGivenNameIsNull();
+
+    /**
+     * Count records with null family_name
+     */
+    long countByFamilyNameIsNull();
+
+    /**
+     * Count records with null birthday
+     */
+    long countByBirthdayIsNull();
+
+    /**
+     * Count records with null relevant_location
+     */
+    long countByRelevantLocationIsNull();
+
 }
