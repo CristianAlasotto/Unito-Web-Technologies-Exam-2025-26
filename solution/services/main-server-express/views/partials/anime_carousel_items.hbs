@@ -1,7 +1,11 @@
 {{#each items}}
 <div class="cardsContainer">
   <div class="card">
+    {{#if this.mal_id}}
     <a href="/anime/{{this.mal_id}}">
+    {{else}}
+    <a href="/anime/{{this.anime_id}}">
+    {{/if}}
       <img src="{{this.image_url}}" alt="{{this.title}}">
       <div class="card-body">
         <p>{{this.title}}</p>

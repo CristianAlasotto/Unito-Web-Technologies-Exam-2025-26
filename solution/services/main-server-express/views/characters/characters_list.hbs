@@ -13,6 +13,7 @@
 	<h1>Characters</h1>
 
 	{{#if characters}}
+	{{> charactersFilter}}
 	<section class="characters-grid">
 		{{#each characters}}
 		<article class="character-card">
@@ -34,11 +35,11 @@
 	{{#if pagination}}
 	<nav class="pagination" aria-label="Pagination">
 		{{#if pagination.hasPrev}}
-		<a href="/characters?page={{pagination.prevPage}}" class="pagination-btn">← Previous</a>
+		<a href="/characters?page={{pagination.prevPage}}{{filtersQuery}}" class="pagination-btn">← Previous</a>
 		{{/if}}
 		<span class="page-info">Page {{pagination.currentPage}} of {{pagination.totalPages}}</span>
 		{{#if pagination.hasNext}}
-		<a href="/characters?page={{pagination.nextPage}}" class="pagination-btn">Next →</a>
+		<a href="/characters?page={{pagination.nextPage}}{{filtersQuery}}" class="pagination-btn">Next →</a>
 		{{/if}}
 	</nav>
 	{{/if}}

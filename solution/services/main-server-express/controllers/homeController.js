@@ -6,7 +6,7 @@ const getApiRequestConfig = (type) => {
       return {
         path: '/api/details',
         params: {
-          fields: 'anime_id,title,title_english,title_japanese,image_url',
+          fields: 'mal_id,title,title_english,title_japanese,image_url',
           sort: '-popularity',
         },
       };
@@ -14,6 +14,7 @@ const getApiRequestConfig = (type) => {
       return {
         path: '/api/characters',
         params: {
+          fields: 'character_mal_id,image,name',
           sort: '-favorites',
         },
       };
