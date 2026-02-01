@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -82,9 +83,7 @@ public class DetailsService {
             case "end_date", "enddate" -> repository.findByEndDateIsNull(pageable);
             case "title_japanese", "titlejapanese" -> repository.findByTitleJapaneseIsNull(pageable);
             case "season" -> repository.findBySeasonIsNull(pageable);
-            default ->
-                // Invalid field name, return all records
-                    repository.findAll(pageable);
+            default -> repository.findAll(pageable);
         };
     }
 
@@ -98,9 +97,7 @@ public class DetailsService {
             case "end_date", "enddate" -> repository.findByEndDateIsNotNull(pageable);
             case "title_japanese", "titlejapanese" -> repository.findByTitleJapaneseIsNotNull(pageable);
             case "season" -> repository.findBySeasonIsNotNull(pageable);
-            default ->
-                // Invalid field name, return all records
-                    repository.findAll(pageable);
+            default -> repository.findAll(pageable);
         };
     }
 
@@ -115,5 +112,24 @@ public class DetailsService {
         counts.put("title_japanese", repository.countByTitleJapaneseIsNull());
         counts.put("season", repository.countBySeasonIsNull());
         return counts;
+    }
+
+    /**
+     * Update the score for a specific anime
+     * @param malId The MAL ID of the anime
+     * @param newScore The new score value (0.00 to 10.00)
+     * @return Updated Details entity, or empty if not found
+     */
+    public Optional<Details> updateScore(Integer malId, BigDecimal newScore) {
+        Optional<Details> detailsOpt = repository.findById(malId);
+        
+        if (detailsOpt.isPresent()) {
+            Details details = detailsOpt.get();
+            details.setScore(newScore);
+            Details updated = repository.save(details);
+            return Optional.of(updated);
+        }
+        
+        return Optional.empty();
     }
 }
