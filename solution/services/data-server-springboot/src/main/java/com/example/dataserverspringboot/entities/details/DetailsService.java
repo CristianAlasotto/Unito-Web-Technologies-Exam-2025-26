@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
@@ -46,5 +47,24 @@ public class DetailsService {
         }
 
         return repository.findAll(pageable);
+    }
+
+    /**
+     * Update the score for a specific anime
+     * @param malId The anime MAL ID
+     * @param newScore The new score value
+     * @return The updated Details object, or empty if not found
+     */
+    public Optional<Details> updateScore(Integer malId, BigDecimal newScore) {
+        Optional<Details> detailsOpt = repository.findById(malId);
+        
+        if (detailsOpt.isPresent()) {
+            Details details = detailsOpt.get();
+            details.setScore(newScore);
+            Details updated = repository.save(details);
+            return Optional.of(updated);
+        }
+        
+        return Optional.empty();
     }
 }

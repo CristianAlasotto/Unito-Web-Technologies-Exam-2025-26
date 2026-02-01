@@ -1,5 +1,6 @@
 package com.example.dataserverspringboot.entities.persondetails;
 
+import com.example.dataserverspringboot.entities.details.Details;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,6 +23,9 @@ public class PersonDetailsController {
     @Autowired
     private PersonDetailsService service;
 
+    @Autowired
+    private PersonDetailsRepository personDetailsRepository;
+
     @GetMapping("/{person_mal_id}")
     public ResponseEntity<?> getById(
             @PathVariable("person_mal_id") Integer personMalId,
@@ -43,7 +47,6 @@ public class PersonDetailsController {
             return ResponseEntity.ok(filtered);
         }
         
-        // Return all fields with snake_case names
         return ResponseEntity.ok(toSnakeCaseMap(data));
     }
 
@@ -63,6 +66,76 @@ public class PersonDetailsController {
         summary.put("image_url", data.getImageUrl());
         
         return ResponseEntity.ok(summary);
+    }
+
+    /**
+     * JOIN 2: Get all anime this person worked on
+     * GET /api/person_details/{person_mal_id}/anime
+     */
+    @GetMapping("/{person_mal_id}/details")
+    public ResponseEntity<?> getAnimeWorks(
+            @PathVariable("person_mal_id") Integer personMalId,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer offset,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer pageSize) {
+        
+        // Check if person exists
+        Optional<PersonDetails> person = service.getById(personMalId);
+        if (person.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Person not found");
+            error.put("person_mal_id", personMalId);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        // Pagination setup
+        boolean usePageBased = (page != null || pageSize != null);
+        
+        if (usePageBased) {
+            int finalPage = (page != null) ? page : 1;
+            int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
+            
+            Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize);
+            Page<Details> animePage = personDetailsRepository.findAnimeWorks(personMalId, pageable);
+            
+            List<Map<String, Object>> animeList = animePage.getContent().stream()
+                .map(this::toDetailsSnakeCaseMap)
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("person", toSnakeCaseMap(person.get()));
+            response.put("page", finalPage);
+            response.put("pageSize", finalPageSize);
+            response.put("totalPages", animePage.getTotalPages());
+            response.put("total", animePage.getTotalElements());
+            response.put("anime", animeList);
+            return ResponseEntity.ok(response);
+            
+        } else {
+            int finalLimit = (limit != null) ? limit : 10;
+            int finalOffset = (offset != null) ? offset : 0;
+            int pageNum = finalOffset / finalLimit;
+            
+            Pageable pageable = PageRequest.of(pageNum, finalLimit);
+            Page<Details> animePage = personDetailsRepository.findAnimeWorks(personMalId, pageable);
+            
+            List<Map<String, Object>> animeList = animePage.getContent().stream()
+                .map(this::toDetailsSnakeCaseMap)
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("person", toSnakeCaseMap(person.get()));
+            
+            if (limit != null || offset != null) {
+                response.put("limit", finalLimit);
+                response.put("offset", finalOffset);
+            }
+            
+            response.put("total", animePage.getTotalElements());
+            response.put("anime", animeList);
+            return ResponseEntity.ok(response);
+        }
     }
 
     @GetMapping
@@ -86,10 +159,7 @@ public class PersonDetailsController {
             int finalOffset = (offset != null) ? offset : 0;
             
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
-            Page<PersonDetails> pageResult = service.findWithFilters(
-                search,
-                
-                pageable);
+            Page<PersonDetails> pageResult = service.findWithFilters(search, pageable);
             
             List<PersonDetails> results = pageResult.getContent();
             long totalCount = pageResult.getTotalElements();
@@ -107,7 +177,6 @@ public class PersonDetailsController {
                 return ResponseEntity.ok(response);
             }
             
-            // Convert all entities to snake_case
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
@@ -124,10 +193,7 @@ public class PersonDetailsController {
             int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
             
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
-            Page<PersonDetails> pageResult = service.findWithFilters(
-                search,
-                
-                pageable);
+            Page<PersonDetails> pageResult = service.findWithFilters(search, pageable);
             
             List<PersonDetails> results = pageResult.getContent();
             long totalPages = pageResult.getTotalPages();
@@ -145,7 +211,6 @@ public class PersonDetailsController {
                 return ResponseEntity.ok(response);
             }
             
-            // Convert all entities to snake_case
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
@@ -159,10 +224,7 @@ public class PersonDetailsController {
             
         } else {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
-            Page<PersonDetails> pageResult = service.findWithFilters(
-                search,
-                
-                pageable);
+            Page<PersonDetails> pageResult = service.findWithFilters(search, pageable);
             
             List<PersonDetails> results = pageResult.getContent();
             
@@ -173,7 +235,6 @@ public class PersonDetailsController {
                 return ResponseEntity.ok(filteredResults);
             }
             
-            // Convert all entities to snake_case
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
@@ -190,7 +251,7 @@ public class PersonDetailsController {
     }
 
     /**
-     * Convert entity to Map with snake_case field names
+     * Convert PersonDetails entity to Map with snake_case field names
      */
     private Map<String, Object> toSnakeCaseMap(PersonDetails entity) {
         Map<String, Object> result = new HashMap<>();
@@ -208,8 +269,24 @@ public class PersonDetailsController {
     }
 
     /**
+     * Convert Details entity to Map with snake_case field names
+     */
+    private Map<String, Object> toDetailsSnakeCaseMap(Details entity) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("mal_id", entity.getMalId());
+        result.put("title", entity.getTitle());
+        result.put("title_japanese", entity.getTitleJapanese());
+        result.put("type", entity.getType());
+        result.put("score", entity.getScore());
+        result.put("image_url", entity.getImageUrl());
+        result.put("episodes", entity.getEpisodes());
+        result.put("year", entity.getYear());
+        result.put("status", entity.getStatus());
+        return result;
+    }
+
+    /**
      * Filter fields based on comma-separated field list
-     * Field names use snake_case
      */
     private Map<String, Object> filterFields(PersonDetails entity, String fields) {
         Map<String, Object> result = new HashMap<>();

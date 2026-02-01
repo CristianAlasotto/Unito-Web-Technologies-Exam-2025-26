@@ -571,4 +571,83 @@ public class DetailsController {
         }
     }
 
+    /**
+     * Update the score for a specific anime
+     * POST /api/details/update_score
+
+     * Request body: { "mal_id": 1, "score": 8.5 }
+
+     * @param request Map containing mal_id and score
+     * @return Updated anime details with new score
+     */
+    @PostMapping("/update_score")
+    public ResponseEntity<?> updateScore(@RequestBody Map<String, Object> request) {
+        try {
+            // Validate mal_id
+            if (!request.containsKey("mal_id")) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Missing required field: mal_id");
+                return ResponseEntity.status(400).body(error);
+            }
+            
+            // Validate score
+            if (!request.containsKey("score")) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Missing required field: score");
+                return ResponseEntity.status(400).body(error);
+            }
+            
+            // Parse mal_id
+            Integer malId;
+            try {
+                malId = Integer.parseInt(request.get("mal_id").toString());
+            } catch (NumberFormatException e) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Invalid mal_id format. Must be an integer.");
+                return ResponseEntity.status(400).body(error);
+            }
+            
+            // Parse score
+            java.math.BigDecimal score;
+            try {
+                score = new java.math.BigDecimal(request.get("score").toString());
+            } catch (NumberFormatException e) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Invalid score format. Must be a number.");
+                return ResponseEntity.status(400).body(error);
+            }
+            
+            // Validate score range (0.00 to 10.00)
+            if (score.compareTo(java.math.BigDecimal.ZERO) < 0 || 
+                score.compareTo(new java.math.BigDecimal("10.00")) > 0) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Score must be between 0.00 and 10.00");
+                return ResponseEntity.status(400).body(error);
+            }
+            
+            // Update score
+            Optional<Details> updated = service.updateScore(malId, score);
+            
+            if (updated.isEmpty()) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Anime not found");
+                error.put("mal_id", malId);
+                return ResponseEntity.status(404).body(error);
+            }
+            
+            // Return success response
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Score updated successfully");
+            response.put("anime", toSnakeCaseMap(updated.get()));
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Internal server error");
+            error.put("details", e.getMessage());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+
 }
