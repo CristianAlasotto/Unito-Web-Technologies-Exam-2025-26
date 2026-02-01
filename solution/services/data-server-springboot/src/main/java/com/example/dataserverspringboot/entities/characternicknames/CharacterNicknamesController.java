@@ -261,7 +261,7 @@ public class CharacterNicknamesController {
             }
         }
 
-        // CRITICAL FIX: Always add characterMalId as tiebreaker
+        // CRITICAL FIX: Always add primaryKeys as tiebreaker
         orders.add(Sort.Order.asc("characterMalId"));
         orders.add(Sort.Order.asc("nickname"));
 

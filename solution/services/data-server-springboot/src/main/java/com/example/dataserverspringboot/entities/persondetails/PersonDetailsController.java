@@ -289,7 +289,7 @@ public class PersonDetailsController {
             }
         }
 
-        // CRITICAL FIX: Always add characterMalId as tiebreaker
+        // CRITICAL FIX: Always add primaryKeys as tiebreaker
         orders.add(Sort.Order.asc("personMalId"));
 
         return Sort.by(orders);  // ← Now ALWAYS consistent!

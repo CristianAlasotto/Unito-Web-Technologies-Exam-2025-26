@@ -261,7 +261,7 @@ public class PersonAlternateNamesController {
             }
         }
 
-        // CRITICAL FIX: Always add characterMalId as tiebreaker
+        // CRITICAL FIX: Always add primaryKeys as tiebreaker
         orders.add(Sort.Order.asc("personMalId"));
         orders.add(Sort.Order.asc("altName"));
 
