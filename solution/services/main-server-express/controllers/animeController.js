@@ -216,8 +216,6 @@ exports.detail = async (req, res, next) => {
       sortOrder: req.query.sortOrder || 'desc'
     };
 
-    const hasScoreFilter = filters.minScore !== null || filters.maxScore !== null;
-
     const response = await apiPostgres.get(`/api/details/${id}`);
     const charactersResponse = await apiPostgres.get('/api/characters?page=1&pageSize=12');
     const recommendationsResponse = await apiPostgres.get(
@@ -236,11 +234,12 @@ exports.detail = async (req, res, next) => {
     // Fetch ratings
     let ratings = [];
     let totalPages = 1;
-    let allRatings = [];
 
     try {
       const params = new URLSearchParams({
-        anime_id: id
+        anime_id: id,
+        page: page,
+        limit: limit
       });
 
       if (filters.status) {
@@ -251,48 +250,26 @@ exports.detail = async (req, res, next) => {
         params.append('is_rewatching', filters.rewatching === 'true' ? 1 : 0);
       }
 
+      // Add score range filters directly to params
+      if (filters.minScore !== null) {
+        params.append('minScore', filters.minScore);
+      }
+      if (filters.maxScore !== null) {
+        params.append('maxScore', filters.maxScore);
+      }
+
       if (filters.sortBy) {
         const sortPrefix = filters.sortOrder === 'desc' ? '-' : '';
         params.append('sort', sortPrefix + filters.sortBy);
       }
 
-      if (hasScoreFilter) {
-        params.append('limit', 10000);
-        params.append('page', 1);
+      const ratingsResponse = await apiMongo.get(`/api/ratings?${params.toString()}`);
 
-        const ratingsResponse = await apiMongo.get(`/api/ratings?${params.toString()}`);
-
-        if (ratingsResponse.data.items) {
-          allRatings = ratingsResponse.data.items;
-        } else if (Array.isArray(ratingsResponse.data)) {
-          allRatings = ratingsResponse.data;
-        }
-
-        allRatings = allRatings.filter(rating => {
-          const score = rating.score;
-          const minOk = filters.minScore === null || score >= filters.minScore;
-          const maxOk = filters.maxScore === null || score <= filters.maxScore;
-          return minOk && maxOk;
-        });
-
-        const totalFiltered = allRatings.length;
-        totalPages = Math.ceil(totalFiltered / limit);
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        ratings = allRatings.slice(startIndex, endIndex);
-
-      } else {
-        params.append('page', page);
-        params.append('limit', limit);
-
-        const ratingsResponse = await apiMongo.get(`/api/ratings?${params.toString()}`);
-
-        if (ratingsResponse.data.items) {
-          ratings = ratingsResponse.data.items;
-          totalPages = ratingsResponse.data.totalPages || 1;
-        } else if (Array.isArray(ratingsResponse.data)) {
-          ratings = ratingsResponse.data;
-        }
+      if (ratingsResponse.data.items) {
+        ratings = ratingsResponse.data.items;
+        totalPages = ratingsResponse.data.totalPages || 1;
+      } else if (Array.isArray(ratingsResponse.data)) {
+        ratings = ratingsResponse.data;
       }
 
     } catch (error) {
@@ -479,12 +456,10 @@ exports.getRatingsJson = async (req, res) => {
       sortOrder: req.query.sortOrder || 'desc'
     };
 
-    const hasScoreFilter = filters.minScore !== null || filters.maxScore !== null;
-
     const params = new URLSearchParams();
     params.set('anime_id', id);
 
-    // Only add filters MongoDB supports
+    // Add filters to query params
     if (filters.status) {
       params.set('status', filters.status);
     }
@@ -493,56 +468,36 @@ exports.getRatingsJson = async (req, res) => {
       params.set('is_rewatching', filters.rewatching === 'true' ? '1' : '0');
     }
 
+    if (filters.minScore !== null) {
+      params.set('minScore', String(filters.minScore));
+    }
+
+    if (filters.maxScore !== null) {
+      params.set('maxScore', String(filters.maxScore));
+    }
+
     // Build sort string for MongoDB
     if (filters.sortBy) {
       const sortPrefix = filters.sortOrder === 'desc' ? '-' : '';
       params.set('sort', sortPrefix + filters.sortBy);
     }
 
-    let ratings = [];
-    let totalPages = 1;
+    // Use standard pagination via MongoDB
+    params.set('page', String(page));
+    params.set('pageSize', String(pageSize));
 
-    // If we have score filters, fetch all results and filter client-side
-    if (hasScoreFilter) {
-      params.set('limit', '10000');
-      params.set('page', '1');
-
-      const response = await apiMongo.get(`/api/ratings?${params.toString()}`);
-      const data = response.data || {};
-      let allRatings = data.items || [];
-
-      // Client-side filtering for score ranges
-      allRatings = allRatings.filter(rating => {
-        const score = rating.score;
-        const minOk = filters.minScore === null || score >= filters.minScore;
-        const maxOk = filters.maxScore === null || score <= filters.maxScore;
-        return minOk && maxOk;
-      });
-
-      // Manual pagination
-      const totalFiltered = allRatings.length;
-      totalPages = Math.ceil(totalFiltered / pageSize);
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      ratings = allRatings.slice(startIndex, endIndex);
-
-    } else {
-      // No score filters - use normal MongoDB pagination
-      params.set('page', String(page));
-      params.set('pageSize', String(pageSize));
-
-      const response = await apiMongo.get(`/api/ratings?${params.toString()}`);
-      const data = response.data || {};
-      ratings = data.items || [];
-      totalPages = data.totalPages || 1;
-    }
+    const response = await apiMongo.get(`/api/ratings?${params.toString()}`);
+    const data = response.data || {};
+    const ratings = data.items || [];
+    const totalPages = data.totalPages || 1;
+    const total = data.total || 0;
 
     res.json({
       ratings: ratings,
       pagination: {
         currentPage: page,
         totalPages: totalPages,
-        total: ratings.length
+        total: total
       }
     });
   } catch (err) {
