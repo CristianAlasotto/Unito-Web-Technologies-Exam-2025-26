@@ -1,5 +1,6 @@
 package com.example.dataserverspringboot.entities.details;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+@Hidden
 @Service
 public class DetailsService {
 
@@ -83,6 +85,7 @@ public class DetailsService {
             case "end_date", "enddate" -> repository.findByEndDateIsNull(pageable);
             case "title_japanese", "titlejapanese" -> repository.findByTitleJapaneseIsNull(pageable);
             case "season" -> repository.findBySeasonIsNull(pageable);
+            case "favorites" -> repository.findByFavoritesIsNotNull(pageable);
             default -> repository.findAll(pageable);
         };
     }
@@ -97,6 +100,7 @@ public class DetailsService {
             case "end_date", "enddate" -> repository.findByEndDateIsNotNull(pageable);
             case "title_japanese", "titlejapanese" -> repository.findByTitleJapaneseIsNotNull(pageable);
             case "season" -> repository.findBySeasonIsNotNull(pageable);
+            case "favorites" -> repository.findByFavoritesIsNotNull(pageable);
             default -> repository.findAll(pageable);
         };
     }
@@ -111,6 +115,7 @@ public class DetailsService {
         counts.put("end_date", repository.countByEndDateIsNull());
         counts.put("title_japanese", repository.countByTitleJapaneseIsNull());
         counts.put("season", repository.countBySeasonIsNull());
+        counts.put("favorites", repository.countByFavoritesIsNull());
         return counts;
     }
 

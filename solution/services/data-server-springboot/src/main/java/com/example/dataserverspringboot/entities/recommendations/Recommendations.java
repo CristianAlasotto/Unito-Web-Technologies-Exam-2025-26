@@ -1,9 +1,11 @@
 package com.example.dataserverspringboot.entities.recommendations;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Objects;
 
+@Schema(description = "Anime recommended entity")  // For entity
 @Entity
 @Table(name = "recommendations")
 @IdClass(Recommendations.RecommendationsId.class)

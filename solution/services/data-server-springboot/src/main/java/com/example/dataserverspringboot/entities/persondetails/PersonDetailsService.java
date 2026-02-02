@@ -1,5 +1,6 @@
 package com.example.dataserverspringboot.entities.persondetails;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -8,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+@Hidden
 @Service
 public class PersonDetailsService {
 

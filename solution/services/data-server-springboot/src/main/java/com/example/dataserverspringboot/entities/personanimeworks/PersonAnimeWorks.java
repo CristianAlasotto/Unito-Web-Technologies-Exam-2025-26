@@ -1,9 +1,11 @@
 package com.example.dataserverspringboot.entities.personanimeworks;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Objects;
 
+@Schema(description = "Anime staff works entity")
 @Entity
 @Table(name = "person_anime_works")
 @IdClass(PersonAnimeWorks.PersonAnimeWorksId.class)

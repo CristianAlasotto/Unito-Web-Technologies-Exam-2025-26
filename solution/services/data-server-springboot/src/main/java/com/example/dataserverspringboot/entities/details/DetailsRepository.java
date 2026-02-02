@@ -1,5 +1,6 @@
 package com.example.dataserverspringboot.entities.details;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -7,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+@Hidden
 @Repository
 public interface DetailsRepository extends JpaRepository<Details, Integer> {
 
@@ -110,6 +112,21 @@ public interface DetailsRepository extends JpaRepository<Details, Integer> {
     Page<Details> findBySeasonIsNotNull(Pageable pageable);
 
     // Count methods for statistics
+
+    /**
+     * Find all characters where favorites IS NULL
+     */
+    Page<Details> findByFavoritesIsNull(Pageable pageable);
+
+    /**
+     * Find all characters where favorites IS NOT NULL
+     */
+    Page<Details> findByFavoritesIsNotNull(Pageable pageable);
+
+    /**
+     * Count characters with null favorites
+     */
+    long countByFavoritesIsNull();
 
     /**
      * Count anime with null synopsis
