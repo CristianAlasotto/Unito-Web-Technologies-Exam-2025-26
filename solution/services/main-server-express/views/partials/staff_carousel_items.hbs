@@ -2,7 +2,13 @@
 <div class="cardsContainer">
   <div class="card">
     <a href="/staff/{{this.person_mal_id}}">
+      {{#if (isHttpUrl this.image_url)}}
       <img src="{{this.image_url}}" alt="{{this.name}}">
+      {{else}}
+      <div class="card-image-placeholder">
+        <img src="/images/logo.png" alt="Logo">
+      </div>
+      {{/if}}
       <div class="card-body">
         <p>{{this.name}}</p>
       </div>

@@ -223,6 +223,10 @@
   background: #1e3a7a;
 }
 
+.staff-detail .recommendations .card {
+  background: #2a2a2a;
+}
+
 .btn {
   display: inline-block;
   padding: 0.8rem 1.5rem;

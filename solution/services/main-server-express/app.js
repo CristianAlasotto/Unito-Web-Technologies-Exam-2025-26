@@ -42,6 +42,14 @@ hbs.registerHelper('any', function() {
   return options.inverse(this);
 });
 
+hbs.registerHelper('isHttpUrl', function(value) {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  const trimmed = value.trim();
+  return /^https?:\/\//i.test(trimmed);
+});
+
 // middleware -> pipeline richieste
 app.use(logger('dev'));
 app.use(express.json());

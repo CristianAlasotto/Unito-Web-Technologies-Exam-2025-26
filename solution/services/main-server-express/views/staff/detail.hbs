@@ -8,7 +8,13 @@
 	{{#if staff}}
 	<article class="staff-detail-card">
 		<div class="staff-header">
+			{{#if (isHttpUrl staff.image_url)}}
 			<img src="{{staff.image_url}}" alt="{{staff.name_display}}">
+			{{else}}
+			<div class="card-image-placeholder">
+				<img src="/images/logo.png" alt="Logo">
+			</div>
+			{{/if}}
 			<div>
 				<h2>{{staff.name_display}}</h2>
 				<p class="staff-alt-name"><strong>Given name:</strong> {{staff.given_name_display}}</p>

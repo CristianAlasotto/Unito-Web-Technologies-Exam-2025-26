@@ -18,7 +18,13 @@
 		{{#each characters}}
 		<article class="character-card">
 			<a href="/characters/{{this.character_mal_id}}">
+				{{#if (isHttpUrl this.image)}}
 				<img src="{{this.image}}" alt="{{this.name}}" />
+				{{else}}
+				<div class="card-image-placeholder">
+					<img src="/images/logo.png" alt="Logo" />
+				</div>
+				{{/if}}
 				<div class="character-card-content">
 					<h3>{{this.name}}</h3>
 					<div class="character-info">
