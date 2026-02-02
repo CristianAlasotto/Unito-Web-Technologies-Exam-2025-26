@@ -20,13 +20,13 @@ public class PersonAlternateNamesService {
         return repository.count();
     }
 
-    public Page<PersonAlternateNames> findWithFilters(String search, Integer person_mal_id, Pageable pageable) {
+    public Page<PersonAlternateNames> findWithFilters(String search, Integer personMalId, Pageable pageable) {
         if (search != null && !search.isEmpty()) {
             return repository.searchByAltName(search, pageable);
         }
 
-        if (person_mal_id != null) {
-            return repository.findByPersonMalId(person_mal_id, pageable);
+        if (personMalId != null) {
+            return repository.findByPersonMalId(personMalId, pageable);
         }
 
         return repository.findAll(pageable);

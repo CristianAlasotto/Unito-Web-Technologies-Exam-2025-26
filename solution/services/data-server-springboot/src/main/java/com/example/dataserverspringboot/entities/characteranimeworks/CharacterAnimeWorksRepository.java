@@ -31,4 +31,40 @@ public interface CharacterAnimeWorksRepository extends JpaRepository<CharacterAn
      */
     Page<CharacterAnimeWorks> findByAnimeMalId(Integer anime_mal_id, Pageable pageable);
 
+    // ============================================================
+    // NULL FILTERING METHODS
+    // ============================================================
+
+    /**
+     * Find all where character_name IS NULL
+     */
+    Page<CharacterAnimeWorks> findByCharacterNameIsNull(Pageable pageable);
+
+    /**
+     * Find all where character_name IS NOT NULL
+     */
+    Page<CharacterAnimeWorks> findByCharacterNameIsNotNull(Pageable pageable);
+
+    /**
+     * Find all where role IS NULL
+     */
+    Page<CharacterAnimeWorks> findByRoleIsNull(Pageable pageable);
+
+    /**
+     * Find all where role IS NOT NULL
+     */
+    Page<CharacterAnimeWorks> findByRoleIsNotNull(Pageable pageable);
+
+    // Count methods for statistics
+
+    /**
+     * Count records with null character_name
+     */
+    long countByCharacterNameIsNull();
+
+    /**
+     * Count records with null role
+     */
+    long countByRoleIsNull();
+
 }

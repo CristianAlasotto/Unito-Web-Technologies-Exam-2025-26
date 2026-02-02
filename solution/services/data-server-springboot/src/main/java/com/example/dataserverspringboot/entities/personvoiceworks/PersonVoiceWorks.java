@@ -84,9 +84,9 @@ public class PersonVoiceWorks {
     @Override
     public String toString() {
         return "PersonVoiceWorks{" +
-                "person_mal_id=" + personMalId +
-                ", character_mal_id=" + characterMalId +
-                ", anime_mal_id=" + animeMalId +
+                "personMalId=" + personMalId +
+                ", characterMalId=" + characterMalId +
+                ", animeMalId=" + animeMalId +
                 ", role='" + role + '\'' +
                 ", language='" + language + '\'' +
                 '}';
@@ -101,7 +101,7 @@ public class PersonVoiceWorks {
         public PersonVoiceWorksId() {
         }
 
-        public PersonVoiceWorksId(Integer personMalId, Integer characterMalId, Integer anime_mal_id) {
+        public PersonVoiceWorksId(Integer personMalId, Integer characterMalId, Integer animeMalId) {
             this.personMalId = personMalId;
             this.characterMalId = characterMalId;
             this.animeMalId = animeMalId;

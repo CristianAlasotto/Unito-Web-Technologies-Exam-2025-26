@@ -1,6 +1,17 @@
+.anime-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.anime-container h1 {
+  margin-bottom: 2rem;
+  font-size: 2rem;
+}
+
 .anime-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: 1rem;
   padding: 1rem 0;
   margin-top: 1rem;
@@ -12,6 +23,18 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   overflow: hidden;
   transition: transform 0.2s;
+  width: 200px;
+  height: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.anime-card a {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  text-decoration: none;
 }
 
 .anime-card:hover {
@@ -21,24 +44,45 @@
 
 .anime-card img {
   width: 100%;
-  height: 200px;
+  height: 250px;
   object-fit: cover;
 }
 
-.anime-card h3 {
+.anime-card-content {
   padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-grow: 1;
+}
+
+.anime-card h3 {
   font-size: 0.875rem;
-  margin: 0;
-  min-height: 2.5rem;
+  margin: 0 0 0.5rem 0;
   color: #fff;
+  line-height: 1.2;
+  min-height: 2.1rem;
 }
 
 .anime-info {
-  display: flex;
-  justify-content: space-between;
-  padding: 0 0.75rem 0.75rem;
   font-size: 0.75rem;
   color: #aaa;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.anime-info span {
+  background-color: #3a3a3a;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.no-data {
+  text-align: center;
+  color: #aaa;
+  padding: 2rem;
+  font-size: 1.1rem;
 }
 
 .error-message {
@@ -47,6 +91,15 @@
   padding: 1rem;
   border-radius: 4px;
   margin: 1rem 0;
+}
+
+.warning-banner {
+  background: #ff9800;
+  color: #000;
+  padding: 1rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  border-radius: 4px;
 }
 
 /* --- ANIME DETAILS --- */
@@ -62,7 +115,7 @@
   margin-bottom: 2rem;
 }
 
-.anime-poster {
+.anime-header img {
   width: 225px;
   height: 350px;
   object-fit: cover;
@@ -70,11 +123,11 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
-.anime-main-info {
+.anime-header > div {
   flex: 1;
 }
 
-.anime-main-info h1 {
+.anime-header h1 {
   margin: 0 0 0.5rem 0;
   font-size: 2rem;
 }
@@ -83,28 +136,10 @@
   color: #aaa;
   font-size: 1.2rem;
   margin: 0 0 1rem 0;
+  font-weight: normal;
 }
 
-.anime-meta {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin: 1rem 0;
-}
-
-.anime-meta span {
-  background: #2a2a2a;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
-}
-
-.dates {
-  color: #aaa;
-  margin: 1rem 0;
-}
-
-.synopsis {
+.anime-detail .info {
   background: #2a2a2a;
   padding: 1.5rem;
   border-radius: 8px;
@@ -112,47 +147,21 @@
   line-height: 1.6;
 }
 
-.anime-details-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin: 2rem 0;
-}
-
-.detail-section h3 {
+.anime-detail .info h3 {
   margin: 0 0 1rem 0;
   font-size: 1.2rem;
 }
 
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+.anime-detail .info p {
+  margin: 0.75rem 0;
 }
 
-.tag {
-  background: #3a3a3a;
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
-  font-size: 0.85rem;
+.anime-detail .info strong {
   color: #fff;
+  margin-right: 0.5rem;
 }
 
-.anime-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-  background: #2a2a2a;
-  padding: 1.5rem;
-  border-radius: 8px;
-  margin: 2rem 0;
-}
-
-.stat {
-  text-align: center;
-}
-
-.mal-link {
+.anime-detail a {
   display: inline-block;
   background: #2e51a2;
   color: white;
@@ -163,7 +172,7 @@
   transition: background 0.3s;
 }
 
-.mal-link:hover {
+.anime-detail a:hover {
   background: #1e3a7a;
 }
 
@@ -172,7 +181,7 @@
     flex-direction: column;
   }
   
-  .anime-poster {
+  .anime-header img {
     width: 100%;
     max-width: 300px;
     margin: 0 auto;

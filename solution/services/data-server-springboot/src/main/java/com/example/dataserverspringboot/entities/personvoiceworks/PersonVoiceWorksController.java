@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 /**
  * REST API Controller for PersonVoiceWorks
- * Composite key table - supports list operations only
+ * Returns field names in snake_case to match database columns
  */
 @RestController
 @RequestMapping("/api/person_voice_works")
@@ -21,6 +21,49 @@ public class PersonVoiceWorksController {
 
     @Autowired
     private PersonVoiceWorksService service;
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getById(
+            @PathVariable PersonVoiceWorks.PersonVoiceWorksId id,
+            @RequestParam(required = false) String fields) {
+        
+        Optional<PersonVoiceWorks> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "PersonVoiceWorks not found");
+            error.put("id", id);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        PersonVoiceWorks data = entity.get();
+        
+        if (fields != null && !fields.isEmpty()) {
+            Map<String, Object> filtered = filterFields(data, fields);
+            return ResponseEntity.ok(filtered);
+        }
+        
+        // Return all fields with snake_case names
+        return ResponseEntity.ok(toSnakeCaseMap(data));
+    }
+
+    @GetMapping("/{id}/summary")
+    public ResponseEntity<?> getSummary(@PathVariable PersonVoiceWorks.PersonVoiceWorksId id) {
+        Optional<PersonVoiceWorks> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            return ResponseEntity.status(404).build();
+        }
+        
+        PersonVoiceWorks data = entity.get();
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("person_mal_id", data.getPersonMalId());
+        summary.put("character_mal_id", data.getCharacterMalId());
+        summary.put("anime_mal_id", data.getAnimeMalId());
+        summary.put("language", data.getLanguage());
+        
+        return ResponseEntity.ok(summary);
+    }
 
     @GetMapping
     public ResponseEntity<?> getAll(
@@ -32,6 +75,8 @@ public class PersonVoiceWorksController {
             @RequestParam(required = false) Integer person_mal_id,
             @RequestParam(required = false) Integer character_mal_id,
             @RequestParam(required = false) Integer anime_mal_id,
+            @RequestParam(required = false) String nullFilter,
+            @RequestParam(required = false) String notNullFilter,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -49,7 +94,13 @@ public class PersonVoiceWorksController {
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
             Page<PersonVoiceWorks> pageResult = service.findWithFilters(
                 search,
-                language, role, person_mal_id, character_mal_id, anime_mal_id,
+                language,
+                role,
+                person_mal_id,
+                character_mal_id,
+                anime_mal_id,
+                nullFilter,
+                notNullFilter,
                 pageable);
             
             List<PersonVoiceWorks> results = pageResult.getContent();
@@ -68,6 +119,7 @@ public class PersonVoiceWorksController {
                 return ResponseEntity.ok(response);
             }
             
+            // Convert all entities to snake_case
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
@@ -86,7 +138,13 @@ public class PersonVoiceWorksController {
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<PersonVoiceWorks> pageResult = service.findWithFilters(
                 search,
-                language, role, person_mal_id, character_mal_id, anime_mal_id,
+                language,
+                role,
+                person_mal_id,
+                character_mal_id,
+                anime_mal_id,
+                nullFilter,
+                notNullFilter,
                 pageable);
             
             List<PersonVoiceWorks> results = pageResult.getContent();
@@ -105,6 +163,7 @@ public class PersonVoiceWorksController {
                 return ResponseEntity.ok(response);
             }
             
+            // Convert all entities to snake_case
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
@@ -120,7 +179,13 @@ public class PersonVoiceWorksController {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
             Page<PersonVoiceWorks> pageResult = service.findWithFilters(
                 search,
-                language, role, person_mal_id, character_mal_id, anime_mal_id,
+                language,
+                role,
+                person_mal_id,
+                character_mal_id,
+                anime_mal_id,
+                nullFilter,
+                notNullFilter,
                 pageable);
             
             List<PersonVoiceWorks> results = pageResult.getContent();
@@ -132,6 +197,7 @@ public class PersonVoiceWorksController {
                 return ResponseEntity.ok(filteredResults);
             }
             
+            // Convert all entities to snake_case
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
@@ -147,6 +213,24 @@ public class PersonVoiceWorksController {
         return ResponseEntity.ok(stats);
     }
 
+    /**
+     * Get statistics on NULL values for various fields
+     * GET /api/person_voice_works/stats/null_counts
+     */
+    @GetMapping("/stats/null_counts")
+    public ResponseEntity<Map<String, Object>> getNullCounts() {
+        Map<String, Long> nullCounts = service.getNullCounts();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("null_counts", nullCounts);
+        response.put("total_records", service.count());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Convert entity to Map with snake_case field names
+     */
     private Map<String, Object> toSnakeCaseMap(PersonVoiceWorks entity) {
         Map<String, Object> result = new HashMap<>();
         result.put("person_mal_id", entity.getPersonMalId());
@@ -157,6 +241,10 @@ public class PersonVoiceWorksController {
         return result;
     }
 
+    /**
+     * Filter fields based on comma-separated field list
+     * Field names use snake_case
+     */
     private Map<String, Object> filterFields(PersonVoiceWorks entity, String fields) {
         Map<String, Object> result = new HashMap<>();
         String[] requestedFields = fields.split(",");
@@ -186,22 +274,26 @@ public class PersonVoiceWorksController {
     }
 
     private Sort parseSortParameter(String sort) {
-        if (sort == null || sort.isEmpty()) {
-            return Sort.unsorted();
-        }
-        
-        String[] sortFields = sort.split(",");
         List<Sort.Order> orders = new ArrayList<>();
-        
-        for (String field : sortFields) {
-            field = field.trim();
-            if (field.startsWith("-")) {
-                orders.add(Sort.Order.desc(field.substring(1)));
-            } else {
-                orders.add(Sort.Order.asc(field));
+
+        if (sort != null && !sort.isEmpty()) {
+            String[] sortFields = sort.split(",");
+            for (String field : sortFields) {
+                field = field.trim();
+                if (field.startsWith("-")) {
+                    orders.add(Sort.Order.desc(field.substring(1)));
+                } else {
+                    orders.add(Sort.Order.asc(field));
+                }
             }
         }
-        
-        return Sort.by(orders);
+
+        // CRITICAL FIX: Always add primaryKeys as tiebreaker
+        orders.add(Sort.Order.asc("personMalId"));
+        orders.add(Sort.Order.asc("characterMalId"));
+        orders.add(Sort.Order.asc("animeMalId"));
+
+
+        return Sort.by(orders);  // ← Now ALWAYS consistent!
     }
 }

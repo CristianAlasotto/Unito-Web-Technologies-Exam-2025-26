@@ -20,13 +20,13 @@ public class CharacterNicknamesService {
         return repository.count();
     }
 
-    public Page<CharacterNicknames> findWithFilters(String search, Integer character_mal_id, Pageable pageable) {
+    public Page<CharacterNicknames> findWithFilters(String search, Integer characterMalId, Pageable pageable) {
         if (search != null && !search.isEmpty()) {
             return repository.searchByNickname(search, pageable);
         }
 
-        if (character_mal_id != null) {
-            return repository.findByCharacterMalId(character_mal_id, pageable);
+        if (characterMalId != null) {
+            return repository.findByCharacterMalId(characterMalId, pageable);
         }
 
         return repository.findAll(pageable);

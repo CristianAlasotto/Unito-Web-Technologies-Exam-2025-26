@@ -1,0 +1,50 @@
+{{#if warning}}
+<div class="warning-banner"
+	style="background: #ff9800; color: #000; padding: 1rem; text-align: center; margin-bottom: 1rem;">
+	⚠️ {{warning}}
+</div>
+{{/if}}
+
+{{#if error}}
+<div class="error-message">{{error}}</div>
+{{/if}}
+
+<div class="characters-container">
+	<h1>Characters</h1>
+
+	{{#if characters}}
+	<section class="characters-grid">
+		{{#each characters}}
+		<article class="character-card">
+			<a href="/characters/{{this.character_mal_id}}">
+				<img src="{{this.image}}" alt="{{this.name}}" />
+				<div class="character-card-content">
+					<h3>{{this.name}}</h3>
+					<div class="character-info">
+						{{#if this.title}}<span>{{this.title}}</span>{{/if}}
+						{{#if this.favorites}}<span>❤️ {{this.favorites}}</span>{{/if}}
+						{{#if this.name_kanji}}<span>{{this.name_kanji}}</span>{{/if}}
+					</div>
+				</div>
+			</a>
+		</article>
+		{{/each}}
+	</section>
+
+	{{#if pagination}}
+	<nav class="pagination" aria-label="Pagination">
+		{{#if pagination.hasPrev}}
+		<a href="/characters?page={{pagination.prevPage}}" class="pagination-btn">← Previous</a>
+		{{/if}}
+		<span class="page-info">Page {{pagination.currentPage}} of {{pagination.totalPages}}</span>
+		{{#if pagination.hasNext}}
+		<a href="/characters?page={{pagination.nextPage}}" class="pagination-btn">Next →</a>
+		{{/if}}
+	</nav>
+	{{/if}}
+	{{else}}
+	{{#unless warning}} {{! Mostra questo solo se non c'è già un avviso }}
+	<p class="no-data">No characters available at the moment.</p>
+	{{/unless}}
+	{{/if}}
+</div>

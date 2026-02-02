@@ -28,15 +28,15 @@ public class PersonAnimeWorksController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String position,
-            @RequestParam(required = false) Integer person_mal_id,
-            @RequestParam(required = false) Integer anime_mal_id,
+            @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
+            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer pageSize) {
         
-        boolean useLimitOffset = (limit != null || offset != null);
         boolean usePageBased = (page != null || pageSize != null);
+        boolean useLimitOffset = (limit != null || offset != null) && !usePageBased;
         
         Sort sortObj = parseSortParameter(sort);
         
@@ -47,7 +47,7 @@ public class PersonAnimeWorksController {
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
             Page<PersonAnimeWorks> pageResult = service.findWithFilters(
                 search,
-                position, person_mal_id, anime_mal_id,
+                position, personMalId, animeMalId,
                 pageable);
             
             List<PersonAnimeWorks> results = pageResult.getContent();
@@ -79,12 +79,12 @@ public class PersonAnimeWorksController {
             
         } else if (usePageBased) {
             int finalPage = (page != null) ? page : 1;
-            int finalPageSize = (pageSize != null) ? pageSize : 10;
+            int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
             
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<PersonAnimeWorks> pageResult = service.findWithFilters(
                 search,
-                position, person_mal_id, anime_mal_id,
+                position, personMalId, animeMalId,
                 pageable);
             
             List<PersonAnimeWorks> results = pageResult.getContent();
@@ -118,7 +118,7 @@ public class PersonAnimeWorksController {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
             Page<PersonAnimeWorks> pageResult = service.findWithFilters(
                 search,
-                position, person_mal_id, anime_mal_id,
+                position, personMalId, animeMalId,
                 pageable);
             
             List<PersonAnimeWorks> results = pageResult.getContent();
@@ -143,6 +143,86 @@ public class PersonAnimeWorksController {
         Map<String, Object> stats = new HashMap<>();
         stats.put("total", service.count());
         return ResponseEntity.ok(stats);
+    }
+
+
+    /**
+     * Get single resource by composite key (using query parameters)
+     * GET /api/person_anime_works/single?person_mal_id&position&anime_mal_id
+     */
+    @GetMapping("/single")
+    public ResponseEntity<?> getSingle(
+            @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
+            @RequestParam(required = false) String position,
+            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId,
+            @RequestParam(required = false) String fields) {
+        
+        // Check if all key fields are provided
+        if (personMalId == null || position == null || animeMalId == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "All key fields required: personMalId, position, animeMalId");
+            error.put("usage", "GET /api/person_anime_works/single?person_mal_id&position&anime_mal_id");
+            return ResponseEntity.status(400).body(error);
+        }
+        
+        // Create composite key
+        PersonAnimeWorks.PersonAnimeWorksId id = new PersonAnimeWorks.PersonAnimeWorksId(personMalId, position, animeMalId);
+        Optional<PersonAnimeWorks> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "PersonAnimeWorks not found");
+            error.put("person_mal_id", personMalId); error.put("position", position); error.put("anime_mal_id", animeMalId);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        PersonAnimeWorks data = entity.get();
+        
+        if (fields != null && !fields.isEmpty()) {
+            Map<String, Object> filtered = filterFields(data, fields);
+            return ResponseEntity.ok(filtered);
+        }
+        
+        return ResponseEntity.ok(toSnakeCaseMap(data));
+    }
+
+
+    /**
+     * Get summary by composite key (using query parameters)
+     * GET /api/person_anime_works/summary?person_mal_id&position&anime_mal_id
+     */
+    @GetMapping("/summary")
+    public ResponseEntity<?> getSummary(
+            @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
+            @RequestParam(required = false) String position,
+            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId) {
+        
+        // Check if all key fields are provided
+        if (personMalId == null || position == null || animeMalId == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "All key fields required: personMalId, position, animeMalId");
+            error.put("usage", "GET /api/person_anime_works/summary?person_mal_id&position&anime_mal_id");
+            return ResponseEntity.status(400).body(error);
+        }
+        
+        // Create composite key
+        PersonAnimeWorks.PersonAnimeWorksId id = new PersonAnimeWorks.PersonAnimeWorksId(personMalId, position, animeMalId);
+        Optional<PersonAnimeWorks> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "PersonAnimeWorks not found");
+            error.put("person_mal_id", personMalId); error.put("position", position); error.put("anime_mal_id", animeMalId);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        PersonAnimeWorks data = entity.get();
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("person_mal_id", data.getPersonMalId());
+        summary.put("position", data.getPosition());
+        summary.put("anime_mal_id", data.getAnimeMalId());
+        
+        return ResponseEntity.ok(summary);
     }
 
     private Map<String, Object> toSnakeCaseMap(PersonAnimeWorks entity) {
@@ -176,22 +256,24 @@ public class PersonAnimeWorksController {
     }
 
     private Sort parseSortParameter(String sort) {
-        if (sort == null || sort.isEmpty()) {
-            return Sort.unsorted();
-        }
-        
-        String[] sortFields = sort.split(",");
         List<Sort.Order> orders = new ArrayList<>();
-        
-        for (String field : sortFields) {
-            field = field.trim();
-            if (field.startsWith("-")) {
-                orders.add(Sort.Order.desc(field.substring(1)));
-            } else {
-                orders.add(Sort.Order.asc(field));
+
+        if (sort != null && !sort.isEmpty()) {
+            String[] sortFields = sort.split(",");
+            for (String field : sortFields) {
+                field = field.trim();
+                if (field.startsWith("-")) {
+                    orders.add(Sort.Order.desc(field.substring(1)));
+                } else {
+                    orders.add(Sort.Order.asc(field));
+                }
             }
         }
-        
-        return Sort.by(orders);
+
+        // CRITICAL FIX: Always add primaryKeys as tiebreaker
+        orders.add(Sort.Order.asc("personMalId"));
+        orders.add(Sort.Order.asc("animeMalId"));
+
+        return Sort.by(orders);  // ← Now ALWAYS consistent!
     }
 }

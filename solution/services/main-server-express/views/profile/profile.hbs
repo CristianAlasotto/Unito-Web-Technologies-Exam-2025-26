@@ -15,41 +15,70 @@
 			<p class="email">📧 {{profile.email}}</p>
 			{{/if}}
 			{{#if profile.joined}}
-			<p class="joined">📅 Joined: {{profile.joined}}</p>
+			<p class="joined">📅 Iscritto dal: {{profile.joined}}</p>
 			{{/if}}
 		</div>
+		<a href="/" class="btn btn-secondary">Torna alla Home</a>
 	</div>
 
 	{{#if profile.bio}}
-	<div class="profile-bio">
-		<h3>About</h3>
+	<div class="profile-section profile-bio">
+		<h3>Bio</h3>
 		<p>{{profile.bio}}</p>
 	</div>
 	{{/if}}
 
-	<div class="profile-stats">
-		<h3>Anime Stats</h3>
+	<div class="profile-section profile-stats">
+		<h3>Statistiche Anime</h3>
 		<div class="stats-grid">
 			{{#if profile.watching}}
 			<div class="stat-item">
 				<span class="stat-value">{{profile.watching}}</span>
-				<span class="stat-label">Watching</span>
+				<span class="stat-label">In corso</span>
 			</div>
 			{{/if}}
 			{{#if profile.completed}}
 			<div class="stat-item">
 				<span class="stat-value">{{profile.completed}}</span>
-				<span class="stat-label">Completed</span>
+				<span class="stat-label">Completati</span>
 			</div>
 			{{/if}}
 			{{#if profile.plan_to_watch}}
 			<div class="stat-item">
 				<span class="stat-value">{{profile.plan_to_watch}}</span>
-				<span class="stat-label">Plan to Watch</span>
+				<span class="stat-label">Da vedere</span>
+			</div>
+			{{/if}}
+			{{#if profile.on_hold}}
+			<div class="stat-item">
+				<span class="stat-value">{{profile.on_hold}}</span>
+				<span class="stat-label">In pausa</span>
+			</div>
+			{{/if}}
+			{{#if profile.dropped}}
+			<div class="stat-item">
+				<span class="stat-value">{{profile.dropped}}</span>
+				<span class="stat-label">Abbandonati</span>
 			</div>
 			{{/if}}
 		</div>
 	</div>
 
-	<a href="/" class="btn btn-secondary">Back to Home</a>
+	{{#any profile.birthday profile.location profile.gender}}
+	<div class="profile-section profile-details">
+		<h3>Dettagli</h3>
+		<ul>
+			{{#if profile.birthday}}
+			<li>🎂 Compleanno: {{profile.birthday}}</li>
+			{{/if}}
+			{{#if profile.location}}
+			<li>📍 Luogo: {{profile.location}}</li>
+			{{/if}}
+			{{#if profile.gender}}
+			<li>👤 Genere: {{profile.gender}}</li>
+			{{/if}}
+		</ul>
+	</div>
+	{{/any}}
+
 </div>

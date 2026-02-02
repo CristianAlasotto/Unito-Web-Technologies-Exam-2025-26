@@ -30,6 +30,9 @@ public class DetailsController {
 
     @Autowired
     private DetailsService service;
+
+    @Autowired
+    private DetailsRepository detailsRepository;
     
     @Autowired
     private CharacterAnimeWorksRepository characterAnimeWorksRepository;
@@ -45,16 +48,16 @@ public class DetailsController {
 
     @GetMapping("/{mal_id}")
     public ResponseEntity<?> getById(
-            @PathVariable Integer mal_id,
+            @PathVariable("mal_id") Integer malId,
             @RequestParam(required = false) String fields,
             @RequestParam(required = false) String include) {
         
-        Optional<Details> entity = service.getById(mal_id);
+        Optional<Details> entity = service.getById(malId);
         
         if (entity.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "Details not found");
-            error.put("mal_id", mal_id);
+            error.put("mal_id", malId);
             return ResponseEntity.status(404).body(error);
         }
         
@@ -63,7 +66,7 @@ public class DetailsController {
         // Handle relation expansion
         if (include != null && !include.isEmpty()) {
             Map<String, Object> result = toSnakeCaseMap(data);
-            expandRelations(mal_id, include, result);
+            expandRelations(malId, include, result);
             
             // Apply field selection if requested
             if (fields != null && !fields.isEmpty()) {
@@ -83,8 +86,8 @@ public class DetailsController {
     }
 
     @GetMapping("/{mal_id}/summary")
-    public ResponseEntity<?> getSummary(@PathVariable Integer mal_id) {
-        Optional<Details> entity = service.getById(mal_id);
+    public ResponseEntity<?> getSummary(@PathVariable("mal_id") Integer malId) {
+        Optional<Details> entity = service.getById(malId);
         
         if (entity.isEmpty()) {
             return ResponseEntity.status(404).build();
@@ -110,13 +113,15 @@ public class DetailsController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String rating,
             @RequestParam(required = false) String source,
+            @RequestParam(required = false) String nullFilter,      // NEW: Filter for NULL values
+            @RequestParam(required = false) String notNullFilter,   // NEW: Filter for NOT NULL values
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer pageSize) {
         
-        boolean useLimitOffset = (limit != null || offset != null);
         boolean usePageBased = (page != null || pageSize != null);
+        boolean useLimitOffset = (limit != null || offset != null) && !usePageBased;
         
         Sort sortObj = parseSortParameter(sort);
         
@@ -132,6 +137,8 @@ public class DetailsController {
                 status,
                 rating,
                 source,
+                nullFilter,       // NEW
+                notNullFilter,    // NEW
                 pageable);
             
             List<Details> results = pageResult.getContent();
@@ -164,7 +171,7 @@ public class DetailsController {
             
         } else if (usePageBased) {
             int finalPage = (page != null) ? page : 1;
-            int finalPageSize = (pageSize != null) ? pageSize : 10;
+            int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
             
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<Details> pageResult = service.findWithFilters(
@@ -174,6 +181,8 @@ public class DetailsController {
                 status,
                 rating,
                 source,
+                nullFilter,       // NEW
+                notNullFilter,    // NEW
                 pageable);
             
             List<Details> results = pageResult.getContent();
@@ -213,6 +222,8 @@ public class DetailsController {
                 status,
                 rating,
                 source,
+                nullFilter,       // NEW
+                notNullFilter,    // NEW
                 pageable);
             
             List<Details> results = pageResult.getContent();
@@ -241,21 +252,162 @@ public class DetailsController {
     }
 
     /**
+     * Get statistics on NULL values for various fields
+     * GET /api/details/stats/null_counts
+     */
+    @GetMapping("/stats/null_counts")
+    public ResponseEntity<Map<String, Object>> getNullCounts() {
+        Map<String, Long> nullCounts = service.getNullCounts();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("null_counts", nullCounts);
+        response.put("total_records", service.count());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Update score for a specific anime
+     * POST /api/details/update_score
+
+     * Request Body:
+     * {
+     *   "mal_id": 1,
+     *   "score": 8.50
+     * }
+
+     * Response:
+     * {
+     *   "success": true,
+     *   "message": "Score updated successfully",
+     *   "anime": { ... full anime details ... }
+     * }
+     */
+    @PostMapping("/update_score")
+    public ResponseEntity<?> updateScore(@RequestBody Map<String, Object> request) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // Validate request body
+            if (request == null || request.isEmpty()) {
+                response.put("success", false);
+                response.put("error", "Request body is required");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Validate mal_id presence
+            if (!request.containsKey("mal_id")) {
+                response.put("success", false);
+                response.put("error", "mal_id is required");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Validate score presence
+            if (!request.containsKey("score")) {
+                response.put("success", false);
+                response.put("error", "score is required");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Parse and validate mal_id
+            int malId;
+            try {
+                Object malIdObj = request.get("mal_id");
+                if (malIdObj instanceof Integer) {
+                    malId = (Integer) malIdObj;
+                } else if (malIdObj instanceof String) {
+                    malId = Integer.parseInt((String) malIdObj);
+                } else if (malIdObj instanceof Number) {
+                    malId = ((Number) malIdObj).intValue();
+                } else {
+                    response.put("success", false);
+                    response.put("error", "mal_id must be a valid integer");
+                    return ResponseEntity.badRequest().body(response);
+                }
+            } catch (NumberFormatException e) {
+                response.put("success", false);
+                response.put("error", "mal_id must be a valid integer");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Parse and validate score
+            java.math.BigDecimal score;
+            try {
+                Object scoreObj = request.get("score");
+                if (scoreObj instanceof java.math.BigDecimal) {
+                    score = (java.math.BigDecimal) scoreObj;
+                } else if (scoreObj instanceof Double) {
+                    score = java.math.BigDecimal.valueOf((Double) scoreObj);
+                } else if (scoreObj instanceof Float) {
+                    score = java.math.BigDecimal.valueOf((Float) scoreObj);
+                } else if (scoreObj instanceof Integer) {
+                    score = java.math.BigDecimal.valueOf((Integer) scoreObj);
+                } else if (scoreObj instanceof String) {
+                    score = new java.math.BigDecimal((String) scoreObj);
+                } else if (scoreObj instanceof Number) {
+                    score = java.math.BigDecimal.valueOf(((Number) scoreObj).doubleValue());
+                } else {
+                    response.put("success", false);
+                    response.put("error", "score must be a valid number");
+                    return ResponseEntity.badRequest().body(response);
+                }
+            } catch (NumberFormatException e) {
+                response.put("success", false);
+                response.put("error", "score must be a valid number");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Validate score range (0.00 to 10.00)
+            if (score.compareTo(java.math.BigDecimal.ZERO) < 0 || 
+                score.compareTo(java.math.BigDecimal.valueOf(10)) > 0) {
+                response.put("success", false);
+                response.put("error", "score must be between 0.00 and 10.00");
+                response.put("provided_score", score);
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Update the score
+            Optional<Details> updatedDetails = service.updateScore(malId, score);
+            
+            if (updatedDetails.isEmpty()) {
+                response.put("success", false);
+                response.put("error", "Anime not found");
+                response.put("mal_id", malId);
+                return ResponseEntity.status(404).body(response);
+            }
+            
+            // Success response
+            Details details = updatedDetails.get();
+            response.put("success", true);
+            response.put("message", "Score updated successfully");
+            response.put("anime", toSnakeCaseMap(details));
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", "Internal server error");
+            response.put("details", e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    /**
      * Expand relations based on include parameter
      * Supports: characters, staff
      */
-    private void expandRelations(Integer mal_id, String include, Map<String, Object> result) {
+    private void expandRelations(Integer malId, String include, Map<String, Object> result) {
         String[] relations = include.split(",");
         
         for (String relation : relations) {
             relation = relation.trim();
             
             if ("characters".equals(relation)) {
-                List<Map<String, Object>> characters = getCharactersForAnime(mal_id);
+                List<Map<String, Object>> characters = getCharactersForAnime(malId);
                 result.put("characters", characters);
             }
             else if ("staff".equals(relation)) {
-                List<Map<String, Object>> staff = getStaffForAnime(mal_id);
+                List<Map<String, Object>> staff = getStaffForAnime(malId);
                 result.put("staff", staff);
             }
         }
@@ -264,12 +416,12 @@ public class DetailsController {
     /**
      * Get all characters for an anime
      */
-    private List<Map<String, Object>> getCharactersForAnime(Integer mal_id) {
+    private List<Map<String, Object>> getCharactersForAnime(Integer malId) {
         List<Map<String, Object>> characters = new ArrayList<>();
         
         // Find all character_anime_works entries for this anime
         List<CharacterAnimeWorks> works = characterAnimeWorksRepository
-            .findByAnimeMalId(mal_id, Pageable.unpaged())
+            .findByAnimeMalId(malId, Pageable.unpaged())
             .getContent();
         
         for (CharacterAnimeWorks work : works) {
@@ -293,12 +445,12 @@ public class DetailsController {
     /**
      * Get all staff for an anime
      */
-    private List<Map<String, Object>> getStaffForAnime(Integer mal_id) {
+    private List<Map<String, Object>> getStaffForAnime(Integer malId) {
         List<Map<String, Object>> staff = new ArrayList<>();
         
         // Find all person_anime_works entries for this anime
         List<PersonAnimeWorks> works = personAnimeWorksRepository
-            .findByAnimeMalId(mal_id, Pageable.unpaged())
+            .findByAnimeMalId(malId, Pageable.unpaged())
             .getContent();
         
         for (PersonAnimeWorks work : works) {
@@ -478,22 +630,95 @@ public class DetailsController {
     }
 
     private Sort parseSortParameter(String sort) {
-        if (sort == null || sort.isEmpty()) {
-            return Sort.unsorted();
-        }
-        
-        String[] sortFields = sort.split(",");
         List<Sort.Order> orders = new ArrayList<>();
-        
-        for (String field : sortFields) {
-            field = field.trim();
-            if (field.startsWith("-")) {
-                orders.add(Sort.Order.desc(field.substring(1)));
-            } else {
-                orders.add(Sort.Order.asc(field));
+
+        if (sort != null && !sort.isEmpty()) {
+            String[] sortFields = sort.split(",");
+            for (String field : sortFields) {
+                field = field.trim();
+                if (field.startsWith("-")) {
+                    orders.add(Sort.Order.desc(field.substring(1)));
+                } else {
+                    orders.add(Sort.Order.asc(field));
+                }
             }
         }
-        
-        return Sort.by(orders);
+
+        // CRITICAL FIX: Always add primaryKeys as tiebreaker
+        orders.add(Sort.Order.asc("malId"));
+
+        return Sort.by(orders);  // ← Now ALWAYS consistent!
     }
+
+    /**
+     * Get recommendations for a specific anime (JPA version)
+     * GET /api/details/{mal_id}/recommendations
+     */
+    @GetMapping("/{mal_id}/recommendations")
+    public ResponseEntity<?> getRecommendations(
+            @PathVariable("mal_id") Integer malId,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer offset,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer pageSize) {
+        
+        // Check if anime exists
+        Optional<Details> anime = service.getById(malId);
+        if (anime.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Anime not found");
+            error.put("mal_id", malId);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        // Pagination setup
+        boolean usePageBased = (page != null || pageSize != null);
+        
+        if (usePageBased) {
+            int finalPage = (page != null) ? page : 1;
+            int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
+            
+            Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, Sort.by("score").descending());
+            Page<Details> recommendationsPage = detailsRepository.findRecommendationsForAnime(malId, pageable);
+            
+            List<Map<String, Object>> recommendations = recommendationsPage.getContent().stream()
+                .map(this::toSnakeCaseMap)
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("anime", toSnakeCaseMap(anime.get()));
+            response.put("page", finalPage);
+            response.put("pageSize", finalPageSize);
+            response.put("totalPages", recommendationsPage.getTotalPages());
+            response.put("total", recommendationsPage.getTotalElements());
+            response.put("recommendations", recommendations);
+            return ResponseEntity.ok(response);
+            
+        } else {
+            // Offset-based or default
+            int finalLimit = (limit != null) ? limit : 10;
+            int finalOffset = (offset != null) ? offset : 0;
+            int pageNum = finalOffset / finalLimit;
+            
+            Pageable pageable = PageRequest.of(pageNum, finalLimit, Sort.by("score").descending());
+            Page<Details> recommendationsPage = detailsRepository.findRecommendationsForAnime(malId, pageable);
+            
+            List<Map<String, Object>> recommendations = recommendationsPage.getContent().stream()
+                .map(this::toSnakeCaseMap)
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("anime", toSnakeCaseMap(anime.get()));
+            
+            if (limit != null || offset != null) {
+                response.put("limit", finalLimit);
+                response.put("offset", finalOffset);
+            }
+            
+            response.put("total", recommendationsPage.getTotalElements());
+            response.put("recommendations", recommendations);
+            return ResponseEntity.ok(response);
+        }
+    }
+
 }

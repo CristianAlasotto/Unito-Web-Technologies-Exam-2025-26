@@ -71,9 +71,9 @@ public class CharacterAnimeWorks {
     @Override
     public String toString() {
         return "CharacterAnimeWorks{" +
-                "character_mal_id=" + characterMalId +
-                ", anime_mal_id=" + animeMalId +
-                ", character_name='" + characterName + '\'' +
+                "characterMalId=" + characterMalId +
+                ", animeMalId=" + animeMalId +
+                ", characterName='" + characterName + '\'' +
                 ", role='" + role + '\'' +
                 '}';
     }
@@ -86,7 +86,7 @@ public class CharacterAnimeWorks {
         public CharacterAnimeWorksId() {
         }
 
-        public CharacterAnimeWorksId(Integer characterMalId, Integer anime_mal_id) {
+        public CharacterAnimeWorksId(Integer characterMalId, Integer animeMalId) {
             this.characterMalId = characterMalId;
             this.animeMalId = animeMalId;
         }

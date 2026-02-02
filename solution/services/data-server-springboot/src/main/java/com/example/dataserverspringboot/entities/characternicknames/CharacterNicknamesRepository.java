@@ -19,6 +19,6 @@ public interface CharacterNicknamesRepository extends JpaRepository<CharacterNic
     /**
      * Find by character_mal_id
      */
-    Page<CharacterNicknames> findByCharacterMalId(Integer character_mal_id, Pageable pageable);
+    Page<CharacterNicknames> findByCharacterMalId(Integer characterMalId, Pageable pageable);
 
 }

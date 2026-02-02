@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 /**
  * REST API Controller for CharacterAnimeWorks
- * Composite key table - supports list operations only
+ * Returns field names in snake_case to match database columns
  */
 @RestController
 @RequestMapping("/api/character_anime_works")
@@ -22,6 +22,49 @@ public class CharacterAnimeWorksController {
     @Autowired
     private CharacterAnimeWorksService service;
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getById(
+            @PathVariable CharacterAnimeWorks.CharacterAnimeWorksId id,
+            @RequestParam(required = false) String fields) {
+        
+        Optional<CharacterAnimeWorks> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "CharacterAnimeWorks not found");
+            error.put("id", id);
+            return ResponseEntity.status(404).body(error);
+        }
+        
+        CharacterAnimeWorks data = entity.get();
+        
+        if (fields != null && !fields.isEmpty()) {
+            Map<String, Object> filtered = filterFields(data, fields);
+            return ResponseEntity.ok(filtered);
+        }
+        
+        // Return all fields with snake_case names
+        return ResponseEntity.ok(toSnakeCaseMap(data));
+    }
+
+    @GetMapping("/{id}/summary")
+    public ResponseEntity<?> getSummary(@PathVariable CharacterAnimeWorks.CharacterAnimeWorksId id) {
+        Optional<CharacterAnimeWorks> entity = service.getById(id);
+        
+        if (entity.isEmpty()) {
+            return ResponseEntity.status(404).build();
+        }
+        
+        CharacterAnimeWorks data = entity.get();
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("character_mal_id", data.getCharacterMalId());
+        summary.put("anime_mal_id", data.getAnimeMalId());
+        summary.put("character_name", data.getCharacterName());
+        summary.put("role", data.getRole());
+        
+        return ResponseEntity.ok(summary);
+    }
+
     @GetMapping
     public ResponseEntity<?> getAll(
             @RequestParam(required = false) String fields,
@@ -30,6 +73,8 @@ public class CharacterAnimeWorksController {
             @RequestParam(required = false) String role,
             @RequestParam(required = false) Integer character_mal_id,
             @RequestParam(required = false) Integer anime_mal_id,
+            @RequestParam(required = false) String nullFilter,
+            @RequestParam(required = false) String notNullFilter,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -47,7 +92,11 @@ public class CharacterAnimeWorksController {
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
             Page<CharacterAnimeWorks> pageResult = service.findWithFilters(
                 search,
-                role, character_mal_id, anime_mal_id,
+                role,
+                character_mal_id,
+                anime_mal_id,
+                nullFilter,
+                notNullFilter,
                 pageable);
             
             List<CharacterAnimeWorks> results = pageResult.getContent();
@@ -66,6 +115,7 @@ public class CharacterAnimeWorksController {
                 return ResponseEntity.ok(response);
             }
             
+            // Convert all entities to snake_case
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
@@ -84,7 +134,11 @@ public class CharacterAnimeWorksController {
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<CharacterAnimeWorks> pageResult = service.findWithFilters(
                 search,
-                role, character_mal_id, anime_mal_id,
+                role,
+                character_mal_id,
+                anime_mal_id,
+                nullFilter,
+                notNullFilter,
                 pageable);
             
             List<CharacterAnimeWorks> results = pageResult.getContent();
@@ -103,6 +157,7 @@ public class CharacterAnimeWorksController {
                 return ResponseEntity.ok(response);
             }
             
+            // Convert all entities to snake_case
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
@@ -118,7 +173,11 @@ public class CharacterAnimeWorksController {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
             Page<CharacterAnimeWorks> pageResult = service.findWithFilters(
                 search,
-                role, character_mal_id, anime_mal_id,
+                role,
+                character_mal_id,
+                anime_mal_id,
+                nullFilter,
+                notNullFilter,
                 pageable);
             
             List<CharacterAnimeWorks> results = pageResult.getContent();
@@ -130,6 +189,7 @@ public class CharacterAnimeWorksController {
                 return ResponseEntity.ok(filteredResults);
             }
             
+            // Convert all entities to snake_case
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
@@ -145,6 +205,24 @@ public class CharacterAnimeWorksController {
         return ResponseEntity.ok(stats);
     }
 
+    /**
+     * Get statistics on NULL values for various fields
+     * GET /api/character_anime_works/stats/null_counts
+     */
+    @GetMapping("/stats/null_counts")
+    public ResponseEntity<Map<String, Object>> getNullCounts() {
+        Map<String, Long> nullCounts = service.getNullCounts();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("null_counts", nullCounts);
+        response.put("total_records", service.count());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Convert entity to Map with snake_case field names
+     */
     private Map<String, Object> toSnakeCaseMap(CharacterAnimeWorks entity) {
         Map<String, Object> result = new HashMap<>();
         result.put("character_mal_id", entity.getCharacterMalId());
@@ -154,6 +232,10 @@ public class CharacterAnimeWorksController {
         return result;
     }
 
+    /**
+     * Filter fields based on comma-separated field list
+     * Field names use snake_case
+     */
     private Map<String, Object> filterFields(CharacterAnimeWorks entity, String fields) {
         Map<String, Object> result = new HashMap<>();
         String[] requestedFields = fields.split(",");
@@ -180,22 +262,24 @@ public class CharacterAnimeWorksController {
     }
 
     private Sort parseSortParameter(String sort) {
-        if (sort == null || sort.isEmpty()) {
-            return Sort.unsorted();
-        }
-        
-        String[] sortFields = sort.split(",");
         List<Sort.Order> orders = new ArrayList<>();
-        
-        for (String field : sortFields) {
-            field = field.trim();
-            if (field.startsWith("-")) {
-                orders.add(Sort.Order.desc(field.substring(1)));
-            } else {
-                orders.add(Sort.Order.asc(field));
+
+        if (sort != null && !sort.isEmpty()) {
+            String[] sortFields = sort.split(",");
+            for (String field : sortFields) {
+                field = field.trim();
+                if (field.startsWith("-")) {
+                    orders.add(Sort.Order.desc(field.substring(1)));
+                } else {
+                    orders.add(Sort.Order.asc(field));
+                }
             }
         }
-        
-        return Sort.by(orders);
+
+        // CRITICAL FIX: Always add primaryKeys as tiebreaker
+        orders.add(Sort.Order.asc("characterMalId"));
+        orders.add(Sort.Order.asc("animeMalId"));
+
+        return Sort.by(orders);  // ← Now ALWAYS consistent!
     }
 }

@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -12,8 +14,8 @@ public class CharactersService {
     @Autowired
     private CharactersRepository repository;
 
-    public Optional<Characters> getById(Integer character_mal_id) {
-        return repository.findById(character_mal_id);
+    public Optional<Characters> getById(Integer characterMalId) {
+        return repository.findById(characterMalId);
     }
 
     public long count() {
@@ -26,5 +28,65 @@ public class CharactersService {
         }
 
         return repository.findAll(pageable);
+    }
+
+    /**
+     * Find records with filters including NULL/NOT NULL filters
+     */
+    public Page<Characters> findWithFilters(String search, 
+                                           String nullFilter, String notNullFilter,
+                                           Pageable pageable) {
+        
+        // Handle NULL filter first (takes precedence)
+        if (nullFilter != null && !nullFilter.isEmpty()) {
+            return handleNullFilter(nullFilter, pageable);
+        }
+        
+        // Handle NOT NULL filter
+        if (notNullFilter != null && !notNullFilter.isEmpty()) {
+            return handleNotNullFilter(notNullFilter, pageable);
+        }
+        
+        // Fall back to regular filters
+        return findWithFilters(search, pageable);
+    }
+
+    /**
+     * Handle NULL filtering for specific field
+     */
+    private Page<Characters> handleNullFilter(String field, Pageable pageable) {
+        return switch (field.toLowerCase()) {
+            case "name_kanji", "namekanji" -> repository.findByNameKanjiIsNull(pageable);
+            case "image" -> repository.findByImageIsNull(pageable);
+            case "about" -> repository.findByAboutIsNull(pageable);
+            default ->
+                // Invalid field name, return all records
+                    repository.findAll(pageable);
+        };
+    }
+
+    /**
+     * Handle NOT NULL filtering for specific field
+     */
+    private Page<Characters> handleNotNullFilter(String field, Pageable pageable) {
+        return switch (field.toLowerCase()) {
+            case "name_kanji", "namekanji" -> repository.findByNameKanjiIsNotNull(pageable);
+            case "image" -> repository.findByImageIsNotNull(pageable);
+            case "about" -> repository.findByAboutIsNotNull(pageable);
+            default ->
+                // Invalid field name, return all records
+                    repository.findAll(pageable);
+        };
+    }
+
+    /**
+     * Get statistics on NULL values
+     */
+    public Map<String, Long> getNullCounts() {
+        Map<String, Long> counts = new HashMap<>();
+        counts.put("name_kanji", repository.countByNameKanjiIsNull());
+        counts.put("image", repository.countByImageIsNull());
+        counts.put("about", repository.countByAboutIsNull());
+        return counts;
     }
 }

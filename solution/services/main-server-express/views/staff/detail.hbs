@@ -1,11 +1,15 @@
 <div class="staff-detail">
-	<h1>{{staff.name}}</h1>
-	
-	<div class="staff-info">
-		<p><strong>Position:</strong> {{staff.position}}</p>
-		<p><strong>Email:</strong> {{staff.email}}</p>
-		<p><strong>Department:</strong> {{staff.department}}</p>
+	<div class="staff-header">
+		<img src="{{staff.image_url}}" alt="{{staff.name}}">
+		<div>
+			<h1>{{staff.name}}</h1>
+			<p class="staff-birthday"><strong>Birthday:</strong> {{staff.birthday}}</p>
+			<p class="staff-favorites"><strong>Favorites:</strong> {{staff.favorites}}</p>
+			{{#if staff.website_url}}
+			<a href="{{staff.website_url}}" target="_blank" class="staff-website">Website</a>
+			{{/if}}
+		</div>
 	</div>
-	
-	<a href="/staff" class="btn btn-secondary">Back to Staff</a>
+
+	<a href="/staff" class="btn btn-secondary">← Back to Staff</a>
 </div>

@@ -64,8 +64,7 @@ echo "🗄️ Starting MongoDB server..."
 
 # Start Spring Boot server in background
 echo "🐘 Starting Spring Boot server..."
-echo "      NOT ENABLED # !"
-#(cd ./services/data-server-springboot && ./spring_start.sh "$POSTGRES_HOST" "$POSTGRES_PORT" "$POSTGRES_DB" "$POSTGRES_USER" "$POSTGRES_PASSWORD" "$DATA_SPRING_PORT") &
+(cd ./services/data-server-springboot && ./spring_start.sh "localhost" "$SPRING_DATASOURCE_PORT" "$POSTGRES_DB" "$POSTGRES_USER" "$POSTGRES_PASSWORD" "$DATA_SPRING_PORT") &
 
 # --- Main Express Server folder ---
 cd services/main-server-express

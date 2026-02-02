@@ -70,6 +70,8 @@ public class PersonDetailsController {
             @RequestParam(required = false) String fields,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String nullFilter,
+            @RequestParam(required = false) String notNullFilter,
             
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
@@ -88,7 +90,8 @@ public class PersonDetailsController {
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
             Page<PersonDetails> pageResult = service.findWithFilters(
                 search,
-                
+                nullFilter,
+                notNullFilter,
                 pageable);
             
             List<PersonDetails> results = pageResult.getContent();
@@ -126,7 +129,8 @@ public class PersonDetailsController {
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<PersonDetails> pageResult = service.findWithFilters(
                 search,
-                
+                nullFilter,
+                notNullFilter,
                 pageable);
             
             List<PersonDetails> results = pageResult.getContent();
@@ -161,7 +165,8 @@ public class PersonDetailsController {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
             Page<PersonDetails> pageResult = service.findWithFilters(
                 search,
-                
+                nullFilter,
+                notNullFilter,
                 pageable);
             
             List<PersonDetails> results = pageResult.getContent();
@@ -187,6 +192,21 @@ public class PersonDetailsController {
         Map<String, Object> stats = new HashMap<>();
         stats.put("total", service.count());
         return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Get statistics on NULL values for various fields
+     * GET /api/person_details/stats/null_counts
+     */
+    @GetMapping("/stats/null_counts")
+    public ResponseEntity<Map<String, Object>> getNullCounts() {
+        Map<String, Long> nullCounts = service.getNullCounts();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("null_counts", nullCounts);
+        response.put("total_records", service.count());
+        
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -255,22 +275,23 @@ public class PersonDetailsController {
     }
 
     private Sort parseSortParameter(String sort) {
-        if (sort == null || sort.isEmpty()) {
-            return Sort.unsorted();
-        }
-        
-        String[] sortFields = sort.split(",");
         List<Sort.Order> orders = new ArrayList<>();
-        
-        for (String field : sortFields) {
-            field = field.trim();
-            if (field.startsWith("-")) {
-                orders.add(Sort.Order.desc(field.substring(1)));
-            } else {
-                orders.add(Sort.Order.asc(field));
+
+        if (sort != null && !sort.isEmpty()) {
+            String[] sortFields = sort.split(",");
+            for (String field : sortFields) {
+                field = field.trim();
+                if (field.startsWith("-")) {
+                    orders.add(Sort.Order.desc(field.substring(1)));
+                } else {
+                    orders.add(Sort.Order.asc(field));
+                }
             }
         }
-        
-        return Sort.by(orders);
+
+        // CRITICAL FIX: Always add primaryKeys as tiebreaker
+        orders.add(Sort.Order.asc("personMalId"));
+
+        return Sort.by(orders);  // ← Now ALWAYS consistent!
     }
 }

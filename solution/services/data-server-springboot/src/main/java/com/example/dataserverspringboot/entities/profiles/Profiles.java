@@ -44,7 +44,7 @@ public class Profiles {
 
     public Profiles(String username, String gender, LocalDate birthday, String location, 
                     LocalDate joined, Integer watching, Integer completed, Integer onHold, 
-                    Integer dropped, Integer plan_to_watch) {
+                    Integer dropped, Integer planToWatch) {
         this.username = username;
         this.gender = gender;
         this.birthday = birthday;

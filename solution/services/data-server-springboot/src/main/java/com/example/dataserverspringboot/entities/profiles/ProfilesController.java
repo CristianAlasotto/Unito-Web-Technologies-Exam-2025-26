@@ -24,7 +24,7 @@ public class ProfilesController {
 
     @GetMapping("/{username}")
     public ResponseEntity<?> getById(
-            @PathVariable String username,
+            @PathVariable("username") String username,
             @RequestParam(required = false) String fields) {
         
         Optional<Profiles> entity = service.getById(username);
@@ -48,7 +48,7 @@ public class ProfilesController {
     }
 
     @GetMapping("/{username}/summary")
-    public ResponseEntity<?> getSummary(@PathVariable String username) {
+    public ResponseEntity<?> getSummary(@PathVariable("username") String username) {
         Optional<Profiles> entity = service.getById(username);
         
         if (entity.isEmpty()) {
@@ -73,13 +73,15 @@ public class ProfilesController {
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String gender,
             @RequestParam(required = false) String location,
+            @RequestParam(required = false) String nullFilter,      // NEW: Filter for NULL values
+            @RequestParam(required = false) String notNullFilter,   // NEW: Filter for NOT NULL values
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer pageSize) {
         
-        boolean useLimitOffset = (limit != null || offset != null);
         boolean usePageBased = (page != null || pageSize != null);
+        boolean useLimitOffset = (limit != null || offset != null) && !usePageBased;
         
         Sort sortObj = parseSortParameter(sort);
         
@@ -92,6 +94,8 @@ public class ProfilesController {
                 search,
                 gender,
                 location,
+                nullFilter,       // NEW
+                notNullFilter,    // NEW
                 pageable);
             
             List<Profiles> results = pageResult.getContent();
@@ -124,13 +128,15 @@ public class ProfilesController {
             
         } else if (usePageBased) {
             int finalPage = (page != null) ? page : 1;
-            int finalPageSize = (pageSize != null) ? pageSize : 10;
+            int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
             
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<Profiles> pageResult = service.findWithFilters(
                 search,
                 gender,
                 location,
+                nullFilter,       // NEW
+                notNullFilter,    // NEW
                 pageable);
             
             List<Profiles> results = pageResult.getContent();
@@ -167,6 +173,8 @@ public class ProfilesController {
                 search,
                 gender,
                 location,
+                nullFilter,       // NEW
+                notNullFilter,    // NEW
                 pageable);
             
             List<Profiles> results = pageResult.getContent();
@@ -192,6 +200,21 @@ public class ProfilesController {
         Map<String, Object> stats = new HashMap<>();
         stats.put("total", service.count());
         return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Get statistics on NULL values for various fields
+     * GET /api/profiles/stats/null_counts
+     */
+    @GetMapping("/stats/null_counts")
+    public ResponseEntity<Map<String, Object>> getNullCounts() {
+        Map<String, Long> nullCounts = service.getNullCounts();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("null_counts", nullCounts);
+        response.put("total_records", service.count());
+        
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -260,22 +283,23 @@ public class ProfilesController {
     }
 
     private Sort parseSortParameter(String sort) {
-        if (sort == null || sort.isEmpty()) {
-            return Sort.unsorted();
-        }
-        
-        String[] sortFields = sort.split(",");
         List<Sort.Order> orders = new ArrayList<>();
-        
-        for (String field : sortFields) {
-            field = field.trim();
-            if (field.startsWith("-")) {
-                orders.add(Sort.Order.desc(field.substring(1)));
-            } else {
-                orders.add(Sort.Order.asc(field));
+
+        if (sort != null && !sort.isEmpty()) {
+            String[] sortFields = sort.split(",");
+            for (String field : sortFields) {
+                field = field.trim();
+                if (field.startsWith("-")) {
+                    orders.add(Sort.Order.desc(field.substring(1)));
+                } else {
+                    orders.add(Sort.Order.asc(field));
+                }
             }
         }
-        
-        return Sort.by(orders);
+
+        // CRITICAL FIX: Always add primaryKeys as tiebreaker
+        orders.add(Sort.Order.asc("username"));
+
+        return Sort.by(orders);  // ← Now ALWAYS consistent!
     }
 }

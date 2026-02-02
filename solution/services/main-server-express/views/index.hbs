@@ -16,50 +16,153 @@
 <div class="error-message">{{error}}</div>
 {{/if}}
 
-<div class="preview-section">
-  <h3>Anime</h3>
-  <div class="card-container">
-    {{#each animes}}
-    <div class="card">
-      <a href="/anime/{{this.id}}">
-        <img src="{{this.image_url}}" alt="{{this.title}}">
-        <div class="card-body">
-          <p>{{this.title}}</p>
-        </div>
-      </a>
-    </div>
-    {{/each}}
+{{!-- Anime carousel --}}
+<div class="carousel" id="anime-carousel" data-current-page="{{animeCarousel.currentPage}}"
+  data-page-size="{{animeCarousel.pageSize}}">
+  <h3>Top Rated animes</h3>
+  {{#if animeCarousel.hasPrev}}
+  <button class="btn-left" data-prev-page="{{animeCarousel.prevPage}}">
+    ←
+  </button>
+  {{/if}}
+
+  <div class="carousel-container">
+    {{> anime_carousel_items items=popularAnimes}}
   </div>
+
+  {{#if animeCarousel.hasNext}}
+  <button class="btn-right" data-next-page="{{animeCarousel.nextPage}}">
+    →
+  </button>
+  {{/if}}
 </div>
 
-<div class="preview-section">
-  <h3>Characters</h3>
-  <div class="card-container">
-    {{#each characters}}
-    <div class="card">
-      <a href="/characters/{{this.id}}">
-        <img src="{{this.image_url}}" alt="{{this.name}}">
-        <div class="card-body">
-          <p>{{this.name}}</p>
-        </div>
-      </a>
-    </div>
-    {{/each}}
+{{!-- Characters carousel --}}
+<div class="carousel" id="character-carousel" data-current-page="{{characterCarousel.currentPage}}"
+  data-page-size="{{characterCarousel.pageSize}}">
+  <h3>Most popular Characters</h3>
+  {{#if characterCarousel.hasPrev}}
+  <button class="btn-left" data-prev-page="{{characterCarousel.prevPage}}">
+    ←
+  </button>
+  {{/if}}
+
+  <div class="carousel-container">
+    {{> characters_carousel_items items=popularCharacters}}
   </div>
+
+  {{#if characterCarousel.hasNext}}
+  <button class="btn-right" data-next-page="{{characterCarousel.nextPage}}">
+    →
+  </button>
+  {{/if}}
 </div>
 
-<div class="preview-section">
-  <h3>Staff</h3>
-  <div class="card-container">
-    {{#each staff}}
-    <div class="card">
-      <a href="/staff/{{this.id}}">
-        <img src="{{this.image_url}}" alt="{{this.name}}">
-        <div class="card-body">
-          <p>{{this.name}}</p>
-        </div>
-      </a>
-    </div>
-    {{/each}}
+{{!-- Staff carousel --}}
+<div class="carousel" id="staff-carousel" data-current-page="{{staffCarousel.currentPage}}"
+  data-page-size="{{staffCarousel.pageSize}}">
+  <h3>Some of our best Creators</h3>
+  {{#if staffCarousel.hasPrev}}
+  <button class="btn-left" data-prev-page="{{staffCarousel.prevPage}}">
+    ←
+  </button>
+  {{/if}}
+
+  <div class="carousel-container">
+    {{> staff_carousel_items items=popularStaff}}
   </div>
+
+  {{#if staffCarousel.hasNext}}
+  <button class="btn-right" data-next-page="{{staffCarousel.nextPage}}">
+    →
+  </button>
+  {{/if}}
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const carousels = document.querySelectorAll('.carousel');
+
+    carousels.forEach(carousel => {
+      const carouselId = carousel.id;
+
+      const updateButtons = () => {
+        const prevButton = carousel.querySelector('.btn-left');
+        const nextButton = carousel.querySelector('.btn-right');
+
+        if (prevButton) {
+          prevButton.addEventListener('click', () => {
+            const page = prevButton.dataset.prevPage;
+            fetchCarouselData(carouselId, page);
+          }, { once: true }); // Avoid multiple clicks
+        }
+
+        if (nextButton) {
+          nextButton.addEventListener('click', () => {
+            const page = nextButton.dataset.nextPage;
+            fetchCarouselData(carouselId, page);
+          }, { once: true }); // Avoid multiple clicks
+        }
+      }
+
+      updateButtons();
+
+      async function fetchCarouselData(carouselId, page) {
+        const carousel = document.getElementById(carouselId);
+        const pageSize = carousel.dataset.pageSize;
+        const type = carouselId.split('-')[0]; // anime, character, or staff
+
+        try {
+          const response = await fetch(`/?carouselType=${type}&page=${page}&pageSize=${pageSize}`);
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const data = await response.json();
+
+          const carouselContainer = carousel.querySelector('.carousel-container');
+          carouselContainer.innerHTML = data.html;
+
+          carousel.dataset.currentPage = data.currentPage;
+
+          // Update or create prev button
+          let prevButton = carousel.querySelector('.btn-left');
+          if (data.hasPrev) {
+            if (!prevButton) {
+              prevButton = document.createElement('button');
+              prevButton.className = 'btn-left';
+              carousel.insertBefore(prevButton, carouselContainer);
+            }
+            prevButton.innerHTML = '←';
+            prevButton.dataset.prevPage = data.prevPage;
+            prevButton.style.display = 'block';
+          } else if (prevButton) {
+            prevButton.style.display = 'none';
+          }
+
+          // Update or create next button
+          let nextButton = carousel.querySelector('.btn-right');
+          if (data.hasNext) {
+            if (!nextButton) {
+              nextButton = document.createElement('button');
+              nextButton.className = 'btn-right';
+              carousel.appendChild(nextButton);
+            }
+            nextButton.innerHTML = '→';
+            nextButton.dataset.nextPage = data.nextPage;
+            nextButton.style.display = 'block';
+          } else if (nextButton) {
+            nextButton.style.display = 'none';
+          }
+
+          // Re-attach event listeners to the new/updated buttons
+          updateButtons();
+
+        } catch (error) {
+          console.error('Failed to fetch carousel data:', error);
+          const carouselContainer = carousel.querySelector('.carousel-container');
+          carouselContainer.innerHTML = '<p class="error-message">Error loading items.</p>';
+        }
+      }
+    });
+  });
+</script>
