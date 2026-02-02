@@ -1,36 +1,22 @@
-const axios = require('axios');
+const { apiPostgres } = require('./apiClients');
 
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080/api';
+exports.showProfile = async (req, res, next) => {
+    const username = req.params.username;
 
-// PROVVISORIO
-var temp_userName = 'Folleh';
-
-async function profileController(req, res, next) {
     try {
-        const username = req.query.user || temp_userName;
-        
-        const response = await axios.get(`${API_BASE_URL}/profiles/${username}`);
-        const profile = response.data;
-        
+        const response = await apiPostgres.get(`/api/profiles/${username}`);
+        const profileData = response.data;
+
         res.render('profile/profile', {
-            title: 'Profile',
-            profile,
+            title: `${profileData.username}'s Profile`,
+            currentPage: 'profile',
+            profile: profileData
+        });
+    } catch (err) {
+        res.render('profile/profile', {
+            title: 'Profile Error',
+            error: 'The requested profile could not be loaded.',
             currentPage: 'profile'
         });
-    } catch (error) {
-        if (error.response?.status === 404) {
-            // return next();
-            const username = req.query.user || temp_userName;
-            res.status(404).render('profile/profile', {
-                title: 'Profile Not Found',
-                warning: `Profile for user "${username}" not found.`,
-                currentPage: 'profile',
-                profile: {}
-            });
-            return;
-        }
-        next(error);
     }
-}
-
-module.exports = profileController;
+};

@@ -187,7 +187,7 @@ exports.list = async (req, res, next) => {
         hasNext: page < totalPages,
         nextPage: parseInt(page) + 1
       },
-      warning: !animes || animes.length === 0 ? 'Nessun anime trovato nel database.' : null
+      warning: !animes || animes.length === 0 ? 'No anime found in database.' : null
     });
   } catch (err) {
     res.render('anime/anime_list', {
@@ -318,7 +318,7 @@ exports.detail = async (req, res, next) => {
     res.render('anime/anime_detail', {
       title: 'Anime Detail',
       anime: null,
-      error: 'Impossibile caricare i dettagli dell\'anime. Il server potrebbe non essere disponibile.'
+      error: 'Unable to load anime details.'
     });
   }
 };
@@ -354,7 +354,7 @@ exports.reccomendations = async (req, res) => {
     res.render('anime/anime_recommendations', {
       title: 'Recommendations',
       recommendations: null,
-      error: 'Impossibile caricare i consigli dell\'anime. Il server potrebbe non essere disponibile.'
+      error: 'Unable to load recommendations.'
     });
   }
 };
