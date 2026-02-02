@@ -1,5 +1,6 @@
 package com.example.dataserverspringboot.entities.characteranimeworks;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
  * REST API Controller for CharacterAnimeWorks
  * Returns field names in snake_case to match database columns
  */
+@Tag(name = "Character Anime Works", description = "Anime characters with role and relationships API")
 @RestController
 @RequestMapping("/api/character_anime_works")
 @CrossOrigin(origins = "*")

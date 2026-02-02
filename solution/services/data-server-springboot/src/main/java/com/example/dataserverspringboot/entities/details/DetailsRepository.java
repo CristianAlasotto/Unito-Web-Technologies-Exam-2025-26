@@ -52,6 +52,23 @@ public interface DetailsRepository extends JpaRepository<Details, Integer> {
     Page<Details> findRecommendationsForAnime(@Param("malId") Integer malId, Pageable pageable);
 
     /**
+     * JOIN: Find all characters that appear in this anime
+     * details → character_anime_works → characters
+     */
+    @Query("SELECT c FROM com.example.dataserverspringboot.entities.characters.Characters c WHERE c.characterMalId IN " +
+            "(SELECT caw.characterMalId FROM com.example.dataserverspringboot.entities.characteranimeworks.CharacterAnimeWorks caw " +
+            "WHERE caw.animeMalId = :malId) " +
+            "ORDER BY c.favorites DESC NULLS LAST")
+    Page<com.example.dataserverspringboot.entities.characters.Characters> findCharactersInAnime(@Param("malId") Integer malId, Pageable pageable);
+
+    /**
+     * COUNT: Total characters in this anime
+     */
+    @Query("SELECT COUNT(DISTINCT caw.characterMalId) FROM com.example.dataserverspringboot.entities.characteranimeworks.CharacterAnimeWorks caw " +
+            "WHERE caw.animeMalId = :malId")
+    long countCharactersInAnime(@Param("malId") Integer malId);
+
+    /**
      * Count recommendations for a specific anime
      */
     @Query("SELECT COUNT(r) FROM com.example.dataserverspringboot.entities.recommendations.Recommendations r WHERE r.malId = :malId")

@@ -1,5 +1,6 @@
 package com.example.dataserverspringboot.entities.personvoiceworks;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
  * REST API Controller for PersonVoiceWorks
  * Returns field names in snake_case to match database columns
  */
+@Tag(name = "Person Voice Works", description = "Anime voice actors with their roles and languages and relationships API")
 @RestController
 @RequestMapping("/api/person_voice_works")
 @CrossOrigin(origins = "*")

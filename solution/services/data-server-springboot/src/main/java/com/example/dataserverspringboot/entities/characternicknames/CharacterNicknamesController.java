@@ -1,5 +1,6 @@
 package com.example.dataserverspringboot.entities.characternicknames;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
  * REST API Controller for CharacterNicknames
  * Composite key table - supports list operations only
  */
+@Tag(name = "Character Nicknames", description = "Anime character nicknames and relationships API")
 @RestController
 @RequestMapping("/api/character_nicknames")
 @CrossOrigin(origins = "*")

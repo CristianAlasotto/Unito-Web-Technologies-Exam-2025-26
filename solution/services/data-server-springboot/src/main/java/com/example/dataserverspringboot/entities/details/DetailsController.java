@@ -17,12 +17,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * REST API Controller for Details
  * Returns field names in snake_case to match database columns
  * Supports relation expansion via ?include parameter
  */
+@Tag(name = "Details", description = "Anime details and relationships API")
 @RestController
 @RequestMapping("/api/details")
 @CrossOrigin(origins = "*")
@@ -83,6 +90,69 @@ public class DetailsController {
         
         // Return all fields with snake_case names
         return ResponseEntity.ok(toSnakeCaseMap(data));
+    }
+
+    /**
+     * Convert Characters entity to Map with snake_case field names
+     */
+    private Map<String, Object> charactersToSnakeCaseMap(com.example.dataserverspringboot.entities.characters.Characters entity) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("character_mal_id", entity.getCharacterMalId());
+        result.put("name", entity.getName());
+        result.put("name_kanji", entity.getNameKanji());
+        result.put("image", entity.getImage());
+        result.put("favorites", entity.getFavorites());
+        result.put("url", entity.getUrl());
+        return result;
+    }
+
+    @GetMapping("/{mal_id}/characters")
+    @Operation(
+            summary = "Get characters in anime",
+            description = "Retrieve all characters that appear in this anime, sorted by favorites"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Characters retrieved"),
+            @ApiResponse(responseCode = "404", description = "Anime not found", content = @Content)
+    })
+    public ResponseEntity<?> getCharacters(
+            @Parameter(description = "Anime MAL ID", example = "1", required = true)
+            @PathVariable Integer mal_id,
+
+            @Parameter(description = "Page number (1-indexed)", example = "1")
+            @RequestParam(required = false) Integer page,
+
+            @Parameter(description = "Results per page", example = "10")
+            @RequestParam(required = false) Integer pageSize) {
+
+        // Check if anime exists
+        if (!detailsRepository.existsById(mal_id)) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Anime not found");
+            error.put("mal_id", mal_id);
+            return ResponseEntity.status(404).body(error);
+        }
+
+        int finalPage = (page != null) ? page : 1;
+        int finalPageSize = (pageSize != null) ? pageSize : 10;
+
+        Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize);
+        Page<com.example.dataserverspringboot.entities.characters.Characters> charactersPage =
+                detailsRepository.findCharactersInAnime(mal_id, pageable);
+
+        List<Map<String, Object>> charactersList = charactersPage.getContent().stream()
+                .map(this::charactersToSnakeCaseMap)
+                .collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("mal_id", mal_id);
+        response.put("page", finalPage);
+        response.put("pageSize", finalPageSize);
+        response.put("totalPages", charactersPage.getTotalPages());
+        response.put("totalItems", charactersPage.getTotalElements());
+        response.put("items", charactersList);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{mal_id}/summary")
