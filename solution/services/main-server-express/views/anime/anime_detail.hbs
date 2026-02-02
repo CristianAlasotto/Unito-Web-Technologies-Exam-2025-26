@@ -10,410 +10,217 @@
 {{/if}}
 
 <div class="anime-container">
-    <h1>Anime Details</h1>
+	<h1>Anime Details</h1>
 
-    {{#if anime}}
-        <article class="anime-detail">
-            <div class="anime-header">
-                <img src="{{anime.image_url}}" alt="{{anime.title}}" class="anime-poster">
-                <div class="anime-main-info">
-                    <h3>{{anime.title}}</h3>
-                    {{#if anime.title_japanese}}
-                        <h4 class="japanese-title">{{anime.title_japanese}}</h4>
-                    {{/if}}
+	{{#if anime}}
+	<article class="anime-detail anime-detail-card">
+		<div class="anime-header">
+			<img src="{{anime.image_url}}" alt="{{anime.title}}" class="anime-poster">
+			<div class="anime-main-info">
+				<h2>{{anime.title}}</h2>
+				{{#if anime.title_english}}
+				<h4 class="english-title">{{anime.title_english}}</h4>
+				{{/if}}
+				{{#if anime.title_japanese}}
+				<h4 class="japanese-title">{{anime.title_japanese}}</h4>
+				{{/if}}
 
-                    <div class="anime-meta">
-                        <span class="score">⭐ {{anime.score}}</span>
-                        <span class="type">{{anime.type}}</span>
-                        <span class="status">{{anime.status}}</span>
-                        <span class="episodes">{{anime.episodes}} episodes</span>
-                    </div>
+				<div class="anime-meta">
+					<span class="score">⭐ {{anime.score_display}}</span>
+					<span class="scored-by">Scored by: {{anime.scored_by_display}}</span>
+					<span class="type">{{anime.type_display}}</span>
+					<span class="status">{{anime.status_display}}</span>
+					<span class="episodes">{{anime.episodes_text}}</span>
+					<span class="season">Season: {{anime.season_display}}</span>
+					<span class="year">Year: {{anime.year_display}}</span>
+					<span class="rating">Rating: {{anime.rating_display}}</span>
+					<span class="source">Source: {{anime.source_display}}</span>
+				</div>
 
-                    {{#if anime.start_date}}
-                        <p class="dates">
-                            <strong>Period:</strong>
-                            {{anime.start_date}}
-                            {{#if anime.end_date}}
-                                - {{anime.end_date}}
-                            {{/if}}
-                        </p>
-                    {{/if}}
-                </div>
-            </div>
+				<p class="dates">
+					<strong>Start date:</strong> {{anime.start_date_display}}
+				</p>
+				<p class="dates">
+					<strong>End date:</strong> {{anime.end_date_display}}
+				</p>
+			</div>
+		</div>
 
-            {{#if anime.synopsis}}
-                <section class="synopsis">
-                    <h3>Synopsis</h3>
-                    <p>{{anime.synopsis}}</p>
-                </section>
-            {{/if}}
+		{{#if anime.synopsis}}
+		<section class="synopsis">
+			<h3>Synopsis</h3>
+			<p>{{anime.synopsis}}</p>
+		</section>
+		{{/if}}
 
-            <div class="anime-details-grid">
-                {{#if anime.genres}}
-                    <section class="detail-section">
-                        <h3>Genres</h3>
-                        <div class="tags">
-                            {{#each anime.genres}}
-                                <span class="tag">{{this}}</span>
-                            {{/each}}
-                        </div>
-                    </section>
-                {{/if}}
+		<div class="anime-details-grid">
+			{{#if anime.has_genres}}
+			<section class="detail-section">
+				<h3>Genres</h3>
+				<div class="tags">
+					{{#each anime.genres}}
+					<span class="tag">{{this}}</span>
+					{{/each}}
+				</div>
+			</section>
+			{{/if}}
 
-                {{#if anime.themes}}
-                    <section class="detail-section">
-                        <h3>Themes</h3>
-                        <div class="tags">
-                            {{#each anime.themes}}
-                                <span class="tag">{{this}}</span>
-                            {{/each}}
-                        </div>
-                    </section>
-                {{/if}}
+			{{#if anime.has_themes}}
+			<section class="detail-section">
+				<h3>Themes</h3>
+				<div class="tags">
+					{{#each anime.themes}}
+					<span class="tag">{{this}}</span>
+					{{/each}}
+				</div>
+			</section>
+			{{/if}}
 
-                {{#if anime.studios}}
-                    <section class="detail-section">
-                        <h3>Studios</h3>
-                        <div class="tags">
-                            {{#each anime.studios}}
-                                <span class="tag">{{this}}</span>
-                            {{/each}}
-                        </div>
-                    </section>
-                {{/if}}
+			{{#if anime.has_studios}}
+			<section class="detail-section">
+				<h3>Studios</h3>
+				<div class="tags">
+					{{#each anime.studios}}
+					<span class="tag">{{this}}</span>
+					{{/each}}
+				</div>
+			</section>
+			{{/if}}
 
-                {{#if anime.demographics}}
-                    <section class="detail-section">
-                        <h3>Demographics</h3>
-                        <div class="tags">
-                            {{#each anime.demographics}}
-                                <span class="tag">{{this}}</span>
-                            {{/each}}
-                        </div>
-                    </section>
-                {{/if}}
-            </div>
+			{{#if anime.has_demographics}}
+			<section class="detail-section">
+				<h3>Demographics</h3>
+				<div class="tags">
+					{{#each anime.demographics}}
+					<span class="tag">{{this}}</span>
+					{{/each}}
+				</div>
+			</section>
+			{{/if}}
 
-            <div class="anime-stats">
-                {{#if anime.rank}}
-                    <div class="stat">
-                        <strong>Rank:</strong> #{{anime.rank}}
-                    </div>
-                {{/if}}
-                {{#if anime.popularity}}
-                    <div class="stat">
-                        <strong>Popularity:</strong> #{{anime.popularity}}
-                    </div>
-                {{/if}}
-                {{#if anime.members}}
-                    <div class="stat">
-                        <strong>Members:</strong> {{anime.members}}
-                    </div>
-                {{/if}}
-                {{#if anime.favorites}}
-                    <div class="stat">
-                        <strong>Favorites:</strong> {{anime.favorites}}
-                    </div>
-                {{/if}}
-            </div>
+			{{#if anime.has_producers}}
+			<section class="detail-section">
+				<h3>Producers</h3>
+				<div class="tags">
+					{{#each anime.producers}}
+					<span class="tag">{{this}}</span>
+					{{/each}}
+				</div>
+			</section>
+			{{/if}}
 
-            <br>
-            <section class="recommendations">
-                <h3>Recommended Animes</h3>
-                {{#if character.recommendations}}
-                    {{> anime_carousel_items items=character.recommendations}}
-                {{else}}
-                    <p>No recommendations available.</p>
-                {{/if}}
-            </section>
+			{{#if anime.has_licensors}}
+			<section class="detail-section">
+				<h3>Licensors</h3>
+				<div class="tags">
+					{{#each anime.licensors}}
+					<span class="tag">{{this}}</span>
+					{{/each}}
+				</div>
+			</section>
+			{{/if}}
 
-            {{#if anime.url}}
-                <a href="{{anime.url}}" target="_blank" class="mal-link">
-                    View on MyAnimeList
-                </a>
-            {{/if}}
+			{{#if anime.has_streaming}}
+			<section class="detail-section">
+				<h3>Streaming</h3>
+				<div class="tags">
+					{{#each anime.streaming}}
+					<span class="tag">{{this}}</span>
+					{{/each}}
+				</div>
+			</section>
+			{{/if}}
 
-            <hr style="border-color: #333; margin: 2rem 0;">
+			{{#if anime.has_explicit_genres}}
+			<section class="detail-section">
+				<h3>Explicit Genres</h3>
+				<div class="tags">
+					{{#each anime.explicit_genres}}
+					<span class="tag">{{this}}</span>
+					{{/each}}
+				</div>
+			</section>
+			{{/if}}
+		</div>
 
-            {{!-- RATINGS SECTION --}}
-            <section class="ratings-section">
-                <h3 style="margin-bottom: 1rem;">User Ratings</h3>
+		<div class="anime-stats">
+			<div class="stat">
+				<strong>Rank:</strong> {{anime.rank_display}}
+			</div>
+			<div class="stat">
+				<strong>Popularity:</strong> {{anime.popularity_display}}
+			</div>
+			<div class="stat">
+				<strong>Members:</strong> {{anime.members_display}}
+			</div>
+			<div class="stat">
+				<strong>Favorites:</strong> {{anime.favorites_display}}
+			</div>
+		</div>
 
-                {{!-- ADD RATING FORM --}}
-                <div class="add-rating-section" style="background: #1a1a1a; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                    <h4 style="margin-bottom: 1rem; color: #fff;">Add Your Rating</h4>
+		<br>
+		<h3 class="recommendationsTitle">Related Characters</h3>
+		<section class="recommendations">
+			{{#if anime.has_related_characters}}
+			<div class="cardsContainer">
+				{{#each anime.related_characters}}
+				<div class="card">
+					{{#if this.character_mal_id}}
+					<a href="/characters/{{this.character_mal_id}}">
+						{{else}}
+						<a href="/characters/{{this.character_id}}">
+							{{/if}}
+							{{#if this.image}}
+							<img src="{{this.image}}" alt="{{this.name}}">
+							{{else}}
+							<img src="{{this.image_url}}" alt="{{this.name}}">
+							{{/if}}
+							<div class="card-body">
+								<p>{{this.name}}</p>
+							</div>
+						</a>
+				</div>
+				{{/each}}
+			</div>
+			{{else}}
+			<p>No related_characters available.</p>
+			{{/if}}
+		</section>
 
-                    <div id="rating-message" style="display: none; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem;"></div>
+		<br>
+		<h3 class="recommendationsTitle">Recommended Animes</h3>
+		<section class="recommendations">
+			{{#if anime.hasRelatedAnimes}}
+			<div class="cardsContainer">
+				{{#each anime.recommendations}}
+				<div class="card">
+					{{#if this.mal_id}}
+					<a href="/anime/{{this.mal_id}}">
+						{{else}}
+						<a href="/anime/{{this.anime_id}}">
+							{{/if}}
+							<img src="{{this.image_url}}" alt="{{this.title}}">
+							<div class="card-body">
+								<p>{{this.title}}</p>
+							</div>
+						</a>
+				</div>
+				{{/each}}
+			</div>
+			{{else}}
+			<p>No recommended animes available.</p>
+			{{/if}}
+		</section>
 
-                    <form id="add-rating-form" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end;">
-
-                        {{!-- Username --}}
-                        <div>
-                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Username*</label>
-                            <input
-                                    type="text"
-                                    id="rating-username"
-                                    name="username"
-                                    required
-                                    placeholder="Enter your username"
-                                    style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
-                        </div>
-
-                        {{!-- Score --}}
-                        <div>
-                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Score* (1-10)</label>
-                            <input
-                                    type="number"
-                                    id="rating-score"
-                                    name="score"
-                                    min="1"
-                                    max="10"
-                                    required
-                                    placeholder="1-10"
-                                    style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
-                        </div>
-
-                        {{!-- Status --}}
-                        <div>
-                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Status*</label>
-                            <select
-                                    id="rating-status"
-                                    name="status"
-                                    required
-                                    style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
-                                <option value="">Select status</option>
-                                <option value="watching">Watching</option>
-                                <option value="completed">Completed</option>
-                                <option value="on_hold">On Hold</option>
-                                <option value="dropped">Dropped</option>
-                                <option value="plan_to_watch">Plan to Watch</option>
-                            </select>
-                        </div>
-
-                        {{!-- Episodes Watched --}}
-                        <div>
-                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Episodes Watched*</label>
-                            <input
-                                    type="number"
-                                    id="rating-episodes"
-                                    name="num_watched_episodes"
-                                    min="0"
-                                    required
-                                    placeholder="0"
-                                    style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
-                        </div>
-
-                        {{!-- Is Rewatching --}}
-                        <div>
-                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Rewatching?</label>
-                            <select
-                                    id="rating-rewatching"
-                                    name="is_rewatching"
-                                    style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
-                                <option value="0">No</option>
-                                <option value="1">Yes</option>
-                            </select>
-                        </div>
-
-                        {{!-- Submit Button --}}
-                        <div>
-                            <button
-                                    type="submit"
-                                    id="submit-rating-btn"
-                                    style="width: 100%; padding: 0.5rem 1rem; background: #4caf50; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.3s;">
-                                Submit Rating
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                {{!-- FILTER SECTION --}}
-                <div class="ratings-filters" style="background: #1a1a1a; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end;">
-
-                        {{!-- Score Range Filter --}}
-                        <div>
-                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Min Score</label>
-                            <select id="filter-minScore" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
-                                <option value="">Any</option>
-                                <option value="0">0</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
-                                <option value="6">6</option>
-                                <option value="7">7</option>
-                                <option value="8">8</option>
-                                <option value="9">9</option>
-                                <option value="10">10</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Max Score</label>
-                            <select id="filter-maxScore" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
-                                <option value="">Any</option>
-                                <option value="0">0</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
-                                <option value="6">6</option>
-                                <option value="7">7</option>
-                                <option value="8">8</option>
-                                <option value="9">9</option>
-                                <option value="10">10</option>
-                            </select>
-                        </div>
-
-                        {{!-- Status Filter --}}
-                        <div>
-                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Status</label>
-                            <select id="filter-status" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
-                                <option value="">All</option>
-                                <option value="watching">Watching</option>
-                                <option value="completed">Completed</option>
-                                <option value="on_hold">On Hold</option>
-                                <option value="dropped">Dropped</option>
-                                <option value="plan_to_watch">Plan to Watch</option>
-                            </select>
-                        </div>
-
-                        {{!-- Rewatching Filter --}}
-                        <div>
-                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Rewatching</label>
-                            <select id="filter-rewatching" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
-                                <option value="">All</option>
-                                <option value="true">Yes</option>
-                                <option value="false">No</option>
-                            </select>
-                        </div>
-
-                        {{!-- Sort By --}}
-                        <div>
-                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Sort By</label>
-                            <select id="filter-sortBy" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
-                                <option value="score">Score</option>
-                                <option value="username">Username</option>
-                                <option value="status">Status</option>
-                                <option value="num_watched_episodes">Episodes Watched</option>
-                            </select>
-                        </div>
-
-                        {{!-- Sort Order --}}
-                        <div>
-                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Order</label>
-                            <select id="filter-sortOrder" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
-                                <option value="desc">Descending</option>
-                                <option value="asc">Ascending</option>
-                            </select>
-                        </div>
-
-                        {{!-- Filter Buttons --}}
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button id="apply-filters-btn" style="flex: 1; padding: 0.5rem 1rem; background: #2196f3; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                                Apply
-                            </button>
-                            <button id="clear-filters-btn" style="flex: 1; padding: 0.5rem 1rem; background: #555; color: #fff; border: none; border-radius: 4px; cursor: pointer;">
-                                Clear
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {{!-- RATINGS TABLE (Dynamically Updated) --}}
-                <div id="ratings-container">
-                    {{#if ratings}}
-                        {{#if ratings.length}}
-                            <div style="overflow-x: auto;">
-                                <table style="width: 100%; border-collapse: collapse; background: #1a1a1a; border-radius: 8px; overflow: hidden; margin-bottom: 2rem;">
-                                    <thead>
-                                    <tr style="background: #333; color: #fff; text-align: left;">
-                                        <th style="padding: 12px 15px;">User</th>
-                                        <th style="padding: 12px 15px;">Score</th>
-                                        <th style="padding: 12px 15px;">Status</th>
-                                        <th style="padding: 12px 15px;">Is Rewatching</th>
-                                        <th style="padding: 12px 15px;">Watched Episodes</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {{#each ratings}}
-                                        <tr style="border-bottom: 1px solid #2d2d2d; color: #ccc;">
-                                            <td style="padding: 12px 15px;">
-                                                <span style="font-weight: bold; color: #fff;">{{this.username}}</span>
-                                            </td>
-                                            <td style="padding: 12px 15px;">
-                                                <span style="color: #ff9800; font-weight: bold;">⭐ {{this.score}}</span>
-                                            </td>
-                                            <td style="padding: 12px 15px; text-transform: capitalize;">
-                                                {{this.status}}
-                                            </td>
-                                            <td style="padding: 12px 15px;">
-                                                {{#if this.is_rewatching}}
-                                                    <span style="color: #4caf50; font-weight: bold;">Yes</span>
-                                                {{else}}
-                                                    <span style="color: #888;">No</span>
-                                                {{/if}}
-                                            </td>
-                                            <td style="padding: 12px 15px;">
-                                                {{this.num_watched_episodes}}
-                                            </td>
-                                        </tr>
-                                    {{/each}}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {{!-- PAGINATION --}}
-                            {{#if ratingsPagination}}
-                                {{#if ratingsPagination.hasNext}}
-                                    <div class="pagination" style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1rem;">
-                                        {{#if ratingsPagination.hasPrev}}
-                                            <a href="{{ratingsPagination.prevUrl}}" style="padding: 0.5rem 1rem; background: #333; color: #fff; text-decoration: none; border-radius: 4px;">
-                                                ← Previous
-                                            </a>
-                                        {{/if}}
-
-                                        <span class="page-info" style="color: #ccc;">
-                                            Page {{ratingsPagination.currentPage}} of {{ratingsPagination.totalPages}}
-                                        </span>
-
-                                        {{#if ratingsPagination.hasNext}}
-                                            <a href="{{ratingsPagination.nextUrl}}" style="padding: 0.5rem 1rem; background: #333; color: #fff; text-decoration: none; border-radius: 4px;">
-                                                Next →
-                                            </a>
-                                        {{/if}}
-                                    </div>
-                                {{else}}
-                                    {{#if ratingsPagination.hasPrev}}
-                                        <div class="pagination" style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1rem;">
-                                            <a href="{{ratingsPagination.prevUrl}}" style="padding: 0.5rem 1rem; background: #333; color: #fff; text-decoration: none; border-radius: 4px;">
-                                                ← Previous
-                                            </a>
-
-                                            <span class="page-info" style="color: #ccc;">
-                                                Page {{ratingsPagination.currentPage}} of {{ratingsPagination.totalPages}}
-                                            </span>
-                                        </div>
-                                    {{/if}}
-                                {{/if}}
-                            {{/if}}
-                        {{/if}}
-                    {{else}}
-                        <p style="color: #888; font-style: italic; margin-bottom: 2rem;">No ratings available for this anime yet.</p>
-                    {{/if}}
-                </div>{{!-- End ratings-container --}}
-
-                {{!-- Include external JavaScript for ratings functionality --}}
-                <script src="/js/anime_detail.js"></script>
-            </section>
-
-        </article>
-    {{else}}
-        {{#unless warning}}
-            <p class="no-data">No anime available at the moment.</p>
-        {{/unless}}
-    {{/if}}
+		{{#if anime.url}}
+		<a href="{{anime.url}}" target="_blank" class="mal-link">
+			View on MyAnimeList
+		</a>
+		{{/if}}
+	</article>
+	{{else}}
+	{{#unless warning}}
+	<p class="no-data">No anime available at the moment.</p>
+	{{/unless}}
+	{{/if}}
 </div>

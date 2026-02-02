@@ -29,16 +29,52 @@ public interface PersonVoiceWorksRepository extends JpaRepository<PersonVoiceWor
     /**
      * Find by person_mal_id
      */
-    Page<PersonVoiceWorks> findByPersonMalId(Integer personMalId, Pageable pageable);
+    Page<PersonVoiceWorks> findByPersonMalId(Integer person_mal_id, Pageable pageable);
 
     /**
      * Find by character_mal_id
      */
-    Page<PersonVoiceWorks> findByCharacterMalId(Integer characterMalId, Pageable pageable);
+    Page<PersonVoiceWorks> findByCharacterMalId(Integer character_mal_id, Pageable pageable);
 
     /**
      * Find by anime_mal_id
      */
-    Page<PersonVoiceWorks> findByAnimeMalId(Integer animeMalId, Pageable pageable);
+    Page<PersonVoiceWorks> findByAnimeMalId(Integer anime_mal_id, Pageable pageable);
+
+    // ============================================================
+    // NULL FILTERING METHODS
+    // ============================================================
+
+    /**
+     * Find all where role IS NULL
+     */
+    Page<PersonVoiceWorks> findByRoleIsNull(Pageable pageable);
+
+    /**
+     * Find all where role IS NOT NULL
+     */
+    Page<PersonVoiceWorks> findByRoleIsNotNull(Pageable pageable);
+
+    /**
+     * Find all where language IS NULL
+     */
+    Page<PersonVoiceWorks> findByLanguageIsNull(Pageable pageable);
+
+    /**
+     * Find all where language IS NOT NULL
+     */
+    Page<PersonVoiceWorks> findByLanguageIsNotNull(Pageable pageable);
+
+    // Count methods for statistics
+
+    /**
+     * Count records with null role
+     */
+    long countByRoleIsNull();
+
+    /**
+     * Count records with null language
+     */
+    long countByLanguageIsNull();
 
 }

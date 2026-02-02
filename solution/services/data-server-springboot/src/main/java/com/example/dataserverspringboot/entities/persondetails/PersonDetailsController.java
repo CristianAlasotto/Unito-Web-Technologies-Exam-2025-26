@@ -24,15 +24,15 @@ public class PersonDetailsController {
 
     @GetMapping("/{person_mal_id}")
     public ResponseEntity<?> getById(
-            @PathVariable("person_mal_id") Integer personMalId,
+            @PathVariable Integer person_mal_id,
             @RequestParam(required = false) String fields) {
         
-        Optional<PersonDetails> entity = service.getById(personMalId);
+        Optional<PersonDetails> entity = service.getById(person_mal_id);
         
         if (entity.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "PersonDetails not found");
-            error.put("person_mal_id", personMalId);
+            error.put("person_mal_id", person_mal_id);
             return ResponseEntity.status(404).body(error);
         }
         
@@ -48,8 +48,8 @@ public class PersonDetailsController {
     }
 
     @GetMapping("/{person_mal_id}/summary")
-    public ResponseEntity<?> getSummary(@PathVariable("person_mal_id") Integer personMalId) {
-        Optional<PersonDetails> entity = service.getById(personMalId);
+    public ResponseEntity<?> getSummary(@PathVariable Integer person_mal_id) {
+        Optional<PersonDetails> entity = service.getById(person_mal_id);
         
         if (entity.isEmpty()) {
             return ResponseEntity.status(404).build();
@@ -70,14 +70,16 @@ public class PersonDetailsController {
             @RequestParam(required = false) String fields,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String nullFilter,
+            @RequestParam(required = false) String notNullFilter,
             
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer pageSize) {
         
+        boolean useLimitOffset = (limit != null || offset != null);
         boolean usePageBased = (page != null || pageSize != null);
-        boolean useLimitOffset = (limit != null || offset != null) && !usePageBased;
         
         Sort sortObj = parseSortParameter(sort);
         
@@ -88,7 +90,8 @@ public class PersonDetailsController {
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
             Page<PersonDetails> pageResult = service.findWithFilters(
                 search,
-                
+                nullFilter,
+                notNullFilter,
                 pageable);
             
             List<PersonDetails> results = pageResult.getContent();
@@ -121,12 +124,13 @@ public class PersonDetailsController {
             
         } else if (usePageBased) {
             int finalPage = (page != null) ? page : 1;
-            int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
+            int finalPageSize = (pageSize != null) ? pageSize : 10;
             
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<PersonDetails> pageResult = service.findWithFilters(
                 search,
-                
+                nullFilter,
+                notNullFilter,
                 pageable);
             
             List<PersonDetails> results = pageResult.getContent();
@@ -161,7 +165,8 @@ public class PersonDetailsController {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
             Page<PersonDetails> pageResult = service.findWithFilters(
                 search,
-                
+                nullFilter,
+                notNullFilter,
                 pageable);
             
             List<PersonDetails> results = pageResult.getContent();
@@ -187,6 +192,21 @@ public class PersonDetailsController {
         Map<String, Object> stats = new HashMap<>();
         stats.put("total", service.count());
         return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Get statistics on NULL values for various fields
+     * GET /api/person_details/stats/null_counts
+     */
+    @GetMapping("/stats/null_counts")
+    public ResponseEntity<Map<String, Object>> getNullCounts() {
+        Map<String, Long> nullCounts = service.getNullCounts();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("null_counts", nullCounts);
+        response.put("total_records", service.count());
+        
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -255,22 +275,23 @@ public class PersonDetailsController {
     }
 
     private Sort parseSortParameter(String sort) {
-        if (sort == null || sort.isEmpty()) {
-            return Sort.unsorted();
-        }
-        
-        String[] sortFields = sort.split(",");
         List<Sort.Order> orders = new ArrayList<>();
-        
-        for (String field : sortFields) {
-            field = field.trim();
-            if (field.startsWith("-")) {
-                orders.add(Sort.Order.desc(field.substring(1)));
-            } else {
-                orders.add(Sort.Order.asc(field));
+
+        if (sort != null && !sort.isEmpty()) {
+            String[] sortFields = sort.split(",");
+            for (String field : sortFields) {
+                field = field.trim();
+                if (field.startsWith("-")) {
+                    orders.add(Sort.Order.desc(field.substring(1)));
+                } else {
+                    orders.add(Sort.Order.asc(field));
+                }
             }
         }
-        
-        return Sort.by(orders);
+
+        // CRITICAL FIX: Always add primaryKeys as tiebreaker
+        orders.add(Sort.Order.asc("personMalId"));
+
+        return Sort.by(orders);  // ← Now ALWAYS consistent!
     }
 }

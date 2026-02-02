@@ -53,7 +53,7 @@ function setupLogging(clientName, instance) {
 }
 
 const apiMongo = axios.create({
-  baseURL: process.env.DATA_EXPRESS_URL || 'http://localhost:3001'   // server Express per MongoDB
+  baseURL: process.env.DATA_MONGO_URL || 'http://localhost:8080'   // server MongoDB REST
 });
 
 const apiPostgres = axios.create({

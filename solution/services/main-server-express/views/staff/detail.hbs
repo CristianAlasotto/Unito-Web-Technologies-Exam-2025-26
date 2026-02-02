@@ -1,15 +1,45 @@
-<div class="staff-detail">
-	<div class="staff-header">
-		<img src="{{staff.image_url}}" alt="{{staff.name}}">
-		<div>
-			<h1>{{staff.name}}</h1>
-			<p class="staff-birthday"><strong>Birthday:</strong> {{staff.birthday}}</p>
-			<p class="staff-favorites"><strong>Favorites:</strong> {{staff.favorites}}</p>
-			{{#if staff.website_url}}
-			<a href="{{staff.website_url}}" target="_blank" class="staff-website">Website</a>
-			{{/if}}
-		</div>
-	</div>
+{{#if error}}
+<div class="error-message">{{error}}</div>
+{{/if}}
 
-	<a href="/staff" class="btn btn-secondary">← Back to Staff</a>
+<div class="staff-detail">
+	<h1>Staff Details</h1>
+
+	{{#if staff}}
+	<article class="staff-detail-card">
+		<div class="staff-header">
+			<img src="{{staff.image_url}}" alt="{{staff.name_display}}">
+			<div>
+				<h2>{{staff.name_display}}</h2>
+				<p class="staff-alt-name"><strong>Given name:</strong> {{staff.given_name_display}}</p>
+				<p class="staff-alt-name"><strong>Family name:</strong> {{staff.family_name_display}}</p>
+				<div class="staff-meta">
+					<span><strong>Birthday:</strong> {{staff.birthday_display}}</span>
+					<span><strong>Favorites:</strong> {{staff.favorites_display}}</span>
+					<span><strong>Location:</strong> {{staff.relevant_location_display}}</span>
+				</div>
+				{{#if staff.website_url}}
+				<a href="{{staff.website_url}}" target="_blank" rel="noopener" class="staff-website">Website</a>
+				{{/if}}
+			</div>
+		</div>
+
+		<section class="staff-details-grid">
+			{{#each staffInfo}}
+			<div class="detail-item">
+				<strong>{{this.label}}:</strong>
+				{{#if this.isLink}}
+				<a href="{{this.href}}" target="_blank" rel="noopener">{{this.value}}</a>
+				{{else}}
+				<span>{{this.value}}</span>
+				{{/if}}
+			</div>
+			{{/each}}
+		</section>
+
+		<a href="/staff" class="btn btn-secondary">← Back to Staff</a>
+	</article>
+	{{else}}
+	<p class="no-data">No staff available at the moment.</p>
+	{{/if}}
 </div>

@@ -15,8 +15,6 @@ exports.fetchRatings = async (params) => {
         }
     });
 
-    // status is a string field, so keep it as is (no conversion needed)
-
     let query = Ratings.find(filters);
 
     if (fields) {
@@ -34,11 +32,9 @@ exports.fetchRatings = async (params) => {
 
     const items = await query.lean().exec();
 
-    // Only count if filters are applied (has indexed fields like username or anime_id)
     let total = null;
     let totalPages = null;
 
-    // Only perform count if we have filters with indexes (username or anime_id)
     if (filters.username || filters.anime_id) {
         total = await Ratings.countDocuments(filters);
         totalPages = Math.ceil(total / finalLimit);
@@ -51,81 +47,29 @@ exports.fetchRatings = async (params) => {
     };
 };
 
-exports.createRating = async (ratingData) => {
-    // Insert the new rating
-    const newRating = await Ratings.create(ratingData);
-
-    // Update statistics
-    await updateStats(ratingData.anime_id, ratingData.status, ratingData.score);
-
-    return newRating;
+exports.createRating = async (data) => {
+    const avg = await updateStats(data.anime_id, data.status, data.score);
+    return { new_average_score: avg };
 };
 
-async function updateStats(animeId, status, score) {
-    // Map status string to stats field name
-    const statusMap = {
-        'watching': 'watching',
-        'completed': 'completed',
-        'on_hold': 'on_hold',
-        'dropped': 'dropped',
-        'plan_to_watch': 'plan_to_watch'
-    };
+async function updateStats(mal_id, status, score) {
+    const inc = { [status]: 1, total: 1 };
+    if (score > 0) inc[`score_${score}_votes`] = 1;
 
-    // Prepare the update object
-    const updateObj = {
-        $inc: {}
-    };
+    const stats = await Stats.findOneAndUpdate({ mal_id }, { $inc: inc }, { upsert: true, new: true });
 
-    // Increment the appropriate status counter
-    if (statusMap[status]) {
-        updateObj.$inc[statusMap[status]] = 1;
-        updateObj.$inc.total = 1;
-    }
-
-    // Increment the score votes if score is valid (1-10)
-    if (score >= 1 && score <= 10) {
-        updateObj.$inc[`score_${score}_votes`] = 1;
-    }
-
-    // Update or create the stats document
-    await Stats.findOneAndUpdate(
-        { mal_id: animeId },
-        updateObj,
-        { upsert: true, new: true }
-    );
-
-    // Recalculate percentages for all scores
-    await recalculateScorePercentages(animeId);
-}
-
-async function recalculateScorePercentages(animeId) {
-    const stats = await Stats.findOne({ mal_id: animeId });
-
-    if (!stats) return;
-
-    // Calculate total score votes
-    let totalScoreVotes = 0;
+    let totalVotes = 0, sum = 0;
     for (let i = 1; i <= 10; i++) {
-        totalScoreVotes += stats[`score_${i}_votes`] || 0;
+        const v = stats[`score_${i}_votes`] || 0;
+        totalVotes += v;
+        sum += v * i;
     }
 
-    // If no votes, set all percentages to 0
-    if (totalScoreVotes === 0) {
-        const updateObj = {};
-        for (let i = 1; i <= 10; i++) {
-            updateObj[`score_${i}_percentage`] = 0;
-        }
-        await Stats.updateOne({ mal_id: animeId }, { $set: updateObj });
-        return;
-    }
-
-    // Calculate and update percentages
-    const updateObj = {};
+    const percentages = {};
     for (let i = 1; i <= 10; i++) {
-        const votes = stats[`score_${i}_votes`] || 0;
-        const percentage = (votes / totalScoreVotes) * 100;
-        updateObj[`score_${i}_percentage`] = parseFloat(percentage.toFixed(2));
+        percentages[`score_${i}_percentage`] = totalVotes ? parseFloat(((stats[`score_${i}_votes`] / totalVotes) * 100).toFixed(2)) : 0;
     }
 
-    await Stats.updateOne({ mal_id: animeId }, { $set: updateObj });
+    await Stats.updateOne({ mal_id }, { $set: percentages });
+    return totalVotes ? parseFloat((sum / totalVotes).toFixed(2)) : 0;
 }
