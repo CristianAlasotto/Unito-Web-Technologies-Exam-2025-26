@@ -1,8 +1,10 @@
 package com.example.dataserverspringboot.entities.persondetails;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
+@Schema(description = "Anime staff info entity")  // For entity
 @Entity
 @Table(name = "person_details")
 public class PersonDetails {
