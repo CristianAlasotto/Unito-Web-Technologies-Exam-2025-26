@@ -48,7 +48,11 @@ exports.fetchRatings = async (params) => {
 };
 
 exports.createRating = async (data) => {
+
+    await Ratings.create(data);
+
     const avg = await updateStats(data.anime_id, data.status, data.score);
+
     return { new_average_score: avg };
 };
 
