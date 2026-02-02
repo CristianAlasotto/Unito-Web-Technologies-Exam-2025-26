@@ -2,7 +2,8 @@ const Ratings = require('../models/Ratings');
 const Stats = require('../models/Stats');
 
 exports.fetchRatings = async (params) => {
-    let { fields, sort, limit, pageSize, offset, page, ...filters } = params;
+    // Destructure minScore and maxScore out so they aren't treated as direct filters immediately
+    let { fields, sort, limit, pageSize, offset, page, minScore, maxScore, ...filters } = params;
 
     // Convert numeric fields from strings to numbers
     const numericFields = ['anime_id', 'score', 'is_rewatching', 'num_watched_episodes'];
@@ -14,6 +15,13 @@ exports.fetchRatings = async (params) => {
             }
         }
     });
+
+    // Add Range Query for Score
+    if (minScore !== undefined || maxScore !== undefined) {
+        filters.score = {};
+        if (minScore !== undefined) filters.score.$gte = parseInt(minScore);
+        if (maxScore !== undefined) filters.score.$lte = parseInt(maxScore);
+    }
 
     let query = Ratings.find(filters);
 
@@ -35,7 +43,9 @@ exports.fetchRatings = async (params) => {
     let total = null;
     let totalPages = null;
 
-    if (filters.username || filters.anime_id) {
+    // Calculate total count based on the applied filters (including score range)
+    // We check if any filter keys exist to decide whether to count
+    if (Object.keys(filters).length > 0) {
         total = await Ratings.countDocuments(filters);
         totalPages = Math.ceil(total / finalLimit);
     }
@@ -48,11 +58,7 @@ exports.fetchRatings = async (params) => {
 };
 
 exports.createRating = async (data) => {
-
-    await Ratings.create(data);
-
     const avg = await updateStats(data.anime_id, data.status, data.score);
-
     return { new_average_score: avg };
 };
 
