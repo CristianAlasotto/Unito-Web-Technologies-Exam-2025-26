@@ -70,6 +70,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  padding: 0.5rem;
 }
 
 .staff-info span {
@@ -109,6 +110,18 @@
   padding: 2rem;
 }
 
+.staff-detail h1 {
+  margin-bottom: 1.5rem;
+  font-size: 2rem;
+}
+
+.staff-detail-card {
+  background: #1f1f1f;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+}
+
 .staff-header {
   display: flex;
   gap: 2rem;
@@ -132,10 +145,62 @@
   font-size: 2rem;
 }
 
+.staff-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.8rem;
+}
+
 .staff-header p {
   margin: 0.5rem 0;
   font-size: 1rem;
   color: #ccc;
+}
+
+.staff-alt-name {
+  color: #cfcfcf;
+}
+
+.staff-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  color: #cfcfcf;
+}
+
+.staff-meta span {
+  background: #2d2d2d;
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.staff-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 2rem;
+  margin: 1.5rem 0 2rem 0;
+}
+
+.detail-item {
+  background: #242424;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  color: #d9d9d9;
+}
+
+.detail-item strong {
+  color: #fff;
+  margin-right: 0.35rem;
+}
+
+.detail-item a {
+  color: #79b8ff;
+  text-decoration: none;
+}
+
+.detail-item a:hover {
+  text-decoration: underline;
 }
 
 .staff-header strong {
@@ -189,5 +254,8 @@
     max-width: 300px;
     margin: 0 auto;
   }
-}
 
+  .staff-details-grid {
+    grid-template-columns: 1fr;
+  }
+}

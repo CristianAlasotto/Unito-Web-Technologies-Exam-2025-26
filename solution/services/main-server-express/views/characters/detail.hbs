@@ -1,19 +1,94 @@
+{{#if error}}
+<div class="error-message">{{error}}</div>
+{{/if}}
+
 <div class="character-detail">
-  <div class="character-header">
-    <img src="{{character.image}}" alt="{{character.name}}" />
-    <div>
-      <h1>{{character.name}}</h1>
-      <h2 class="kanji">{{character.name_kanji}}</h2>
+  <h1>Character Details</h1>
+
+  {{#if character}}
+  <article class="character-detail-card">
+    <div class="character-header">
+      <img src="{{character.image}}" alt="{{character.name_display}}" />
+      <div>
+        <h2>{{character.name_display}}</h2>
+        <h3 class="kanji">{{character.name_kanji_display}}</h3>
+        <div class="character-meta">
+          <span><strong>Favorites:</strong> {{character.favorites_display}}</span>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <section class="info">
-    <h3>Information</h3>
-    <p><strong>Role:</strong> {{character.role}}</p>
-    <p><strong>Voice Actor:</strong> {{character.voice_actor}}</p>
-    <p><strong>Favorites:</strong> {{character.favorites}}</p>
-    <p><strong>Description:</strong> {{character.about}}</p>
-  </section>
+    <section class="character-details-grid">
+      {{#each characterInfo}}
+      <div class="detail-item">
+        <strong>{{this.label}}:</strong>
+        {{#if this.isLink}}
+        <a href="{{this.href}}" target="_blank" rel="noopener">{{this.value}}</a>
+        {{else}}
+        <span>{{this.value}}</span>
+        {{/if}}
+      </div>
+      {{/each}}
+    </section>
 
-  <a href="/characters">← Back to list</a>
+    <section class="character-about">
+      <h3>About</h3>
+      <p>{{character.about_display}}</p>
+    </section>
+
+    <br>
+    <h3 class="recommendationsTitle">Appears In:</h3>
+    <section class="recommendations">
+      {{#if anime.hasRelatedAnimes}}
+      <div class="cardsContainer">
+        {{#each anime.recommendations}}
+        <div class="card">
+          {{#if this.mal_id}}
+          <a href="/anime/{{this.mal_id}}">
+            {{else}}
+            <a href="/anime/{{this.anime_id}}">
+              {{/if}}
+              <img src="{{this.image_url}}" alt="{{this.title}}">
+              <div class="card-body">
+                <p>{{this.title}}</p>
+              </div>
+            </a>
+        </div>
+        {{/each}}
+      </div>
+      {{else}}
+      <p>No anime available.</p>
+      {{/if}}
+    </section>
+
+    <br>
+    <h3 class="recommendationsTitle">Voice Actors</h3>
+    <section class="recommendations">
+      {{#if voiceActors.hasVoiceActors}}
+      <div class="cardsContainer">
+        {{#each voiceActors.items}}
+        <div class="card">
+          {{#if this.person_mal_id}}
+          <a href="/staff/{{this.person_mal_id}}">
+            {{else}}
+            <a href="#">
+              {{/if}}
+              <img src="{{this.image_url}}" alt="{{this.name_display}}">
+              <div class="card-body">
+                <p>{{this.name_display}}</p>
+              </div>
+            </a>
+        </div>
+        {{/each}}
+      </div>
+      {{else}}
+      <p>No voice actors available.</p>
+      {{/if}}
+    </section>
+
+    <a href="/characters" class="btn btn-secondary">← Back to list</a>
+  </article>
+  {{else}}
+  <p class="no-data">No character available at the moment.</p>
+  {{/if}}
 </div>

@@ -207,7 +207,7 @@ exports.detail = async (req, res, next) => {
     const response = await apiPostgres.get(`/api/details/${id}`);
     const charactersResponse = await apiMongo.get('/api/characters?page=1&pageSize=12');
     const recommendationsResponse = await apiPostgres.get(
-      `/api/details/${id}/recommendations?page=1&pageSize=12`
+      `/api/details/${id}/recommendations`
     );
     const raw = response.data || {};
     const charactersData = charactersResponse?.data;

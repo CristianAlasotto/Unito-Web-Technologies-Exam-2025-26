@@ -1,0 +1,50 @@
+<aside class="filters">
+	<form id="filtersForm" method="GET" action="/staff" class="filters__form">
+		<div class="filtersContainer">
+			<section class="filters__section">
+				<div class="filters__title">Cerca</div>
+				<input type="text" name="search" value="{{filters.search}}" placeholder="Cowboy Bebop"
+					class="filters__input" />
+			</section>
+
+			<section class="filters__section">
+				<div class="filters__title">Positions</div>
+				<select name="position" class="filters__select">
+					{{#each filters.positionOptions}}
+					<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>
+						{{this.label}}
+					</option>
+					{{/each}}
+				</select>
+			</section>
+
+			<section class="filters__section">
+				<div class="filters__title">Ordina</div>
+				<select name="sort" class="filters__select">
+					{{#each filters.sortOptions}}
+					<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>
+						{{this.label}}
+					</option>
+					{{/each}}
+				</select>
+			</section>
+
+			<section class="filters__section">
+				<div class="filters__title">Città</div>
+				<select name="relevant_position" class="filters__select">
+					{{#each filters.cityOptions}}
+					<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>
+						{{this.label}}
+					</option>
+					{{/each}}
+				</select>
+			</section>
+		</div>
+
+		{{!-- Azioni --}}
+		<section class="filters__actions">
+			<button type="submit" class="filters__btn filters__btn--apply">Applica</button>
+			<a href="/staff" class="filters__btn filters__btn--reset">Reset</a>
+		</section>
+	</form>
+</aside>

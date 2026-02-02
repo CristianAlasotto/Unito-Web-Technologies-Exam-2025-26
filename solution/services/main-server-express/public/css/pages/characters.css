@@ -110,6 +110,18 @@
   padding: 2rem;
 }
 
+.character-detail h1 {
+  margin-bottom: 1.5rem;
+  font-size: 2rem;
+}
+
+.character-detail-card {
+  background: #1f1f1f;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+}
+
 .character-header {
   display: flex;
   gap: 2rem;
@@ -133,6 +145,11 @@
   font-size: 2rem;
 }
 
+.character-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.8rem;
+}
+
 .character-header .kanji {
   color: #aaa;
   font-size: 1.2rem;
@@ -140,29 +157,67 @@
   font-weight: normal;
 }
 
-.character-detail .info {
+.character-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  color: #cfcfcf;
+}
+
+.character-meta span {
+  background: #2d2d2d;
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.character-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 2rem;
+  margin: 1.5rem 0;
+}
+
+.detail-item {
+  background: #242424;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  color: #d9d9d9;
+}
+
+.detail-item strong {
+  color: #fff;
+  margin-right: 0.35rem;
+}
+
+.detail-item a {
+  color: #79b8ff;
+  text-decoration: none;
+}
+
+.detail-item a:hover {
+  text-decoration: underline;
+}
+
+.character-about {
   background: #2a2a2a;
   padding: 1.5rem;
   border-radius: 8px;
-  margin: 2rem 0;
+  margin: 1.5rem 0 2rem 0;
   line-height: 1.6;
 }
 
-.character-detail .info h3 {
+.character-about h3 {
   margin: 0 0 1rem 0;
   font-size: 1.2rem;
 }
 
-.character-detail .info p {
+.character-about p {
   margin: 0.75rem 0;
 }
 
-.character-detail .info strong {
-  color: #fff;
-  margin-right: 0.5rem;
-}
-
-.character-detail a {
+.btn {
   display: inline-block;
   color: white;
   padding: 0.8rem 1.5rem;
@@ -172,8 +227,13 @@
   transition: background 0.3s;
 }
 
-.character-detail a:hover {
-  background: #1e3a7a;
+.btn-secondary {
+  background: #4a4a4a;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a5a5a;
 }
 
 @media (max-width: 768px) {
@@ -186,4 +246,88 @@
     max-width: 300px;
     margin: 0 auto;
   }
+
+  .character-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* RECCOMENDATIONS */
+.recommendationsTitle {
+  margin-bottom: 1rem;
+}
+
+.recommendations {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: stretch;
+  align-content: flex-start;
+  gap: 1rem;
+}
+
+.recommendations .cardsContainer {
+  display: contents;
+  padding: 0;
+}
+
+.anime-detail .recommendations .card,
+.character-detail .recommendations .card {
+  background: #2d2d2d;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  overflow: hidden;
+  transition: transform 0.2s;
+  width: 160px;
+  height: 260px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.anime-detail .recommendations .card:hover,
+.character-detail .recommendations .card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.anime-detail .recommendations .card img,
+.character-detail .recommendations .card img {
+  position: inherit;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+.anime-detail .recommendations .card a,
+.character-detail .recommendations .card a {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.anime-detail .recommendations .card-body,
+.character-detail .recommendations .card-body {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.anime-detail .recommendations .card-body p,
+.character-detail .recommendations .card-body p {
+  font-size: 0.75rem;
+  min-height: 1.6rem;
+  color: #fff;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mal-link {
+  background-color: #3a3a3a;
 }

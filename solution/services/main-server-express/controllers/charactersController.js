@@ -87,10 +87,56 @@ exports.list = async (req, res, next) => {
 exports.detail = async (req, res, next) => {
 	try {
 		const { id } = req.params;
-		const response = await apiPostgres.get(`/api/characters/${id}`);
+		const [characterResponse, animeResponse, voiceActorsResponse] = await Promise.all([
+			apiPostgres.get(`/api/characters/${id}`),
+			apiPostgres.get(`/api/characters/${id}/anime`),
+			apiPostgres.get(`/api/characters/${id}/voice_actors`)
+		]);
+		const raw = characterResponse.data || {};
+		const animePayload = animeResponse.data || {};
+		const voiceActorsPayload = voiceActorsResponse.data || {};
+		const formatValue = (value) =>
+			value === null || value === undefined || value === '' ? 'N/A' : value;
+		const characterInfo = [
+			{ label: 'Kanji name', value: formatValue(raw.name_kanji) },
+			{ label: 'Favorites', value: formatValue(raw.favorites) },
+			{
+				label: 'MyAnimeList',
+				value: formatValue(raw.url),
+				isLink: Boolean(raw.url),
+				href: raw.url
+			},
+		];
+		const animeList = Array.isArray(animePayload.anime) ? animePayload.anime : [];
+		const voiceActorsList = Array.isArray(voiceActorsPayload.voice_actors)
+			? voiceActorsPayload.voice_actors
+			: [];
+		const voiceActors = voiceActorsList.map((actor) => ({
+			...actor,
+			name_display: formatValue(actor.name),
+			given_name_display: formatValue(actor.given_name),
+			family_name_display: formatValue(actor.family_name),
+			birthday_display: formatValue(actor.birthday),
+			favorites_display: formatValue(actor.favorites)
+		}));
 		res.render('characters/detail', {
-			title: response.data.name,
-			character: response.data,
+			title: raw.name || 'Character Detail',
+			character: {
+				...raw,
+				name_display: formatValue(raw.name),
+				name_kanji_display: formatValue(raw.name_kanji),
+				favorites_display: formatValue(raw.favorites),
+				about_display: formatValue(raw.about)
+			},
+			anime: {
+				hasRelatedAnimes: animeList.length > 0,
+				recommendations: animeList
+			},
+			voiceActors: {
+				hasVoiceActors: voiceActors.length > 0,
+				items: voiceActors
+			},
+			characterInfo,
 			currentPage: 'characters'
 		});
 	} catch (err) {
