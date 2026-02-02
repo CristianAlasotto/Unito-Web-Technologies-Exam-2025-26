@@ -21,8 +21,8 @@
   data-page-size="{{animeCarousel.pageSize}}">
   <div class="carousel_titleContainer">
     <h3>Top Rated animes</h3>
-    <span class="see-all-link" role="link" tabindex="0" onclick="window.location.href='/anime'"
-      onkeydown="if(event.key === 'Enter') window.location.href='/anime'">
+    <span class="see-all-link" role="link" tabindex="0" onclick="window.location.href='/anime?search=&sort=-popularity'"
+      onkeydown="if(event.key === 'Enter') window.location.href='/anime?search=&sort=popularity'">
       See all
     </span>
   </div>
@@ -48,8 +48,8 @@
   data-page-size="{{characterCarousel.pageSize}}">
   <div class="carousel_titleContainer">
     <h3>Most popular Characters</h3>
-    <span class="see-all-link" role="link" tabindex="0" onclick="window.location.href='/characters'"
-      onkeydown="if(event.key === 'Enter') window.location.href='/characters'">
+    <span class="see-all-link" role="link" tabindex="0" onclick="window.location.href='/characters?character_mal_id=&sort=-favorites'"
+      onkeydown="if(event.key === 'Enter') window.location.href='/characters?character_mal_id=&sort=-favorites'">
       See all
     </span>
   </div>

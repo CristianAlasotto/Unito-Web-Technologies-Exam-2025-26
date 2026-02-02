@@ -63,6 +63,31 @@ const SOURCE_OPTIONS = [
   { value: 'Web novel', label: 'Web novel' },
 ];
 
+const GENRE_OPTIONS = [
+  { value: '', label: 'Tutti' },
+  { value: 'action', label: 'Action' },
+  { value: 'adventure', label: 'Adventure' },
+  { value: 'avant-garde', label: 'Avant Garde' },
+  { value: 'award-winning', label: 'Award Winning' },
+  { value: 'boys-love', label: 'Boys Love' },
+  { value: 'comedy', label: 'Comedy' },
+  { value: 'drama', label: 'Drama' },
+  { value: 'ecchi', label: 'Ecchi' },
+  { value: 'erotica', label: 'Erotica' },
+  { value: 'fantasy', label: 'Fantasy' },
+  { value: 'girls-love', label: 'Girls Love' },
+  { value: 'gourmet', label: 'Gourmet' },
+  { value: 'hentai', label: 'Hentai' },
+  { value: 'horror', label: 'Horror' },
+  { value: 'mystery', label: 'Mystery' },
+  { value: 'romance', label: 'Romance' },
+  { value: 'sci-fi', label: 'Sci-Fi' },
+  { value: 'slice-of-life', label: 'Slice of Life' },
+  { value: 'sports', label: 'Sports' },
+  { value: 'supernatural', label: 'Supernatural' },
+  { value: 'suspense', label: 'Suspense' }
+];
+
 const buildFiltersModel = (query) => {
   const activeSort = query.sort || '';
   const activeSearch = query.search || query.q || '';
@@ -72,6 +97,7 @@ const buildFiltersModel = (query) => {
   const activeRating = query.rating || '';
   const activeSource = query.source || '';
   const activeEpisodes = query.episodes || '';
+  const activeGenres = query.genres || query.genre || '';
 
   return {
     search: activeSearch,
@@ -93,6 +119,10 @@ const buildFiltersModel = (query) => {
       ...option,
       selected: option.value === activeRating
     })),
+    genreOptions: GENRE_OPTIONS.map((option) => ({
+      ...option,
+      selected: option.value === activeGenres
+    })),
     sourceOptions: SOURCE_OPTIONS.map((option) => ({
       ...option,
       selected: option.value === activeSource
@@ -112,6 +142,8 @@ exports.list = async (req, res, next) => {
     if (req.query.year) params.set('year', req.query.year);
     if (req.query.status) params.set('status', req.query.status);
     if (req.query.rating) params.set('rating', req.query.rating);
+    if (req.query.genres) params.set('genres', req.query.genres);
+    if (!req.query.genres && req.query.genre) params.set('genres', req.query.genre);
     if (req.query.source) params.set('source', req.query.source);
     if (req.query.sort) params.set('sort', req.query.sort);
     if (req.query.episodes) {
@@ -134,6 +166,10 @@ exports.list = async (req, res, next) => {
     Object.entries(req.query).forEach(([key, value]) => {
       if (!value) return;
       if (key === 'page') return;
+      if (key === 'genre') {
+        if (!req.query.genres) paginationQuery.set('genres', value);
+        return;
+      }
       paginationQuery.set(key, value);
     });
     const filtersQuery = paginationQuery.toString() ? `&${paginationQuery.toString()}` : '';

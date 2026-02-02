@@ -50,6 +50,17 @@
         </select>
       </section>
 
+        <section class="filters__section">
+        <div class="filters__title">Genre</div>
+        <select name="genres" class="filters__select">
+          {{#each filters.genreOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>
+            {{this.label}}
+          </option>
+          {{/each}}
+        </select>
+      </section>
+
       <section class="filters__section">
         <div class="filters__title">Source</div>
         <select name="source" class="filters__select">
