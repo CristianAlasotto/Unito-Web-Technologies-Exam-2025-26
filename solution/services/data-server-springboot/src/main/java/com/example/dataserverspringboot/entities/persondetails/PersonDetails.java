@@ -1,8 +1,10 @@
 package com.example.dataserverspringboot.entities.persondetails;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
+@Schema(description = "Anime staff info entity")  // For entity
 @Entity
 @Table(name = "person_details")
 public class PersonDetails {
@@ -141,10 +143,10 @@ public class PersonDetails {
     @Override
     public String toString() {
         return "PersonDetails{" +
-                "person_mal_id=" + personMalId +
+                "personMalId=" + personMalId +
                 ", name='" + name + '\'' +
-                ", given_name='" + givenName + '\'' +
-                ", family_name='" + familyName + '\'' +
+                ", givenName='" + givenName + '\'' +
+                ", familyName='" + familyName + '\'' +
                 ", birthday=" + birthday +
                 ", favorites=" + favorites +
                 '}';

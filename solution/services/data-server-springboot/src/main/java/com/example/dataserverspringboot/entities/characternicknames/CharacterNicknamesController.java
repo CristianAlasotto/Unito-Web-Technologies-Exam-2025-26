@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * Composite key table - supports list operations only
  */
 @RestController
-@RequestMapping("/api/character-nicknames")
+@RequestMapping("/api/character_nicknames")
 @CrossOrigin(origins = "*")
 public class CharacterNicknamesController {
 
@@ -146,7 +146,7 @@ public class CharacterNicknamesController {
 
     /**
      * Get single resource by composite key (using query parameters)
-     * GET /api/character-nicknames/single?character_mal_id&nickname
+     * GET /api/character_nicknames/single?character_mal_id&nickname
      */
     @GetMapping("/single")
     public ResponseEntity<?> getSingle(
@@ -158,7 +158,7 @@ public class CharacterNicknamesController {
         if (characterMalId == null || nickname == null) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "All key fields required: characterMalId, nickname");
-            error.put("usage", "GET /api/character-nicknames/single?character_mal_id&nickname");
+            error.put("usage", "GET /api/character_nicknames/single?character_mal_id&nickname");
             return ResponseEntity.status(400).body(error);
         }
         
@@ -186,7 +186,7 @@ public class CharacterNicknamesController {
 
     /**
      * Get summary by composite key (using query parameters)
-     * GET /api/character-nicknames/summary?character_mal_id&nickname
+     * GET /api/character_nicknames/summary?character_mal_id&nickname
      */
     @GetMapping("/summary")
     public ResponseEntity<?> getSummary(
@@ -197,7 +197,7 @@ public class CharacterNicknamesController {
         if (characterMalId == null || nickname == null) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "All key fields required: characterMalId, nickname");
-            error.put("usage", "GET /api/character-nicknames/summary?character_mal_id&nickname");
+            error.put("usage", "GET /api/character_nicknames/summary?character_mal_id&nickname");
             return ResponseEntity.status(400).body(error);
         }
         
@@ -247,22 +247,35 @@ public class CharacterNicknamesController {
     }
 
     private Sort parseSortParameter(String sort) {
-        if (sort == null || sort.isEmpty()) {
-            return Sort.unsorted();
-        }
-        
-        String[] sortFields = sort.split(",");
         List<Sort.Order> orders = new ArrayList<>();
-        
-        for (String field : sortFields) {
-            field = field.trim();
-            if (field.startsWith("-")) {
-                orders.add(Sort.Order.desc(field.substring(1)));
-            } else {
-                orders.add(Sort.Order.asc(field));
+
+        if (sort != null && !sort.isEmpty()) {
+            String[] sortFields = sort.split(",");
+
+            for (String field : sortFields) {
+                field = field.trim();
+                Sort.Direction direction;
+                String actualField;
+
+                if (field.startsWith("-")) {
+                    direction = Sort.Direction.DESC;
+                    actualField = field.substring(1);
+                } else {
+                    direction = Sort.Direction.ASC;
+                    actualField = field;
+                }
+
+                // ✅ FIX: NULL values always sorted LAST
+                orders.add(Sort.Order.by(actualField)
+                        .with(direction)
+                        .nullsLast());
             }
         }
-        
+
+        // Add primary keys as tiebreaker
+        orders.add(Sort.Order.asc("characterMalId"));
+        orders.add(Sort.Order.asc("nicknames"));
+
         return Sort.by(orders);
     }
 }

@@ -2,6 +2,7 @@ package com.example.dataserverspringboot.entities.recommendations;
 
 import com.example.dataserverspringboot.entities.details.Details;
 import com.example.dataserverspringboot.entities.details.DetailsRepository;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Hidden
 @Service
 public class RecommendationsService {
 

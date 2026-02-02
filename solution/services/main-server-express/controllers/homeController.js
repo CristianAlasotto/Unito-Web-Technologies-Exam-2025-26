@@ -1,13 +1,30 @@
 const { apiPostgres } = require('./apiClients');
 
-const getApiEndpoint = (type) => {
+const getApiRequestConfig = (type) => {
   switch (type) {
     case 'anime':
-      return '/api/details';
+      return {
+        path: '/api/details',
+        params: {
+          fields: 'mal_id,title,title_english,title_japanese,image_url',
+          sort: '-popularity',
+        },
+      };
     case 'character':
-      return '/api/characters';
+      return {
+        path: '/api/characters',
+        params: {
+          fields: 'character_mal_id,image,name',
+          sort: '-favorites',
+        },
+      };
     case 'staff':
-      return '/api/person_details';
+      return {
+        path: '/api/person_details',
+        params: {
+          sort: '-favorites',
+        },
+      };
     default:
       return null;
   }
@@ -16,17 +33,22 @@ const getApiEndpoint = (type) => {
 exports.preview = async (req, res, next) => {
   try {
     const { carouselType, page, pageSize: pageSizeQuery } = req.query;
-    const pageSize = parseInt(pageSizeQuery || "7", 10);
+    const pageSize = parseInt(pageSizeQuery || "5", 10);
 
     // Handle AJAX request for a single carousel
     if (carouselType) {
-      const endpoint = getApiEndpoint(carouselType);
-      if (!endpoint) {
+      const requestConfig = getApiRequestConfig(carouselType);
+      if (!requestConfig) {
         return res.status(400).json({ error: 'Invalid carousel type' });
       }
 
       const currentPage = parseInt(page || '1', 10);
-      const response = await apiPostgres.get(`${endpoint}?page=${currentPage}&pageSize=${pageSize}`);
+      const query = new URLSearchParams({
+        ...requestConfig.params,
+        page: String(currentPage),
+        pageSize: String(pageSize),
+      }).toString();
+      const response = await apiPostgres.get(`${requestConfig.path}?${query}`);
       const items = response.data.items || [];
       const totalPages = response.data.totalPages || 1;
 
@@ -54,14 +76,30 @@ exports.preview = async (req, res, next) => {
     const charactersPage = parseInt(req.query.charactersPage || "1", 10);
     const staffPage = parseInt(req.query.staffPage || "1", 10);
 
+    const animeConfig = getApiRequestConfig('anime');
+    const characterConfig = getApiRequestConfig('character');
+    const staffConfig = getApiRequestConfig('staff');
+
     const popularAnimesPromise = apiPostgres.get(
-      `/api/details?page=${animesPage}&pageSize=${pageSize}`
+      `${animeConfig.path}?${new URLSearchParams({
+        ...animeConfig.params,
+        page: String(animesPage),
+        pageSize: String(pageSize),
+      }).toString()}`
     );
     const popularCharactersPromise = apiPostgres.get(
-      `/api/characters?page=${charactersPage}&pageSize=${pageSize}`
+      `${characterConfig.path}?${new URLSearchParams({
+        ...characterConfig.params,
+        page: String(charactersPage),
+        pageSize: String(pageSize),
+      }).toString()}`
     );
     const popularStaffPromise = apiPostgres.get(
-      `/api/person_details?page=${staffPage}&pageSize=${pageSize}`
+      `${staffConfig.path}?${new URLSearchParams({
+        ...staffConfig.params,
+        page: String(staffPage),
+        pageSize: String(pageSize),
+      }).toString()}`
     );
 
     const [

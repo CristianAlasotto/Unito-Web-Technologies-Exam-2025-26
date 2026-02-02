@@ -1,9 +1,11 @@
 package com.example.dataserverspringboot.entities.characteranimeworks;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Objects;
 
+@Schema(description = "Anime character works entity")  // For entity
 @Entity
 @Table(name = "character_anime_works")
 @IdClass(CharacterAnimeWorks.CharacterAnimeWorksId.class)
@@ -71,9 +73,9 @@ public class CharacterAnimeWorks {
     @Override
     public String toString() {
         return "CharacterAnimeWorks{" +
-                "character_mal_id=" + characterMalId +
-                ", anime_mal_id=" + animeMalId +
-                ", character_name='" + characterName + '\'' +
+                "characterMalId=" + characterMalId +
+                ", animeMalId=" + animeMalId +
+                ", characterName='" + characterName + '\'' +
                 ", role='" + role + '\'' +
                 '}';
     }

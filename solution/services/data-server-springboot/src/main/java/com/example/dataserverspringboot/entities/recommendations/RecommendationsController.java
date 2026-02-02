@@ -251,22 +251,35 @@ public class RecommendationsController {
     }
 
     private Sort parseSortParameter(String sort) {
-        if (sort == null || sort.isEmpty()) {
-            return Sort.unsorted();
-        }
-        
-        String[] sortFields = sort.split(",");
         List<Sort.Order> orders = new ArrayList<>();
-        
-        for (String field : sortFields) {
-            field = field.trim();
-            if (field.startsWith("-")) {
-                orders.add(Sort.Order.desc(field.substring(1)));
-            } else {
-                orders.add(Sort.Order.asc(field));
+
+        if (sort != null && !sort.isEmpty()) {
+            String[] sortFields = sort.split(",");
+
+            for (String field : sortFields) {
+                field = field.trim();
+                Sort.Direction direction;
+                String actualField;
+
+                if (field.startsWith("-")) {
+                    direction = Sort.Direction.DESC;
+                    actualField = field.substring(1);
+                } else {
+                    direction = Sort.Direction.ASC;
+                    actualField = field;
+                }
+
+                // ✅ FIX: NULL values always sorted LAST
+                orders.add(Sort.Order.by(actualField)
+                        .with(direction)
+                        .nullsLast());  // ← ADD THIS
             }
         }
-        
+
+        // Add primary keys as tiebreaker
+        orders.add(Sort.Order.asc("malId"));
+        orders.add(Sort.Order.asc("recommendationsMalId"));
+
         return Sort.by(orders);
     }
 

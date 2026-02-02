@@ -113,6 +113,8 @@ public class DetailsController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String rating,
             @RequestParam(required = false) String source,
+            @RequestParam(required = false) String nullFilter,      // NEW: Filter for NULL values
+            @RequestParam(required = false) String notNullFilter,   // NEW: Filter for NOT NULL values
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -135,6 +137,8 @@ public class DetailsController {
                 status,
                 rating,
                 source,
+                nullFilter,       // NEW
+                notNullFilter,    // NEW
                 pageable);
             
             List<Details> results = pageResult.getContent();
@@ -177,6 +181,8 @@ public class DetailsController {
                 status,
                 rating,
                 source,
+                nullFilter,       // NEW
+                notNullFilter,    // NEW
                 pageable);
             
             List<Details> results = pageResult.getContent();
@@ -216,6 +222,8 @@ public class DetailsController {
                 status,
                 rating,
                 source,
+                nullFilter,       // NEW
+                notNullFilter,    // NEW
                 pageable);
             
             List<Details> results = pageResult.getContent();
@@ -241,6 +249,147 @@ public class DetailsController {
         Map<String, Object> stats = new HashMap<>();
         stats.put("total", service.count());
         return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Get statistics on NULL values for various fields
+     * GET /api/details/stats/null_counts
+     */
+    @GetMapping("/stats/null_counts")
+    public ResponseEntity<Map<String, Object>> getNullCounts() {
+        Map<String, Long> nullCounts = service.getNullCounts();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("null_counts", nullCounts);
+        response.put("total_records", service.count());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Update score for a specific anime
+     * POST /api/details/update_score
+
+     * Request Body:
+     * {
+     *   "mal_id": 1,
+     *   "score": 8.50
+     * }
+
+     * Response:
+     * {
+     *   "success": true,
+     *   "message": "Score updated successfully",
+     *   "anime": { ... full anime details ... }
+     * }
+     */
+    @PostMapping("/update_score")
+    public ResponseEntity<?> updateScore(@RequestBody Map<String, Object> request) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // Validate request body
+            if (request == null || request.isEmpty()) {
+                response.put("success", false);
+                response.put("error", "Request body is required");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Validate mal_id presence
+            if (!request.containsKey("mal_id")) {
+                response.put("success", false);
+                response.put("error", "mal_id is required");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Validate score presence
+            if (!request.containsKey("score")) {
+                response.put("success", false);
+                response.put("error", "score is required");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Parse and validate mal_id
+            int malId;
+            try {
+                Object malIdObj = request.get("mal_id");
+                if (malIdObj instanceof Integer) {
+                    malId = (Integer) malIdObj;
+                } else if (malIdObj instanceof String) {
+                    malId = Integer.parseInt((String) malIdObj);
+                } else if (malIdObj instanceof Number) {
+                    malId = ((Number) malIdObj).intValue();
+                } else {
+                    response.put("success", false);
+                    response.put("error", "mal_id must be a valid integer");
+                    return ResponseEntity.badRequest().body(response);
+                }
+            } catch (NumberFormatException e) {
+                response.put("success", false);
+                response.put("error", "mal_id must be a valid integer");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Parse and validate score
+            java.math.BigDecimal score;
+            try {
+                Object scoreObj = request.get("score");
+                if (scoreObj instanceof java.math.BigDecimal) {
+                    score = (java.math.BigDecimal) scoreObj;
+                } else if (scoreObj instanceof Double) {
+                    score = java.math.BigDecimal.valueOf((Double) scoreObj);
+                } else if (scoreObj instanceof Float) {
+                    score = java.math.BigDecimal.valueOf((Float) scoreObj);
+                } else if (scoreObj instanceof Integer) {
+                    score = java.math.BigDecimal.valueOf((Integer) scoreObj);
+                } else if (scoreObj instanceof String) {
+                    score = new java.math.BigDecimal((String) scoreObj);
+                } else if (scoreObj instanceof Number) {
+                    score = java.math.BigDecimal.valueOf(((Number) scoreObj).doubleValue());
+                } else {
+                    response.put("success", false);
+                    response.put("error", "score must be a valid number");
+                    return ResponseEntity.badRequest().body(response);
+                }
+            } catch (NumberFormatException e) {
+                response.put("success", false);
+                response.put("error", "score must be a valid number");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Validate score range (0.00 to 10.00)
+            if (score.compareTo(java.math.BigDecimal.ZERO) < 0 || 
+                score.compareTo(java.math.BigDecimal.valueOf(10)) > 0) {
+                response.put("success", false);
+                response.put("error", "score must be between 0.00 and 10.00");
+                response.put("provided_score", score);
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Update the score
+            Optional<Details> updatedDetails = service.updateScore(malId, score);
+            
+            if (updatedDetails.isEmpty()) {
+                response.put("success", false);
+                response.put("error", "Anime not found");
+                response.put("mal_id", malId);
+                return ResponseEntity.status(404).body(response);
+            }
+            
+            // Success response
+            Details details = updatedDetails.get();
+            response.put("success", true);
+            response.put("message", "Score updated successfully");
+            response.put("anime", toSnakeCaseMap(details));
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", "Internal server error");
+            response.put("details", e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
     }
 
     /**
@@ -481,22 +630,34 @@ public class DetailsController {
     }
 
     private Sort parseSortParameter(String sort) {
-        if (sort == null || sort.isEmpty()) {
-            return Sort.unsorted();
-        }
-        
-        String[] sortFields = sort.split(",");
         List<Sort.Order> orders = new ArrayList<>();
-        
-        for (String field : sortFields) {
-            field = field.trim();
-            if (field.startsWith("-")) {
-                orders.add(Sort.Order.desc(field.substring(1)));
-            } else {
-                orders.add(Sort.Order.asc(field));
+
+        if (sort != null && !sort.isEmpty()) {
+            String[] sortFields = sort.split(",");
+
+            for (String field : sortFields) {
+                field = field.trim();
+                Sort.Direction direction;
+                String actualField;
+
+                if (field.startsWith("-")) {
+                    direction = Sort.Direction.DESC;
+                    actualField = field.substring(1);
+                } else {
+                    direction = Sort.Direction.ASC;
+                    actualField = field;
+                }
+
+                // ✅ FIX: NULL values always sorted LAST
+                orders.add(Sort.Order.by(actualField)
+                        .with(direction)
+                        .nullsLast());  // ← ADD THIS
             }
         }
-        
+
+        // Add malId as tiebreaker
+        orders.add(Sort.Order.asc("malId"));
+
         return Sort.by(orders);
     }
 

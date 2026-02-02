@@ -4,6 +4,13 @@
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch; /* Per uno scorrimento fluido su iOS */
     padding-bottom: 1rem;
+
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: center;
+	align-items: center;
+	align-content: stretch;
 }
 
 .carousel-container::-webkit-scrollbar {
@@ -19,6 +26,39 @@
     background: #f1f1f1;
 }
 
+.carousel_titleContainer {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.carousel_titleContainer h3 {
+  margin: 0; /* remove default h3 margins so it aligns nicely */
+}
+
+.see-all-link {
+  cursor: pointer;
+  color: var(--link-color);
+  text-decoration: underline;
+  margin-left: 0;
+}
+
+.see-all-link:hover {
+  text-decoration: none;
+}
+
+.cardsContainer {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: center;
+	align-items: center;
+	align-content: stretch;
+}
+
 .card {
     flex: 0 0 auto;
     scroll-snap-align: start;
@@ -32,12 +72,11 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    margin-right: 1rem;
+    margin: 0.7rem;
 }
 
 .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 
 .card a {
