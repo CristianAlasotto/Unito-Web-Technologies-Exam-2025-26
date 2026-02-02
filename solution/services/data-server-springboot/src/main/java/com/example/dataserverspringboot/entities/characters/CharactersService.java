@@ -7,7 +7,9 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import io.swagger.v3.oas.annotations.Hidden;
 
+@Hidden
 @Service
 public class CharactersService {
 
@@ -73,6 +75,7 @@ public class CharactersService {
             case "name_kanji", "namekanji" -> repository.findByNameKanjiIsNotNull(pageable);
             case "image" -> repository.findByImageIsNotNull(pageable);
             case "about" -> repository.findByAboutIsNotNull(pageable);
+            case "favorites" -> repository.findByFavoritesIsNotNull(pageable);
             default ->
                 // Invalid field name, return all records
                     repository.findAll(pageable);
@@ -87,6 +90,7 @@ public class CharactersService {
         counts.put("name_kanji", repository.countByNameKanjiIsNull());
         counts.put("image", repository.countByImageIsNull());
         counts.put("about", repository.countByAboutIsNull());
+        counts.put("favorites", repository.countByFavoritesIsNull());
         return counts;
     }
 }

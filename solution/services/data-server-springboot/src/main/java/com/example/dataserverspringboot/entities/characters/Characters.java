@@ -1,7 +1,9 @@
 package com.example.dataserverspringboot.entities.characters;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 
+@Schema(description = "Anime character entity")
 @Entity
 @Table(name = "characters")
 public class Characters {

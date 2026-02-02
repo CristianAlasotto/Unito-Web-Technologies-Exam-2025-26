@@ -1,11 +1,13 @@
 package com.example.dataserverspringboot.entities.characternicknames;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.util.Optional;
 
+@Hidden
 @Service
 public class CharacterNicknamesService {
 

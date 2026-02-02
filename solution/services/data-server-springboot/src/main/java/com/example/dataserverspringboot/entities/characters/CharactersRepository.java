@@ -8,7 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import io.swagger.v3.oas.annotations.Hidden;
 
+@Hidden
 @Repository
 public interface CharactersRepository extends JpaRepository<Characters, Integer> {
 
@@ -92,6 +94,21 @@ public interface CharactersRepository extends JpaRepository<Characters, Integer>
      * Count characters with null nameKanji
      */
     long countByNameKanjiIsNull();
+
+    /**
+     * Find all characters where favorites IS NULL
+     */
+    Page<Characters> findByFavoritesIsNull(Pageable pageable);
+
+    /**
+     * Find all characters where favorites IS NOT NULL
+     */
+    Page<Characters> findByFavoritesIsNotNull(Pageable pageable);
+
+    /**
+     * Count characters with null favorites
+     */
+    long countByFavoritesIsNull();
 
     /**
      * Count characters with null image

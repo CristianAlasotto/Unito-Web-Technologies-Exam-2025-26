@@ -3,7 +3,9 @@ package com.example.dataserverspringboot.entities.details;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(description = "Anime entity")
 @Entity
 @Table(name = "details")
 public class Details {

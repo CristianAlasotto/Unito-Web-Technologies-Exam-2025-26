@@ -260,20 +260,31 @@ public class PersonAnimeWorksController {
 
         if (sort != null && !sort.isEmpty()) {
             String[] sortFields = sort.split(",");
+
             for (String field : sortFields) {
                 field = field.trim();
+                Sort.Direction direction;
+                String actualField;
+
                 if (field.startsWith("-")) {
-                    orders.add(Sort.Order.desc(field.substring(1)));
+                    direction = Sort.Direction.DESC;
+                    actualField = field.substring(1);
                 } else {
-                    orders.add(Sort.Order.asc(field));
+                    direction = Sort.Direction.ASC;
+                    actualField = field;
                 }
+
+                // ✅ FIX: NULL values always sorted LAST
+                orders.add(Sort.Order.by(actualField)
+                        .with(direction)
+                        .nullsLast());  // ← ADD THIS
             }
         }
 
-        // CRITICAL FIX: Always add primaryKeys as tiebreaker
+        // Add primary keys as tiebreaker
         orders.add(Sort.Order.asc("personMalId"));
         orders.add(Sort.Order.asc("animeMalId"));
 
-        return Sort.by(orders);  // ← Now ALWAYS consistent!
+        return Sort.by(orders);
     }
 }
