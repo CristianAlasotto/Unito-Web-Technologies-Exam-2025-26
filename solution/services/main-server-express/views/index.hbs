@@ -19,7 +19,13 @@
 {{!-- Anime carousel --}}
 <div class="carousel" id="anime-carousel" data-current-page="{{animeCarousel.currentPage}}"
   data-page-size="{{animeCarousel.pageSize}}">
-  <h3>Top Rated animes</h3>
+  <div class="carousel_titleContainer">
+    <h3>Top Rated animes</h3>
+    <span class="see-all-link" role="link" tabindex="0" onclick="window.location.href='/anime'"
+      onkeydown="if(event.key === 'Enter') window.location.href='/anime'">
+      See all
+    </span>
+  </div>
   {{#if animeCarousel.hasPrev}}
   <button class="btn-left" data-prev-page="{{animeCarousel.prevPage}}">
     ←
@@ -40,7 +46,13 @@
 {{!-- Characters carousel --}}
 <div class="carousel" id="character-carousel" data-current-page="{{characterCarousel.currentPage}}"
   data-page-size="{{characterCarousel.pageSize}}">
-  <h3>Most popular Characters</h3>
+  <div class="carousel_titleContainer">
+    <h3>Most popular Characters</h3>
+    <span class="see-all-link" role="link" tabindex="0" onclick="window.location.href='/characters'"
+      onkeydown="if(event.key === 'Enter') window.location.href='/characters'">
+      See all
+    </span>
+  </div>
   {{#if characterCarousel.hasPrev}}
   <button class="btn-left" data-prev-page="{{characterCarousel.prevPage}}">
     ←
@@ -61,7 +73,13 @@
 {{!-- Staff carousel --}}
 <div class="carousel" id="staff-carousel" data-current-page="{{staffCarousel.currentPage}}"
   data-page-size="{{staffCarousel.pageSize}}">
-  <h3>Some of our best Creators</h3>
+  <div class="carousel_titleContainer">
+    <h3>Some of our best Creators/Staff</h3>
+    <span class="see-all-link" role="link" tabindex="0" onclick="window.location.href='/staff'"
+      onkeydown="if(event.key === 'Enter') window.location.href='/staff'">
+      See all
+    </span>
+  </div>
   {{#if staffCarousel.hasPrev}}
   <button class="btn-left" data-prev-page="{{staffCarousel.prevPage}}">
     ←

@@ -1,0 +1,85 @@
+<aside class="filters">
+  <form id="filtersForm" method="GET" action="/anime" class="filters__form">
+    <div class="filtersContainer">
+      <section class="filters__section">
+        <div class="filters__title">Cerca</div>
+        <input type="text" name="search" value="{{filters.search}}" placeholder="Cowboy Bebop" class="filters__input" />
+      </section>
+
+      <section class="filters__section">
+        <div class="filters__title">Ordina</div>
+        <select name="sort" class="filters__select">
+          {{#each filters.sortOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>
+            {{this.label}}
+          </option>
+          {{/each}}
+        </select>
+      </section>
+
+      <section class="filters__section">
+        <div class="filters__title">Formato</div>
+        <select name="type" class="filters__select">
+          {{#each filters.typeOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>
+            {{this.label}}
+          </option>
+          {{/each}}
+        </select>
+      </section>
+
+      <section class="filters__section">
+        <div class="filters__title">Status</div>
+        <select name="status" class="filters__select">
+          {{#each filters.statusOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>
+            {{this.label}}
+          </option>
+          {{/each}}
+        </select>
+      </section>
+
+      <section class="filters__section">
+        <div class="filters__title">Rating</div>
+        <select name="rating" class="filters__select">
+          {{#each filters.ratingOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>
+            {{this.label}}
+          </option>
+          {{/each}}
+        </select>
+      </section>
+
+      <section class="filters__section">
+        <div class="filters__title">Source</div>
+        <select name="source" class="filters__select">
+          {{#each filters.sourceOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>
+            {{this.label}}
+          </option>
+          {{/each}}
+        </select>
+      </section>
+
+      <section class="filters__section">
+        <div class="filters__title">Episodi</div>
+        <input
+          type="number"
+          name="episodes"
+          min="1"
+          max="3000"
+          step="1"
+          value="{{filters.episodes}}"
+          placeholder="Max 3000.0"
+          class="filters__input"
+        />
+      </section>
+    </div>
+
+    {{!-- Azioni --}}
+    <section class="filters__actions">
+      <button type="submit" class="filters__btn filters__btn--apply">Applica</button>
+      <a href="/anime" class="filters__btn filters__btn--reset">Reset</a>
+    </section>
+  </form>
+</aside>

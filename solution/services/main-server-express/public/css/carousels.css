@@ -26,6 +26,30 @@
     background: #f1f1f1;
 }
 
+.carousel_titleContainer {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.carousel_titleContainer h3 {
+  margin: 0; /* remove default h3 margins so it aligns nicely */
+}
+
+.see-all-link {
+  cursor: pointer;
+  color: var(--link-color);
+  text-decoration: underline;
+  margin-left: 0;
+}
+
+.see-all-link:hover {
+  text-decoration: none;
+}
+
 .cardsContainer {
 	display: flex;
 	flex-direction: row;
@@ -53,7 +77,6 @@
 
 .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 
 .card a {
