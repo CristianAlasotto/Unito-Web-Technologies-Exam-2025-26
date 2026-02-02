@@ -24,7 +24,7 @@
 
 /* ===== Horizontal layout ===== */
 .filters__form {
-		display: flex;
+	display: flex;
 	flex-direction: row;
 	flex-wrap: nowrap;
 	justify-content: space-between;
