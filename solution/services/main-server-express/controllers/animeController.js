@@ -358,3 +358,42 @@ exports.reccomendations = async (req, res) => {
     });
   }
 };
+
+exports.getRatingsJson = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const page = parseInt(req.query.page || '1', 10);
+    const pageSize = parseInt(req.query.pageSize || '10', 10);
+    
+    const params = new URLSearchParams();
+    params.set('anime_id', id);
+    params.set('page', String(page));
+    params.set('pageSize', String(pageSize));
+    
+    if (req.query.minScore) params.set('minScore', req.query.minScore);
+    if (req.query.maxScore) params.set('maxScore', req.query.maxScore);
+    if (req.query.status) params.set('status', req.query.status);
+    if (req.query.rewatching) params.set('is_rewatching', req.query.rewatching);
+    if (req.query.sortBy) params.set('sortBy', req.query.sortBy);
+    if (req.query.sortOrder) params.set('sortOrder', req.query.sortOrder);
+
+    const response = await apiMongo.get(`/api/ratings?${params.toString()}`);
+    const data = response.data || {};
+    
+    res.json({
+      ratings: data.items || [],
+      pagination: {
+        currentPage: page,
+        totalPages: data.totalPages || 1,
+        total: data.total || 0
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching ratings:', err.message);
+    res.status(500).json({
+      ratings: [],
+      pagination: { currentPage: 1, totalPages: 1, total: 0 },
+      error: 'Unable to load ratings'
+    });
+  }
+};
