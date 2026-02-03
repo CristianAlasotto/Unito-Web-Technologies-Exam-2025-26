@@ -1,18 +1,191 @@
-const { apiPostgres } = require('./apiClients');
+const { apiMongo, apiPostgres } = require('./apiClients.js');
 
-// NB anime = "details"
+const SORT_OPTIONS = [
+	{ value: '', label: 'Default' },
+	{ value: '-popularity', label: 'Più popolari' },
+	{ value: 'popularity', label: 'Meno popolari' },
+	{ value: 'title', label: 'Nome A-Z' },
+	{ value: '-title', label: 'Nome Z-A' }
+];
+
+const TYPE_OPTIONS = [
+  { value: '', label: 'Tutti' },
+  { value: 'CM', label: 'CM' },
+  { value: 'Movie', label: 'Movie' },
+  { value: 'Music', label: 'Music' },
+  { value: 'CM', label: 'CM' },
+  { value: 'ONA', label: 'ONA' },
+  { value: 'OVA', label: 'OVA' },
+  { value: 'PV', label: 'PV' },
+  { value: 'Special', label: 'Special' },
+  { value: 'TV', label: 'TV' },
+  { value: 'TVSpecial', label: 'TVSpecial' },
+  { value: '[Adventure]', label: 'Adventure' },
+  { value: '[Mecha]', label: 'Mecha' }
+];
+
+const STATUS_OPTIONS = [
+  { value: '', label: 'Tutti' },
+  { value: 'Currently Airing', label: 'Currently Airing' },
+  { value: 'Finished Airing', label: 'Finished Airing' },
+  { value: 'Not yet aired', label: 'Not yet aired' },
+  { value: '[Shin-Ei Animation]', label: 'Shin-Ei Animation' }
+];
+
+const RATING_OPTIONS = [
+  { value: '', label: 'Tutti' },
+  { value: 'G - All Ages', label: 'G - All Ages' },
+  { value: 'PG - Children', label: 'PG - Children' },
+  { value: 'PG-13 - Teens 13 or older', label: 'PG-13 - Teens 13 or older' },
+  { value: 'R - 17+ (violence & profanity)', label: 'R - 17+ (violence & profanity)' },
+  { value: 'R+ - Mild Nudity', label: 'R+ - Mild Nudity' },
+  { value: 'Rx - Hentai', label: 'Rx - Hentai' }
+];
+
+const SOURCE_OPTIONS = [
+  { value: '', label: 'Tutti' },
+  { value: '4-koma manga', label: '4-koma manga' },
+  { value: 'Book', label: 'Book' },
+  { value: 'Card game', label: 'Card game' },
+  { value: 'Game', label: 'Game' },
+  { value: 'Light novel', label: 'Light novel' },
+  { value: 'Manga', label: 'Manga' },
+  { value: 'Mixed media', label: 'Mixed media' },
+  { value: 'Music', label: 'Music' },
+  { value: 'Novel', label: 'Novel' },
+  { value: 'Original', label: 'Original' },
+  { value: 'Other', label: 'Other' },
+  { value: 'Picture book', label: 'Picture book' },
+  { value: 'Radio', label: 'Radio' },
+  { value: 'Unknown', label: 'Unknown' },
+  { value: 'Visual novel', label: 'Visual novel' },
+  { value: 'Web manga', label: 'Web manga' },
+  { value: 'Web novel', label: 'Web novel' },
+];
+
+const GENRE_OPTIONS = [
+  { value: '', label: 'Tutti' },
+  { value: 'action', label: 'Action' },
+  { value: 'adventure', label: 'Adventure' },
+  { value: 'avant garde', label: 'Avant Garde' },
+  { value: 'award winning', label: 'Award Winning' },
+  { value: 'boys love', label: 'Boys Love' },
+  { value: 'comedy', label: 'Comedy' },
+  { value: 'drama', label: 'Drama' },
+  { value: 'ecchi', label: 'Ecchi' },
+  { value: 'erotica', label: 'Erotica' },
+  { value: 'fantasy', label: 'Fantasy' },
+  { value: 'girls love', label: 'Girls Love' },
+  { value: 'gourmet', label: 'Gourmet' },
+  { value: 'hentai', label: 'Hentai' },
+  { value: 'horror', label: 'Horror' },
+  { value: 'mystery', label: 'Mystery' },
+  { value: 'romance', label: 'Romance' },
+  { value: 'sci fi', label: 'Sci-Fi' },
+  { value: 'slice of life', label: 'Slice of Life' },
+  { value: 'sports', label: 'Sports' },
+  { value: 'supernatural', label: 'Supernatural' },
+  { value: 'suspense', label: 'Suspense' }
+];
+
+const normalizeEpisodes = (value) => {
+  if (value === null || value === undefined || value === '') return '';
+  const parsed = parseInt(value, 10);
+  if (Number.isNaN(parsed)) return '';
+  const normalized = Math.min(Math.max(parsed, 1), 3000);
+  return String(normalized);
+};
+
+const buildFiltersModel = (query) => {
+  const activeSort = query.sort || '';
+  const activeSearch = query.search || query.q || '';
+  const activeType = query.type || '';
+  const activeYear = query.year || '';
+  const activeStatus = query.status || '';
+  const activeRating = query.rating || '';
+  const activeSource = query.source || '';
+  const activeEpisodes = normalizeEpisodes(query.episodes ?? query.episode);
+  const activeGenres = query.genres || query.genre || '';
+
+  return {
+    search: activeSearch,
+    year: activeYear,
+    episodes: activeEpisodes,
+    sortOptions: SORT_OPTIONS.map((option) => ({
+      ...option,
+      selected: option.value === activeSort
+    })),
+    typeOptions: TYPE_OPTIONS.map((option) => ({
+      ...option,
+      selected: option.value === activeType
+    })),
+    statusOptions: STATUS_OPTIONS.map((option) => ({
+      ...option,
+      selected: option.value === activeStatus
+    })),
+    ratingOptions: RATING_OPTIONS.map((option) => ({
+      ...option,
+      selected: option.value === activeRating
+    })),
+    genreOptions: GENRE_OPTIONS.map((option) => ({
+      ...option,
+      selected: option.value === activeGenres
+    })),
+    sourceOptions: SOURCE_OPTIONS.map((option) => ({
+      ...option,
+      selected: option.value === activeSource
+    }))
+  };
+};
 
 exports.list = async (req, res, next) => {
   try {
-    const page = req.query.page || 1;
-    const pageSize = req.query.pageSize || 45;
-    const response = await apiPostgres.get(`/api/details?page=${page}&pageSize=${pageSize}`);
+    const page = parseInt(req.query.page || '1', 10);
+    const pageSize = parseInt(req.query.pageSize || '45', 10);
+    const params = new URLSearchParams();
+
+    const searchTerm = req.query.search || req.query.q;
+    if (searchTerm) params.set('search', searchTerm);
+    if (req.query.type) params.set('type', req.query.type);
+    if (req.query.year) params.set('year', req.query.year);
+    if (req.query.status) params.set('status', req.query.status);
+    if (req.query.rating) params.set('rating', req.query.rating);
+    if (req.query.genres) params.set('genres', req.query.genres);
+    if (!req.query.genres && req.query.genre) params.set('genres', req.query.genre);
+    if (req.query.source) params.set('source', req.query.source);
+    if (req.query.sort) params.set('sort', req.query.sort);
+    const episodesParam = normalizeEpisodes(req.query.episodes ?? req.query.episode);
+    if (episodesParam) params.set('episodes', episodesParam);
+
+    params.set('page', String(page));
+    params.set('pageSize', String(pageSize));
+
+    const response = await apiPostgres.get(`/api/details?${params.toString()}`);
     const animes = response.data.items;
     const totalPages = response.data.totalPages;
+    const filters = buildFiltersModel(req.query);
+
+    const paginationQuery = new URLSearchParams();
+    Object.entries(req.query).forEach(([key, value]) => {
+      if (!value) return;
+      if (key === 'page') return;
+      if (key === 'episode' || key === 'episodes') return;
+      if (key === 'genre') {
+        if (!req.query.genres) paginationQuery.set('genres', value);
+        return;
+      }
+      paginationQuery.set(key, value);
+    });
+    if (episodesParam) {
+      paginationQuery.set('episodes', episodesParam);
+    }
+    const filtersQuery = paginationQuery.toString() ? `&${paginationQuery.toString()}` : '';
 
     res.render('anime/anime_list', {
       title: 'Anime',
       animes: animes,
+      filters,
+      filtersQuery,
       pagination: {
         currentPage: page,
         totalPages: totalPages,
@@ -21,12 +194,14 @@ exports.list = async (req, res, next) => {
         hasNext: page < totalPages,
         nextPage: parseInt(page) + 1
       },
-      warning: !animes || animes.length === 0 ? 'Nessun anime trovato nel database.' : null
+      warning: !animes || animes.length === 0 ? 'No anime found in database.' : null
     });
   } catch (err) {
     res.render('anime/anime_list', {
       title: 'Anime',
       animes: [],
+      filters: buildFiltersModel({}),
+      filtersQuery: '',
       currentPage: 'anime',
       error: 'Impossibile caricare i dati degli anime. Il server potrebbe non essere disponibile.'
     });
@@ -37,16 +212,153 @@ exports.detail = async (req, res, next) => {
   try {
     const { id } = req.params;
     const response = await apiPostgres.get(`/api/details/${id}`);
+    const raw = response.data || {};
+    let relatedCharacters = [];
+    let recommendations = [];
+
+    try {
+      const charactersResponse = await apiPostgres.get(`/api/details/${id}/characters`);
+      const charactersData = charactersResponse?.data;
+      relatedCharacters = Array.isArray(charactersData)
+        ? charactersData
+        : charactersData?.characters ||
+            charactersData?.items ||
+            charactersData?.related_characters ||
+            [];
+    } catch (err) {
+      console.warn('Unable to load related characters:', err.message);
+    }
+
+    try {
+      const recommendationsResponse = await apiPostgres.get(
+        `/api/details/${id}/recommendations`
+      );
+      const recommendationsData = recommendationsResponse?.data;
+      recommendations = Array.isArray(recommendationsData)
+        ? recommendationsData
+        : recommendationsData?.recommendations || [];
+    } catch (err) {
+      console.warn('Unable to load recommendations:', err.message);
+    }
+
+    const normalizeList = (value) => {
+      if (Array.isArray(value)) {
+        return value.filter((item) => item !== null && item !== undefined && item !== '');
+      }
+      if (value === null || value === undefined) {
+        return [];
+      }
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed === '' || trimmed === '[]') {
+          return [];
+        }
+        if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+          const normalized = trimmed.replace(/'/g, '"');
+          try {
+            const parsed = JSON.parse(normalized);
+            if (Array.isArray(parsed)) {
+              return parsed.filter((item) => item !== null && item !== undefined && item !== '');
+            }
+          } catch (err) {
+            // Fallback to splitting below.
+          }
+          const items = trimmed
+            .slice(1, -1)
+            .split(',')
+            .map((item) => item.trim().replace(/^["']|["']$/g, ''))
+            .filter((item) => item !== '');
+          return items;
+        }
+        return [trimmed];
+      }
+      return [String(value)];
+    };
+
+    const formatValue = (value) =>
+      value === null || value === undefined || value === '' ? 'N/A' : value;
+
+    const genres = normalizeList(raw.genres);
+    const themes = normalizeList(raw.themes);
+    const studios = normalizeList(raw.studios);
+    const demographics = normalizeList(raw.demographics);
+    const producers = normalizeList(raw.producers);
+    const licensors = normalizeList(raw.licensors);
+    const streaming = normalizeList(raw.streaming);
+    const explicitGenres = normalizeList(raw.explicit_genres);
+
+    const anime = {
+      ...raw,
+      genres,
+      themes,
+      studios,
+      demographics,
+      producers,
+      licensors,
+      streaming,
+      explicit_genres: explicitGenres,
+      score_display: formatValue(raw.score),
+      scored_by_display: formatValue(raw.scored_by),
+      type_display: formatValue(raw.type),
+      status_display: formatValue(raw.status),
+      episodes_display: formatValue(raw.episodes),
+      episodes_text:
+        raw.episodes === null || raw.episodes === undefined || raw.episodes === ''
+          ? 'N/A'
+          : `${raw.episodes} episodes`,
+      season_display: formatValue(raw.season),
+      year_display: formatValue(raw.year),
+      rating_display: formatValue(raw.rating),
+      source_display: formatValue(raw.source),
+      start_date_display: formatValue(raw.start_date),
+      end_date_display: formatValue(raw.end_date),
+      rank_display: formatValue(raw.rank),
+      popularity_display: formatValue(raw.popularity),
+      members_display: formatValue(raw.members),
+      favorites_display: formatValue(raw.favorites),
+      mal_id_display: formatValue(raw.mal_id),
+      has_genres: genres.length > 0,
+      has_themes: themes.length > 0,
+      has_studios: studios.length > 0,
+      has_demographics: demographics.length > 0,
+      has_producers: producers.length > 0,
+      has_licensors: licensors.length > 0,
+      has_streaming: streaming.length > 0,
+      has_explicit_genres: explicitGenres.length > 0,
+      related_characters: relatedCharacters,
+      has_related_characters: relatedCharacters.length > 0,
+      recommendations,
+      hasRelatedAnimes: recommendations.length > 0
+    };
+
     res.render('anime/anime_detail', {
-      title: response.data.title,
-      anime: response.data,
+      title: raw.title,
+      anime,
       currentPage: 'anime'
     });
   } catch (err) {
     res.render('anime/anime_detail', {
       title: 'Anime Detail',
       anime: null,
-      error: 'Impossibile caricare i dettagli dell\'anime. Il server potrebbe non essere disponibile.'
+      error: 'Unable to load anime details.'
+    });
+  }
+};
+
+exports.characters = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const response = await apiPostgres.get(`/api/details/${id}/characters`);
+    res.render('anime/related_characters', {
+      title: `Recommendations for ${response.data.title}`,
+      related_characters: response.data.related_characters,
+      currentPage: 'anime'
+    });
+  } catch (err) {
+    res.render('related_characters', {
+      title: 'Characters',
+      recommendations: null,
+      error: 'Impossibile caricare i personaggi dell\'anime. Il server potrebbe non essere disponibile.'
     });
   }
 };
@@ -55,7 +367,6 @@ exports.reccomendations = async (req, res) => {
   try {
     const { id } = req.params;
     const response = await apiPostgres.get(`/api/details/${id}/recommendations`);
-    //const response = await apiPostgres.get(`/api/details/${id}/recommendations`);
     res.render('anime/anime_recommendations', {
       title: `Recommendations for ${response.data.title}`,
       recommendations: response.data.recommendations,
@@ -65,7 +376,46 @@ exports.reccomendations = async (req, res) => {
     res.render('anime/anime_recommendations', {
       title: 'Recommendations',
       recommendations: null,
-      error: 'Impossibile caricare i consigli dell\'anime. Il server potrebbe non essere disponibile.'
+      error: 'Unable to load recommendations.'
+    });
+  }
+};
+
+exports.getRatingsJson = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const page = parseInt(req.query.page || '1', 10);
+    const pageSize = parseInt(req.query.pageSize || '10', 10);
+    
+    const params = new URLSearchParams();
+    params.set('anime_id', id);
+    params.set('page', String(page));
+    params.set('pageSize', String(pageSize));
+    
+    if (req.query.minScore) params.set('minScore', req.query.minScore);
+    if (req.query.maxScore) params.set('maxScore', req.query.maxScore);
+    if (req.query.status) params.set('status', req.query.status);
+    if (req.query.rewatching) params.set('is_rewatching', req.query.rewatching);
+    if (req.query.sortBy) params.set('sortBy', req.query.sortBy);
+    if (req.query.sortOrder) params.set('sortOrder', req.query.sortOrder);
+
+    const response = await apiMongo.get(`/api/ratings?${params.toString()}`);
+    const data = response.data || {};
+    
+    res.json({
+      ratings: data.items || [],
+      pagination: {
+        currentPage: page,
+        totalPages: data.totalPages || 1,
+        total: data.total || 0
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching ratings:', err.message);
+    res.status(500).json({
+      ratings: [],
+      pagination: { currentPage: 1, totalPages: 1, total: 0 },
+      error: 'Unable to load ratings'
     });
   }
 };

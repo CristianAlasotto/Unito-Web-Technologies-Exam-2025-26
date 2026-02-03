@@ -10,8 +10,6 @@ var usersRouter = require('./routes/users');
 var charactersRouter = require('./routes/characters');
 var staffRouter = require('./routes/staff');
 var profileRouter = require('./routes/profile');
-var favouritesRouter = require('./routes/favourites');
-var generalTestRoutes = require('./routes/generalTest');
 
 var app = express();
 
@@ -43,6 +41,14 @@ hbs.registerHelper('any', function() {
   return options.inverse(this);
 });
 
+hbs.registerHelper('isHttpUrl', function(value) {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  const trimmed = value.trim();
+  return /^https?:\/\//i.test(trimmed);
+});
+
 // middleware -> pipeline richieste
 app.use(logger('dev'));
 app.use(express.json());
@@ -56,8 +62,6 @@ app.use('/users', usersRouter);
 app.use('/characters', charactersRouter);
 app.use('/staff', staffRouter);
 app.use('/profile', profileRouter);
-app.use('/favourites', favouritesRouter);
-app.use('/generalTest', generalTestRoutes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

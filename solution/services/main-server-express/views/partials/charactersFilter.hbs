@@ -1,0 +1,28 @@
+<aside class="filters">
+  <form id="filtersForm" method="GET" action="/characters" class="filters__form">
+    <div class="filtersContainer">
+      <section class="filters__section">
+        <div class="filters__title">Search</div>
+        <input type="text" name="character_mal_id" value="{{filters.character_mal_id}}" placeholder="Spike Spiegel"
+          class="filters__input" />
+      </section>
+
+      <section class="filters__section">
+        <div class="filters__title">Order by</div>
+        <select name="sort" class="filters__select">
+          {{#each filters.sortOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>
+            {{this.label}}
+          </option>
+          {{/each}}
+        </select>
+      </section>
+    </div>
+
+    {{!-- Azioni --}}
+    <section class="filters__actions">
+      <button type="submit" class="filters__btn filters__btn--apply">Apply</button>
+      <a href="/characters" class="filters__btn filters__btn--reset">Reset</a>
+    </section>
+  </form>
+</aside>

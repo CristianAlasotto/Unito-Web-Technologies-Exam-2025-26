@@ -2,8 +2,15 @@
     display: flex;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch; /* Per uno scorrimento fluido su iOS */
+    -webkit-overflow-scrolling: touch;
     padding-bottom: 1rem;
+
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: center;
+	align-items: center;
+	align-content: stretch;
 }
 
 .carousel-container::-webkit-scrollbar {
@@ -19,6 +26,39 @@
     background: #f1f1f1;
 }
 
+.carousel_titleContainer {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.carousel_titleContainer h3 {
+  margin: 0;
+}
+
+.see-all-link {
+  cursor: pointer;
+  color: var(--link-color);
+  text-decoration: underline;
+  margin-left: 0;
+}
+
+.see-all-link:hover {
+  text-decoration: none;
+}
+
+.cardsContainer {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: center;
+	align-items: center;
+	align-content: stretch;
+}
+
 .card {
     flex: 0 0 auto;
     scroll-snap-align: start;
@@ -28,16 +68,15 @@
     overflow: hidden;
     transition: transform 0.2s;
     width: 200px;
-    height: 320px; /* Adjusted height */
+    height: 320px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    margin-right: 1rem;
+    margin: 0.7rem;
 }
 
 .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 
 .card a {
@@ -72,7 +111,7 @@
     color: #fff;
     font-size: 0.875rem;
     line-height: 1.2;
-    min-height: 2.1rem; /* 2 lines of text */
+    min-height: 2.1rem;
 }
 
 .carousel {

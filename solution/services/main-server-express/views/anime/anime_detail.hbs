@@ -1,43 +1,54 @@
 {{#if warning}}
-<div class="warning-banner"
-	style="background: #ff9800; color: #000; padding: 1rem; text-align: center; margin-bottom: 1rem;">
-	⚠️ {{warning}}
-</div>
+    <div class="warning-banner"
+         style="background: #ff9800; color: #000; padding: 1rem; text-align: center; margin-bottom: 1rem;">
+        ⚠️ {{warning}}
+    </div>
 {{/if}}
 
 {{#if error}}
-<div class="error-message">{{error}}</div>
+    <div class="error-message">{{error}}</div>
 {{/if}}
 
 <div class="anime-container">
 	<h1>Anime Details</h1>
 
 	{{#if anime}}
-	<article class="anime-detail">
+	<article class="anime-detail anime-detail-card">
 		<div class="anime-header">
+			{{#if (isHttpUrl anime.image_url)}}
 			<img src="{{anime.image_url}}" alt="{{anime.title}}" class="anime-poster">
+			{{else}}
+			<div class="card-image-placeholder">
+				<img src="/images/logo.png" alt="Logo">
+			</div>
+			{{/if}}
 			<div class="anime-main-info">
-				<h3>{{anime.title}}</h3>
+				<h2>{{anime.title}}</h2>
+				{{#if anime.title_english}}
+				<h4 class="english-title">{{anime.title_english}}</h4>
+				{{/if}}
 				{{#if anime.title_japanese}}
 				<h4 class="japanese-title">{{anime.title_japanese}}</h4>
 				{{/if}}
 
 				<div class="anime-meta">
-					<span class="score">⭐ {{anime.score}}</span>
-					<span class="type">{{anime.type}}</span>
-					<span class="status">{{anime.status}}</span>
-					<span class="episodes">{{anime.episodes}} episodes</span>
+					<span class="score">⭐ {{anime.score_display}}</span>
+					<span class="scored-by">Scored by: {{anime.scored_by_display}}</span>
+					<span class="type">{{anime.type_display}}</span>
+					<span class="status">{{anime.status_display}}</span>
+					<span class="episodes">{{anime.episodes_text}}</span>
+					<span class="season">Season: {{anime.season_display}}</span>
+					<span class="year">Year: {{anime.year_display}}</span>
+					<span class="rating">Rating: {{anime.rating_display}}</span>
+					<span class="source">Source: {{anime.source_display}}</span>
 				</div>
 
-				{{#if anime.start_date}}
 				<p class="dates">
-					<strong>Period:</strong>
-					{{anime.start_date}}
-					{{#if anime.end_date}}
-					- {{anime.end_date}}
-					{{/if}}
+					<strong>Start date:</strong> {{anime.start_date_display}}
 				</p>
-				{{/if}}
+				<p class="dates">
+					<strong>End date:</strong> {{anime.end_date_display}}
+				</p>
 			</div>
 		</div>
 
@@ -49,7 +60,7 @@
 		{{/if}}
 
 		<div class="anime-details-grid">
-			{{#if anime.genres}}
+			{{#if anime.has_genres}}
 			<section class="detail-section">
 				<h3>Genres</h3>
 				<div class="tags">
@@ -60,7 +71,7 @@
 			</section>
 			{{/if}}
 
-			{{#if anime.themes}}
+			{{#if anime.has_themes}}
 			<section class="detail-section">
 				<h3>Themes</h3>
 				<div class="tags">
@@ -71,7 +82,7 @@
 			</section>
 			{{/if}}
 
-			{{#if anime.studios}}
+			{{#if anime.has_studios}}
 			<section class="detail-section">
 				<h3>Studios</h3>
 				<div class="tags">
@@ -82,7 +93,7 @@
 			</section>
 			{{/if}}
 
-			{{#if anime.demographics}}
+			{{#if anime.has_demographics}}
 			<section class="detail-section">
 				<h3>Demographics</h3>
 				<div class="tags">
@@ -92,38 +103,130 @@
 				</div>
 			</section>
 			{{/if}}
+
+			{{#if anime.has_producers}}
+			<section class="detail-section">
+				<h3>Producers</h3>
+				<div class="tags">
+					{{#each anime.producers}}
+					<span class="tag">{{this}}</span>
+					{{/each}}
+				</div>
+			</section>
+			{{/if}}
+
+			{{#if anime.has_licensors}}
+			<section class="detail-section">
+				<h3>Licensors</h3>
+				<div class="tags">
+					{{#each anime.licensors}}
+					<span class="tag">{{this}}</span>
+					{{/each}}
+				</div>
+			</section>
+			{{/if}}
+
+			{{#if anime.has_streaming}}
+			<section class="detail-section">
+				<h3>Streaming</h3>
+				<div class="tags">
+					{{#each anime.streaming}}
+					<span class="tag">{{this}}</span>
+					{{/each}}
+				</div>
+			</section>
+			{{/if}}
+
+			{{#if anime.has_explicit_genres}}
+			<section class="detail-section">
+				<h3>Explicit Genres</h3>
+				<div class="tags">
+					{{#each anime.explicit_genres}}
+					<span class="tag">{{this}}</span>
+					{{/each}}
+				</div>
+			</section>
+			{{/if}}
 		</div>
 
 		<div class="anime-stats">
-			{{#if anime.rank}}
 			<div class="stat">
-				<strong>Rank:</strong> #{{anime.rank}}
+				<strong>Rank:</strong> {{anime.rank_display}}
 			</div>
-			{{/if}}
-			{{#if anime.popularity}}
 			<div class="stat">
-				<strong>Popularity:</strong> #{{anime.popularity}}
+				<strong>Popularity:</strong> {{anime.popularity_display}}
 			</div>
-			{{/if}}
-			{{#if anime.members}}
 			<div class="stat">
-				<strong>Members:</strong> {{anime.members}}
+				<strong>Members:</strong> {{anime.members_display}}
 			</div>
-			{{/if}}
-			{{#if anime.favorites}}
 			<div class="stat">
-				<strong>Favorites:</strong> {{anime.favorites}}
+				<strong>Favorites:</strong> {{anime.favorites_display}}
 			</div>
-			{{/if}}
 		</div>
 
 		<br>
-		<section class="recommendations">
-			<h3>Recommended Animes</h3>
-			{{#if character.recommendations}}
-			{{> anime_carousel_items items=character.recommendations}}
+		<h3 class="recommendationsTitle">Related Characters</h3>
+		<section class="recommendations" id="related-characters-section">
+			{{#if anime.has_related_characters}}
+			<div class="cardsContainer" id="related-characters-container">
+				{{#each anime.related_characters}}
+				<div class="card">
+					{{#if this.character_mal_id}}
+					<a href="/characters/{{this.character_mal_id}}">
+						{{else}}
+						<a href="/characters/{{this.character_id}}">
+							{{/if}}
+							{{#if (isHttpUrl this.image)}}
+							<img src="{{this.image}}" alt="{{this.name}}">
+							{{else}}
+							{{#if (isHttpUrl this.image_url)}}
+							<img src="{{this.image_url}}" alt="{{this.name}}">
+							{{else}}
+							<div class="card-image-placeholder">
+								<img src="/images/logo.png" alt="Logo">
+							</div>
+							{{/if}}
+							{{/if}}
+							<div class="card-body">
+								<p>{{this.name}}</p>
+							</div>
+						</a>
+				</div>
+				{{/each}}
+			</div>
 			{{else}}
-			<p>No recommendations available.</p>
+			<p id="related-characters-empty">No related_characters available.</p>
+			{{/if}}
+		</section>
+
+		<br>
+		<h3 class="recommendationsTitle">Recommended Animes</h3>
+		<section class="recommendations">
+			{{#if anime.hasRelatedAnimes}}
+			<div class="cardsContainer">
+				{{#each anime.recommendations}}
+				<div class="card">
+					{{#if this.mal_id}}
+					<a href="/anime/{{this.mal_id}}">
+						{{else}}
+						<a href="/anime/{{this.anime_id}}">
+							{{/if}}
+							{{#if (isHttpUrl this.image_url)}}
+							<img src="{{this.image_url}}" alt="{{this.title}}">
+							{{else}}
+							<div class="card-image-placeholder">
+								<img src="/images/logo.png" alt="Logo">
+							</div>
+							{{/if}}
+							<div class="card-body">
+								<p>{{this.title}}</p>
+							</div>
+						</a>
+				</div>
+				{{/each}}
+			</div>
+			{{else}}
+			<p>No recommended animes available.</p>
 			{{/if}}
 		</section>
 
@@ -139,3 +242,5 @@
 	{{/unless}}
 	{{/if}}
 </div>
+
+<script src="/js/anime_detail.js" defer></script>
