@@ -7,12 +7,10 @@ router.get('/', animeController.list);
 
 router.get('/:id/ratings-json', animeController.getRatingsJson);
 
-// POST route for submitting ratings with username validation
+// POST route for submitting ratings with username validation and stats update
 router.post('/:id/ratings', async function(req, res) {
     try {
         const ratingData = req.body;
-
-        console.log("Received rating data:", ratingData);
 
         // Validate required fields
         if (!ratingData.username || !ratingData.anime_id || !ratingData.score || !ratingData.status || ratingData.num_watched_episodes === undefined) {
@@ -22,30 +20,46 @@ router.post('/:id/ratings', async function(req, res) {
             });
         }
 
-        // Validate that username exists in Spring Boot API (port 8080)
+        // 1. Validate that username exists in Spring Boot API (port 8080)
         try {
             await apiPostgres.get(`/api/profiles/${ratingData.username}`);
             console.log(`Username validated: ${ratingData.username}`);
         } catch (profileError) {
-            console.log(`Username validation failed for: ${ratingData.username}`);
             return res.status(404).json({
                 error: "User not found",
-                message: `The username "${ratingData.username}" does not exist. Please check your username.`
+                message: `The username "${ratingData.username}" does not exist.`
             });
         }
 
-        // Forward the request to MongoDB API (port 3001)
+        // 2. Forward the request to MongoDB API (port 3001)
+        // This returns the pre-calculated new_average_score
+        let mongoResponse;
         try {
-            const response = await apiMongo.post('/api/ratings', ratingData);
-            console.log("Rating created successfully via MongoDB API");
-            return res.status(201).json(response.data);
+            mongoResponse = await apiMongo.post('/api/ratings', ratingData);
+            console.log("Rating created in Mongo. New average received:", mongoResponse.data.new_average_score);
         } catch (mongoError) {
-            console.error("Error creating rating in MongoDB:", mongoError.message);
             return res.status(500).json({
                 error: "Failed to save rating",
                 message: mongoError.response?.data?.message || mongoError.message
             });
         }
+
+        // 3. Send the NEW average score to Postgres (port 8080)
+        try {
+            const calculatedScore = mongoResponse.data.new_average_score;
+
+            await apiPostgres.post('/api/details/update_score', {
+                mal_id: ratingData.anime_id,
+                score: calculatedScore // Forwarding the pre-calculated average from Mongo
+            });
+
+            console.log(`Postgres updated with new average: ${calculatedScore}`);
+        } catch (postgresError) {
+            console.error("Warning: Could not sync average to Postgres:", postgresError.message);
+        }
+
+        // Return the full mongo response to the frontend
+        return res.status(201).json(mongoResponse.data);
 
     } catch (error) {
         console.error("Error in rating creation:", error);
