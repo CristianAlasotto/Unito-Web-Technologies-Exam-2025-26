@@ -1,0 +1,82 @@
+{{#if error}}
+<div class="error-message">{{error}}</div>
+{{/if}}
+
+<div class="staff-detail">
+	<h1>Staff Details</h1>
+
+	{{#if staff}}
+	<article class="staff-detail-card">
+		<div class="staff-header">
+			{{#if (isHttpUrl staff.image_url)}}
+			<img src="{{staff.image_url}}" alt="{{staff.name_display}}">
+			{{else}}
+			<div class="card-image-placeholder">
+				<img src="/images/logo.png" alt="Logo">
+			</div>
+			{{/if}}
+			<div>
+				<h2>{{staff.name_display}}</h2>
+				<p class="staff-alt-name"><strong>Given name:</strong> {{staff.given_name_display}}</p>
+				<p class="staff-alt-name"><strong>Family name:</strong> {{staff.family_name_display}}</p>
+				<div class="staff-meta">
+					<span><strong>Birthday:</strong> {{staff.birthday_display}}</span>
+					<span><strong>Favorites:</strong> {{staff.favorites_display}}</span>
+					<span><strong>Location:</strong> {{staff.relevant_location_display}}</span>
+				</div>
+				{{#if staff.website_url}}
+				<a href="{{staff.website_url}}" target="_blank" rel="noopener" class="staff-website">Website</a>
+				{{/if}}
+			</div>
+		</div>
+
+		<section class="staff-details-grid">
+			{{#each staffInfo}}
+			<div class="detail-item">
+				<strong>{{this.label}}:</strong>
+				{{#if this.isLink}}
+				<a href="{{this.href}}" target="_blank" rel="noopener">{{this.value}}</a>
+				{{else}}
+				<span>{{this.value}}</span>
+				{{/if}}
+			</div>
+			{{/each}}
+		</section>
+
+		<br>
+		<h3 class="recommendationsTitle">Recommended Animes</h3>
+		<section class="recommendations">
+			{{#if anime.hasRelatedAnimes}}
+			<div class="cardsContainer">
+				{{#each anime.recommendations}}
+				<div class="card">
+					{{#if this.mal_id}}
+					<a href="/anime/{{this.mal_id}}">
+						{{else}}
+						<a href="/anime/{{this.anime_id}}">
+							{{/if}}
+							{{#if (isHttpUrl this.image_url)}}
+							<img src="{{this.image_url}}" alt="{{this.title}}">
+							{{else}}
+							<div class="card-image-placeholder">
+								<img src="/images/logo.png" alt="Logo">
+							</div>
+							{{/if}}
+							<div class="card-body">
+								<p>{{this.title}}</p>
+							</div>
+						</a>
+				</div>
+				{{/each}}
+			</div>
+			{{else}}
+			<p>No recommended animes available.</p>
+			{{/if}}
+		</section>
+
+		<a href="/staff" class="btn btn-secondary">← Back to Staff</a>
+	</article>
+	{{else}}
+	<p class="no-data">No staff available at the moment.</p>
+	{{/if}}
+</div>

@@ -1,0 +1,16 @@
+(in postgress database)
+=== characters.csv === character_mal_id,url,name,name_kanji,image,favorites,about 
+=== person_details.csv === person_mal_id,url,website_url,image_url,name,given_name,family_name,birthday,favorites,relevant_location 
+=== person_anime_works.csv === person_mal_id,position,anime_mal_id 
+=== person_voice_works.csv === person_mal_id,role,anime_mal_id,character_mal_id,language 
+=== character_anime_works.csv === anime_mal_id,character_mal_id,character_name,role 
+=== recommendations.csv === mal_id,recommendation_mal_id 
+=== details.csv === mal_id,title,title_japanese,url,image_url,type,status,score,scored_by,start_date,end_date,synopsis,rank,popularity,members,favorites,genres,studios,themes,demographics,source,rating,episodes,season,year,producers,explicit_genres,licensors,streaming
+=== character_nicknames.csv === character_mal_id,nickname 
+=== person_alternate_names.csv === person_mal_id,alt_name 
+=== profiles.csv === username,gender,birthday,location,joined,watching,completed,on_hold,dropped,plan_to_watch 
+
+(in mongo db database)
+=== ratings.csv === username,anime_id,status,score,is_rewatching,num_watched_episodes 
+=== stats.csv ===mal_id,watching,completed,on_hold,dropped,plan_to_watch,total,score_1_votes,score_1_percentage,score_2_votes,score_2_percentage,score_3_votes,score_3_percentage,score_4_votes,score_4_percentage,score_5_votes,score_5_percentage,score_6_votes,score_6_percentage,score_7_votes,score_7_percentage,score_8_votes,score_8_percentage,score_9_votes,score_9_percentage,score_10_votes,score_10_percentage
+=== favs.csv === username,fav_type,id 

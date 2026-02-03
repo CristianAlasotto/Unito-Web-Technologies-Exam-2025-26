@@ -1,0 +1,19 @@
+{{#each items}}
+    <div class="cardsContainer">
+        <div class="card">
+            <a href="/anime/{{this.anime_id}}">
+                {{#if (isHttpUrl this.anime_image)}}
+                    <img src="{{this.anime_image}}" alt="{{this.anime_title}}">
+                {{else}}
+                    <div class="card-image-placeholder">
+                        <img src="/images/logo.png" alt="Logo">
+                    </div>
+                {{/if}}
+                <div class="card-body">
+                    <p>{{#if this.anime_title}}{{this.anime_title}}{{else}}Anime #{{this.anime_id}}{{/if}}</p>
+                    <p style="color: #d50415; font-size: 0.75rem; margin-top: 0.5rem;">⭐ {{this.score}}/10</p>
+                </div>
+            </a>
+        </div>
+    </div>
+{{/each}}

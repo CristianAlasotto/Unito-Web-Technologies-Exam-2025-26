@@ -1,0 +1,127 @@
+package com.example.dataserverspringboot.entities.personanimeworks;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.*;
+import java.io.Serializable;
+import java.util.Objects;
+
+@Schema(description = "Anime staff works entity (Relationship between Person and Anime with Position)")
+@Entity
+@Table(name = "person_anime_works")
+@IdClass(PersonAnimeWorks.PersonAnimeWorksId.class)
+public class PersonAnimeWorks {
+
+    @Schema(description = "Person MyAnimeList ID (Composite Key)", example = "1")
+    @Id
+    @Column(name = "person_mal_id")
+    private Integer personMalId;
+
+    @Schema(description = "Staff Position/Role (Composite Key)", example = "Director")
+    @Id
+    @Column(name = "position")
+    private String position;
+
+    @Schema(description = "Anime MyAnimeList ID (Composite Key)", example = "1")
+    @Id
+    @Column(name = "anime_mal_id")
+    private Integer animeMalId;
+
+    // Constructors
+    public PersonAnimeWorks() {
+    }
+
+    public PersonAnimeWorks(Integer personMalId, String position, Integer animeMalId) {
+        this.personMalId = personMalId;
+        this.position = position;
+        this.animeMalId = animeMalId;
+    }
+
+    // Getters and Setters
+    public Integer getPersonMalId() {
+        return personMalId;
+    }
+
+    public void setPersonMalId(Integer personMalId) {
+        this.personMalId = personMalId;
+    }
+
+    public String getPosition() {
+        return position;
+    }
+
+    public void setPosition(String position) {
+        this.position = position;
+    }
+
+    public Integer getAnimeMalId() {
+        return animeMalId;
+    }
+
+    public void setAnimeMalId(Integer animeMalId) {
+        this.animeMalId = animeMalId;
+    }
+
+    @Override
+    public String toString() {
+        return "PersonAnimeWorks{" +
+                "person_mal_id=" + personMalId +
+                ", position='" + position + '\'' +
+                ", anime_mal_id=" + animeMalId +
+                '}';
+    }
+
+    // Composite Key Class
+    public static class PersonAnimeWorksId implements Serializable {
+        private Integer personMalId;
+        private String position;
+        private Integer animeMalId;
+
+        public PersonAnimeWorksId() {
+        }
+
+        public PersonAnimeWorksId(Integer personMalId, String position, Integer animeMalId) {
+            this.personMalId = personMalId;
+            this.position = position;
+            this.animeMalId = animeMalId;
+        }
+
+        public Integer getPersonMalId() {
+            return personMalId;
+        }
+
+        public void setPersonMalId(Integer personMalId) {
+            this.personMalId = personMalId;
+        }
+
+        public String getPosition() {
+            return position;
+        }
+
+        public void setPosition(String position) {
+            this.position = position;
+        }
+
+        public Integer getAnimeMalId() {
+            return animeMalId;
+        }
+
+        public void setAnimeMalId(Integer animeMalId) {
+            this.animeMalId = animeMalId;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            PersonAnimeWorksId that = (PersonAnimeWorksId) o;
+            return Objects.equals(personMalId, that.personMalId) &&
+                   Objects.equals(position, that.position) &&
+                   Objects.equals(animeMalId, that.animeMalId);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(personMalId, position, animeMalId);
+        }
+    }
+}

@@ -1,0 +1,358 @@
+.staff-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.staff-container h1 {
+  margin-bottom: 2rem;
+  font-size: 2rem;
+}
+
+.staff-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+  padding: 1rem 0;
+  margin-top: 1rem;
+}
+
+.staff-card {
+  background: #2a2a2a;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  overflow: hidden;
+  transition: transform 0.2s;
+  width: 200px;
+  height: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.staff-card a {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  text-decoration: none;
+}
+
+.staff-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.staff-card img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+}
+
+.staff-card-content {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-grow: 1;
+}
+
+.staff-card h3 {
+  font-size: 0.875rem;
+  margin: 0 0 0.5rem 0;
+  color: #fff;
+  line-height: 1.2;
+  min-height: 2.1rem;
+}
+
+.staff-info {
+  font-size: 0.75rem;
+  color: #aaa;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.staff-info span {
+  background-color: #3a3a3a;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.no-data {
+  text-align: center;
+  color: #aaa;
+  padding: 2rem;
+  font-size: 1.1rem;
+}
+
+.error-message {
+  background: #3a1a1a;
+  color: #ff6b6b;
+  padding: 1rem;
+  border-radius: 4px;
+  margin: 1rem 0;
+}
+
+.warning-banner {
+  background: #d50415;
+  color: #000;
+  padding: 1rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+}
+
+/* --- STAFF DETAILS --- */
+.staff-detail {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.staff-detail h1 {
+  margin-bottom: 1.5rem;
+  font-size: 2rem;
+}
+
+.staff-detail-card {
+  background: #1f1f1f;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+}
+
+.staff-header {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.staff-header img {
+  width: 225px;
+  height: 350px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.staff-header > div {
+  flex: 1;
+}
+
+.staff-header h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2rem;
+}
+
+.staff-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.8rem;
+}
+
+.staff-header p {
+  margin: 0.5rem 0;
+  font-size: 1rem;
+  color: #ccc;
+}
+
+.staff-alt-name {
+  color: #cfcfcf;
+}
+
+.staff-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  color: #cfcfcf;
+}
+
+.staff-meta span {
+  background: #2d2d2d;
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.staff-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 2rem;
+  margin: 1.5rem 0 2rem 0;
+}
+
+.detail-item {
+  background: #242424;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  color: #d9d9d9;
+}
+
+.detail-item strong {
+  color: #fff;
+  margin-right: 0.35rem;
+}
+
+.detail-item a {
+  color: #79b8ff;
+  text-decoration: none;
+}
+
+.detail-item a:hover {
+  text-decoration: underline;
+}
+
+.staff-header strong {
+  color: #fff;
+  margin-right: 0.5rem;
+}
+
+.staff-website {
+  display: inline-block;
+  background: #2e51a2;
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border-radius: 4px;
+  text-decoration: none;
+  margin-top: 1rem;
+  transition: background 0.3s;
+}
+
+.staff-website:hover {
+  background: #1e3a7a;
+}
+
+.staff-detail .recommendations .card {
+  background: #2a2a2a;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.8rem 1.5rem;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background 0.3s;
+}
+
+.btn-secondary {
+  background: #4a4a4a;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a5a5a;
+}
+
+@media (max-width: 768px) {
+  .staff-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .staff-header {
+    flex-direction: column;
+  }
+  
+  .staff-header img {
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+  }
+
+  .staff-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* RECCOMENDATIONS */
+.recommendationsTitle {
+  margin-bottom: 1rem;
+}
+
+.recommendations {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: stretch;
+  align-content: flex-start;
+  gap: 1rem;
+}
+
+.recommendations .cardsContainer {
+  display: contents;
+  padding: 0;
+}
+
+.reccomendations .cardsContainer .card {
+  background-color: #2a2a2a;
+}
+
+.anime-detail .recommendations .card,
+.character-detail .recommendations .card,
+.staff-detail .recommendations .card {
+  background: #2a2a2a;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  overflow: hidden;
+  transition: transform 0.2s;
+  width: 160px;
+  height: 260px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.anime-detail .recommendations .card:hover,
+.character-detail .recommendations .card:hover,
+.staff-detail .recommendations .card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.anime-detail .recommendations .card img,
+.character-detail .recommendations .card img,
+.staff-detail .recommendations .card img {
+  display: block;
+  flex: 0 0 75%;
+  height: 75%;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+.anime-detail .recommendations .card a,
+.character-detail .recommendations .card a,
+.staff-detail .recommendations .card a {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.anime-detail .recommendations .card-body,
+.character-detail .recommendations .card-body,
+.staff-detail .recommendations .card-body {
+  flex: 0 0 25%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.5rem;
+}
+
+.anime-detail .recommendations .card-body p,
+.character-detail .recommendations .card-body p,
+.staff-detail .recommendations .card-body p {
+  font-size: 0.75rem;
+  min-height: 1.6rem;
+  color: #fff;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mal-link {
+  background-color: #3a3a3a;
+}
