@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 DATA_EXPRESS_PORT=$1
@@ -18,4 +17,4 @@ fi
 
 # Start server in dev mode
 echo "🌐 Starting MONGO Express server... :$DATA_EXPRESS_PORT"
-PORT=$DATA_EXPRESS_PORT npm start
+DATA_EXPRESS_PORT=$DATA_EXPRESS_PORT npm start
