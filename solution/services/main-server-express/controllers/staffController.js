@@ -26,10 +26,10 @@ const CITIES_OPTIONS = [
 
 const SORT_OPTIONS = [
   { value: '', label: 'Default' },
-  { value: '-favorites', label: 'Più popolari' },
-  { value: 'favorites', label: 'Meno popolari' },
-  { value: 'name', label: 'Nome A-Z' },
-  { value: '-name', label: 'Nome Z-A' }
+  { value: '-favorites', label: 'Most Popular' },
+  { value: 'favorites', label: 'Less Popular' },
+  { value: 'name', label: 'Name A-Z' },
+  { value: '-name', label: 'Name Z-A' }
 ];
 
 const buildFiltersModel = (query) => {

@@ -13,6 +13,26 @@ var profileRouter = require('./routes/profile');
 
 var app = express();
 
+const swaggerJSDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
+
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'API del progetto Anime',
+      version: '1.0.0',
+      description: 'Documentazione delle API del progetto',
+    },
+    servers: [{ url: 'http://localhost:3000' }],
+  },
+
+  apis: ['./routes/*.js'],
+};
+
+const swaggerSpec = swaggerJSDoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 require('dotenv').config();
 const mockDataStatus = process.env.USE_MOCK_DATA === 'true';
 app.MockDataStatus = mockDataStatus;

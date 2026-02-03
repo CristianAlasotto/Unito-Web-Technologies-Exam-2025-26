@@ -7,7 +7,7 @@ const getApiRequestConfig = (type) => {
         path: '/api/details',
         params: {
           fields: 'mal_id,title,title_english,title_japanese,image_url',
-          sort: '-popularity',
+          sort: 'popularity',
         },
       };
     case 'character':
