@@ -91,9 +91,11 @@ exports.fetchRatings = async (params) => {
  * @returns {Promise<Object>} An object containing the new weighted average score of the anime.
  */
 exports.createRating = async (data) => {
-    // Note: This implementation currently only updates stats and does not insert the rating document itself.
-    // If you intended to save the rating, add: await Ratings.create(data);
+
+    await Ratings.create(data);
+
     const avg = await updateStats(data.anime_id, data.status, data.score);
+
     return { new_average_score: avg };
 };
 
