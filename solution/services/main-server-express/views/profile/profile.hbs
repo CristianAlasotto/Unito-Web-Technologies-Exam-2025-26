@@ -1,84 +1,349 @@
 {{#if warning}}
-<div class="warning-banner"
-	style="background: #ff9800; color: #000; padding: 1rem; text-align: center; margin-bottom: 1rem;">
-	⚠️ {{warning}}
-</div>
+    <div class="warning-banner" style="background: #d50415; color: #000; padding: 1rem; text-align: center; margin-bottom: 1rem;">
+        ⚠️ {{warning}}
+    </div>
 {{/if}}
 
 <div class="profile-container">
-	<div class="profile-header">
-		<img src="{{profile.avatar_url}}" alt="{{profile.display_name}}" class="profile-avatar">
-		<div class="profile-info">
-			<h2>{{profile.display_name}}</h2>
-			<p class="username">@{{profile.username}}</p>
-			{{#if profile.email}}
-			<p class="email">📧 {{profile.email}}</p>
-			{{/if}}
-			{{#if profile.joined}}
-			<p class="joined">📅 Iscritto dal: {{profile.joined}}</p>
-			{{/if}}
-		</div>
-		<a href="/" class="btn btn-secondary">Torna alla Home</a>
-	</div>
+    <div class="profile-header">
+        {{#if (isHttpUrl profile.avatar_url)}}
+            <img src="{{profile.avatar_url}}" alt="{{profile.display_name}}" class="profile-avatar">
+        {{else}}
+            <img src="/images/logo.png" alt="Default Avatar" class="profile-avatar">
+        {{/if}}
+        <div class="profile-info">
+            <h2>{{profile.display_name}}</h2>
+            <p class="username">@{{profile.username}}</p>
+            {{#if profile.email}}
+                <p class="email">📧 {{profile.email}}</p>
+            {{/if}}
+            {{#if profile.joined}}
+                <p class="joined">📅 Joined: {{profile.joined}}</p>
+            {{/if}}
+        </div>
+        <a href="/" class="btn btn-secondary">Back to Home</a>
+    </div>
 
-	{{#if profile.bio}}
-	<div class="profile-section profile-bio">
-		<h3>Bio</h3>
-		<p>{{profile.bio}}</p>
-	</div>
-	{{/if}}
+    {{#if profile.bio}}
+        <div class="profile-section profile-bio">
+            <h3>Bio</h3>
+            <p>{{profile.bio}}</p>
+        </div>
+    {{/if}}
 
-	<div class="profile-section profile-stats">
-		<h3>Statistiche Anime</h3>
-		<div class="stats-grid">
-			{{#if profile.watching}}
-			<div class="stat-item">
-				<span class="stat-value">{{profile.watching}}</span>
-				<span class="stat-label">In corso</span>
-			</div>
-			{{/if}}
-			{{#if profile.completed}}
-			<div class="stat-item">
-				<span class="stat-value">{{profile.completed}}</span>
-				<span class="stat-label">Completati</span>
-			</div>
-			{{/if}}
-			{{#if profile.plan_to_watch}}
-			<div class="stat-item">
-				<span class="stat-value">{{profile.plan_to_watch}}</span>
-				<span class="stat-label">Da vedere</span>
-			</div>
-			{{/if}}
-			{{#if profile.on_hold}}
-			<div class="stat-item">
-				<span class="stat-value">{{profile.on_hold}}</span>
-				<span class="stat-label">In pausa</span>
-			</div>
-			{{/if}}
-			{{#if profile.dropped}}
-			<div class="stat-item">
-				<span class="stat-value">{{profile.dropped}}</span>
-				<span class="stat-label">Abbandonati</span>
-			</div>
-			{{/if}}
-		</div>
-	</div>
+    <div class="profile-section profile-stats">
+        <h3>Anime Stats</h3>
+        <div class="stats-grid">
+            {{#if profile.watching}}
+                <div class="stat-item">
+                    <span class="stat-value">{{profile.watching}}</span>
+                    <span class="stat-label">Watching</span>
+                </div>
+            {{/if}}
+            {{#if profile.completed}}
+                <div class="stat-item">
+                    <span class="stat-value">{{profile.completed}}</span>
+                    <span class="stat-label">Completed</span>
+                </div>
+            {{/if}}
+            {{#if profile.plan_to_watch}}
+                <div class="stat-item">
+                    <span class="stat-value">{{profile.plan_to_watch}}</span>
+                    <span class="stat-label">Plan to Watch</span>
+                </div>
+            {{/if}}
+            {{#if profile.on_hold}}
+                <div class="stat-item">
+                    <span class="stat-value">{{profile.on_hold}}</span>
+                    <span class="stat-label">On Hold</span>
+                </div>
+            {{/if}}
+            {{#if profile.dropped}}
+                <div class="stat-item">
+                    <span class="stat-value">{{profile.dropped}}</span>
+                    <span class="stat-label">Dropped</span>
+                </div>
+            {{/if}}
+        </div>
+    </div>
 
-	{{#any profile.birthday profile.location profile.gender}}
-	<div class="profile-section profile-details">
-		<h3>Dettagli</h3>
-		<ul>
-			{{#if profile.birthday}}
-			<li>🎂 Compleanno: {{profile.birthday}}</li>
-			{{/if}}
-			{{#if profile.location}}
-			<li>📍 Luogo: {{profile.location}}</li>
-			{{/if}}
-			{{#if profile.gender}}
-			<li>👤 Genere: {{profile.gender}}</li>
-			{{/if}}
-		</ul>
-	</div>
-	{{/any}}
+    {{#any profile.birthday profile.location profile.gender}}
+        <div class="profile-section profile-details">
+            <h3>Details</h3>
+            <ul>
+                {{#if profile.birthday}}
+                    <li>🎂 Birthday: {{profile.birthday}}</li>
+                {{/if}}
+                {{#if profile.location}}
+                    <li>📍 Location: {{profile.location}}</li>
+                {{/if}}
+                {{#if profile.gender}}
+                    <li>👤 Gender: {{profile.gender}}</li>
+                {{/if}}
+            </ul>
+        </div>
+    {{/any}}
+
+    <hr style="border-color: #333; margin: 2rem 0;">
+
+    {{!-- Anime Favorites Carousel --}}
+    <div class="carousel" id="anime-carousel" data-current-page="{{animeCarousel.currentPage}}" data-page-size="{{animeCarousel.pageSize}}">
+        <div class="carousel_titleContainer">
+            <h3>Favorite Anime</h3>
+        </div>
+        {{#if animeCarousel.hasPrev}}
+            <button class="btn-left" data-prev-page="{{animeCarousel.prevPage}}">
+                ←
+            </button>
+        {{/if}}
+
+        <div class="carousel-container">
+            {{#if favoriteAnimes}}
+                {{> anime_carousel_items items=favoriteAnimes}}
+            {{else}}
+                <p style="color: #888; font-style: italic; padding: 2rem;">No favorite anime yet.</p>
+            {{/if}}
+        </div>
+
+        {{#if animeCarousel.hasNext}}
+            <button class="btn-right" data-next-page="{{animeCarousel.nextPage}}">
+                →
+            </button>
+        {{/if}}
+    </div>
+
+    {{!-- Character Favorites Carousel --}}
+    <div class="carousel" id="character-carousel" data-current-page="{{characterCarousel.currentPage}}" data-page-size="{{characterCarousel.pageSize}}">
+        <div class="carousel_titleContainer">
+            <h3>Favorite Characters</h3>
+        </div>
+        {{#if characterCarousel.hasPrev}}
+            <button class="btn-left" data-prev-page="{{characterCarousel.prevPage}}">
+                ←
+            </button>
+        {{/if}}
+
+        <div class="carousel-container">
+            {{#if favoriteCharacters}}
+                {{> characters_carousel_items items=favoriteCharacters}}
+            {{else}}
+                <p style="color: #888; font-style: italic; padding: 2rem;">No favorite characters yet.</p>
+            {{/if}}
+        </div>
+
+        {{#if characterCarousel.hasNext}}
+            <button class="btn-right" data-next-page="{{characterCarousel.nextPage}}">
+                →
+            </button>
+        {{/if}}
+    </div>
+
+    {{!-- Reviews Section with AJAX Pagination --}}
+    <div class="profile-section">
+        <h3>Your Reviews</h3>
+
+        <div id="ratings-container">
+            {{#if userReviews}}
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; background: #1a1a1a; border-radius: 8px; overflow: hidden; margin-bottom: 2rem;">
+                        <thead>
+                        <tr style="background: #333; color: #fff; text-align: left;">
+                            <th style="padding: 12px 15px;">Anime</th>
+                            <th style="padding: 12px 15px;">Score</th>
+                            <th style="padding: 12px 15px;">Status</th>
+                            <th style="padding: 12px 15px;">Rewatching</th>
+                            <th style="padding: 12px 15px;">Episodes</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {{#each userReviews}}
+                            <tr style="border-bottom: 1px solid #2d2d2d; color: #ccc;">
+                                <td style="padding: 12px 15px;">
+                                    <a href="/anime/{{this.anime_id}}" style="color: #fff; text-decoration: none; font-weight: bold;">
+                                        {{#if this.anime_title}}{{this.anime_title}}{{else}}Anime #{{this.anime_id}}{{/if}}
+                                    </a>
+                                </td>
+                                <td style="padding: 12px 15px;"><span style="color: #d50415; font-weight: bold;">⭐ {{this.score}}</span></td>
+                                <td style="padding: 12px 15px; text-transform: capitalize;">{{this.status}}</td>
+                                <td style="padding: 12px 15px;">
+                                    {{#if this.is_rewatching}}
+                                        <span style="color: #4caf50; font-weight: bold;">Yes</span>
+                                    {{else}}
+                                        <span style="color: #888;">No</span>
+                                    {{/if}}
+                                </td>
+                                <td style="padding: 12px 15px;">{{this.num_watched_episodes}}</td>
+                            </tr>
+                        {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            {{else}}
+                <p style="color: #888; font-style: italic;">No reviews yet.</p>
+            {{/if}}
+        </div>
+
+        <script>
+            (function() {
+                const username = '{{profile.username}}';
+                let currentPage = {{pagination.page}};
+
+                window.loadRatings = async function(page = 1) {
+                    try {
+                        document.getElementById('ratings-container').innerHTML = '<div style="text-align: center; padding: 2rem; color: #aaa;">Loading...</div>';
+
+                        const response = await fetch(`/profile/${username}/ratings-json?page=${page}`);
+                        const data = await response.json();
+
+                        renderRatings(data.ratings, data.pagination);
+                        currentPage = data.pagination.currentPage;
+                    } catch (error) {
+                        console.error('Error loading ratings:', error);
+                        document.getElementById('ratings-container').innerHTML = '<p style="color: #f44;">Error loading ratings</p>';
+                    }
+                }
+
+                function renderRatings(ratings, pagination) {
+                    const container = document.getElementById('ratings-container');
+
+                    if (!ratings || ratings.length === 0) {
+                        container.innerHTML = '<p style="color: #888; font-style: italic;">No reviews yet.</p>';
+                        return;
+                    }
+
+                    let html = '<div style="overflow-x: auto;">';
+                    html += '<table style="width: 100%; border-collapse: collapse; background: #1a1a1a; border-radius: 8px; overflow: hidden; margin-bottom: 2rem;">';
+                    html += '<thead><tr style="background: #333; color: #fff; text-align: left;">';
+                    html += '<th style="padding: 12px 15px;">Anime</th>';
+                    html += '<th style="padding: 12px 15px;">Score</th>';
+                    html += '<th style="padding: 12px 15px;">Status</th>';
+                    html += '<th style="padding: 12px 15px;">Rewatching</th>';
+                    html += '<th style="padding: 12px 15px;">Episodes</th>';
+                    html += '</tr></thead><tbody>';
+
+                    ratings.forEach(rating => {
+                        html += '<tr style="border-bottom: 1px solid #2d2d2d; color: #ccc;">';
+                        html += `<td style="padding: 12px 15px;"><a href="/anime/${rating.anime_id}" style="color: #fff; text-decoration: none; font-weight: bold;">${rating.anime_title || 'Anime #' + rating.anime_id}</a></td>`;
+                        html += `<td style="padding: 12px 15px;"><span style="color: #ffffff; font-weight: bold;">⭐ ${rating.score}</span></td>`;
+                        html += `<td style="padding: 12px 15px; text-transform: capitalize;">${rating.status}</td>`;
+                        html += `<td style="padding: 12px 15px;">${rating.is_rewatching ? '<span style="color: #4caf50; font-weight: bold;">Yes</span>' : '<span style="color: #888;">No</span>'}</td>`;
+                        html += `<td style="padding: 12px 15px;">${rating.num_watched_episodes}</td>`;
+                        html += '</tr>';
+                    });
+
+                    html += '</tbody></table></div>';
+
+                    // Add pagination
+                    if (pagination.totalPages > 1) {
+                        html += '<div class="pagination" style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1rem;">';
+
+                        if (pagination.currentPage > 1) {
+                            html += `<button class="pagination-btn" data-page="${pagination.currentPage - 1}" style="padding: 0.5rem 1rem; background: #333; color: #fff; border: none; border-radius: 4px; cursor: pointer;">← Previous</button>`;
+                        }
+
+                        html += `<span class="page-info" style="color: #ccc;">Page ${pagination.currentPage} of ${pagination.totalPages}</span>`;
+
+                        if (pagination.currentPage < pagination.totalPages) {
+                            html += `<button class="pagination-btn" data-page="${pagination.currentPage + 1}" style="padding: 0.5rem 1rem; background: #333; color: #fff; border: none; border-radius: 4px; cursor: pointer;">Next →</button>`;
+                        }
+
+                        html += '</div>';
+                    }
+
+                    container.innerHTML = html;
+
+                    // Add click handlers for pagination
+                    document.querySelectorAll('.pagination-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const page = parseInt(this.dataset.page);
+                            loadRatings(page);
+                        });
+                    });
+                }
+
+                // Load initial ratings
+                loadRatings(currentPage);
+            })();
+        </script>
+    </div>
 
 </div>
+
+{{!-- Carousel Navigation Script --}}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const carousels = document.querySelectorAll('#anime-carousel, #character-carousel');
+        const username = '{{profile.username}}';
+
+        carousels.forEach(carousel => {
+            const carouselId = carousel.id;
+
+            carousel.addEventListener('click', (event) => {
+                const button = event.target.closest('.btn-left, .btn-right');
+                if (!button || !carousel.contains(button)) {
+                    return;
+                }
+
+                const page = button.classList.contains('btn-left')
+                        ? button.dataset.prevPage
+                        : button.dataset.nextPage;
+
+                if (page) {
+                    fetchCarouselData(carouselId, page);
+                }
+            });
+
+            async function fetchCarouselData(carouselId, page) {
+                const carousel = document.getElementById(carouselId);
+                const pageSize = carousel.dataset.pageSize;
+                const type = carouselId.split('-')[0];
+
+                try {
+                    const response = await fetch(`/profile/${username}?carouselType=${type}&page=${page}&pageSize=${pageSize}`);
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    const data = await response.json();
+
+                    const carouselContainer = carousel.querySelector('.carousel-container');
+                    carouselContainer.innerHTML = data.html;
+
+                    carousel.dataset.currentPage = data.currentPage;
+
+                    let prevButton = carousel.querySelector('.btn-left');
+                    if (data.hasPrev) {
+                        if (!prevButton) {
+                            prevButton = document.createElement('button');
+                            prevButton.className = 'btn-left';
+                            carousel.insertBefore(prevButton, carouselContainer);
+                        }
+                        prevButton.innerHTML = '←';
+                        prevButton.dataset.prevPage = data.prevPage;
+                        prevButton.style.display = 'block';
+                    } else if (prevButton) {
+                        prevButton.style.display = 'none';
+                    }
+
+                    let nextButton = carousel.querySelector('.btn-right');
+                    if (data.hasNext) {
+                        if (!nextButton) {
+                            nextButton = document.createElement('button');
+                            nextButton.className = 'btn-right';
+                            carousel.appendChild(nextButton);
+                        }
+                        nextButton.innerHTML = '→';
+                        nextButton.dataset.nextPage = data.nextPage;
+                        nextButton.style.display = 'block';
+                    } else if (nextButton) {
+                        nextButton.style.display = 'none';
+                    }
+
+                } catch (error) {
+                    console.error('Failed to fetch carousel data:', error);
+                    const carouselContainer = carousel.querySelector('.carousel-container');
+                    carouselContainer.innerHTML = '<p class="error-message">Error loading items.</p>';
+                }
+            }
+        });
+    });
+</script>
