@@ -1,11 +1,11 @@
 const { apiMongo, apiPostgres } = require('./apiClients.js');
 
 const SORT_OPTIONS = [
-	{ value: '', label: 'Default' },
-	{ value: '-popularity', label: 'Più popolari' },
-	{ value: 'popularity', label: 'Meno popolari' },
-	{ value: 'title', label: 'Nome A-Z' },
-	{ value: '-title', label: 'Nome Z-A' }
+  { value: '', label: 'Default' },
+  { value: '-popularity', label: 'Più popolari' },
+  { value: 'popularity', label: 'Meno popolari' },
+  { value: 'title', label: 'Nome A-Z' },
+  { value: '-title', label: 'Nome Z-A' }
 ];
 
 const TYPE_OPTIONS = [
@@ -211,35 +211,88 @@ exports.list = async (req, res, next) => {
 exports.detail = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 20;
+
+    const filters = {
+      minScore: req.query.minScore ? parseInt(req.query.minScore) : null,
+      maxScore: req.query.maxScore ? parseInt(req.query.maxScore) : null,
+      status: req.query.status || null,
+      rewatching: req.query.rewatching || null,
+      sortBy: req.query.sortBy || 'score',
+      sortOrder: req.query.sortOrder || 'desc'
+    };
+
     const response = await apiPostgres.get(`/api/details/${id}`);
-    const raw = response.data || {};
-    let relatedCharacters = [];
-    let recommendations = [];
-
-    try {
-      const charactersResponse = await apiPostgres.get(`/api/details/${id}/characters`);
-      const charactersData = charactersResponse?.data;
-      relatedCharacters = Array.isArray(charactersData)
-        ? charactersData
-        : charactersData?.characters ||
-            charactersData?.items ||
-            charactersData?.related_characters ||
-            [];
-    } catch (err) {
-      console.warn('Unable to load related characters:', err.message);
-    }
-
-    try {
-      const recommendationsResponse = await apiPostgres.get(
+    const charactersResponse = await apiPostgres.get('/api/characters?page=1&pageSize=12');
+    const recommendationsResponse = await apiPostgres.get(
         `/api/details/${id}/recommendations`
-      );
-      const recommendationsData = recommendationsResponse?.data;
-      recommendations = Array.isArray(recommendationsData)
+    );
+    const raw = response.data || {};
+    const charactersData = charactersResponse?.data;
+    const relatedCharacters = Array.isArray(charactersData)
+        ? charactersData
+        : charactersData?.items || charactersData?.related_characters || [];
+    const recommendationsData = recommendationsResponse?.data;
+    const recommendations = Array.isArray(recommendationsData)
         ? recommendationsData
         : recommendationsData?.recommendations || [];
-    } catch (err) {
-      console.warn('Unable to load recommendations:', err.message);
+
+    // Fetch ratings
+    let ratings = [];
+    let totalPages = 1;
+
+    try {
+      const params = new URLSearchParams({
+        anime_id: id,
+        page: page,
+        limit: limit
+      });
+
+      if (filters.status) {
+        params.append('status', filters.status);
+      }
+
+      if (filters.rewatching) {
+        params.append('is_rewatching', filters.rewatching === 'true' ? 1 : 0);
+      }
+
+      // Add score range filters directly to params
+      if (filters.minScore !== null) {
+        params.append('minScore', filters.minScore);
+      }
+      if (filters.maxScore !== null) {
+        params.append('maxScore', filters.maxScore);
+      }
+
+      if (filters.sortBy) {
+        const sortPrefix = filters.sortOrder === 'desc' ? '-' : '';
+        params.append('sort', sortPrefix + filters.sortBy);
+      }
+
+      const ratingsResponse = await apiMongo.get(`/api/ratings?${params.toString()}`);
+
+      if (ratingsResponse.data.items) {
+        ratings = ratingsResponse.data.items;
+        totalPages = ratingsResponse.data.totalPages || 1;
+      } else if (Array.isArray(ratingsResponse.data)) {
+        ratings = ratingsResponse.data;
+      }
+
+    } catch (error) {
+      console.warn(`Ratings fetch failed for anime ${id}:`, error.message);
     }
+
+    const buildQueryString = (pageNum) => {
+      const params = new URLSearchParams({ page: pageNum });
+      if (filters.minScore !== null) params.append('minScore', filters.minScore);
+      if (filters.maxScore !== null) params.append('maxScore', filters.maxScore);
+      if (filters.status) params.append('status', filters.status);
+      if (filters.rewatching) params.append('rewatching', filters.rewatching);
+      if (filters.sortBy) params.append('sortBy', filters.sortBy);
+      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+      return '?' + params.toString();
+    };
 
     const normalizeList = (value) => {
       if (Array.isArray(value)) {
@@ -264,10 +317,10 @@ exports.detail = async (req, res, next) => {
             // Fallback to splitting below.
           }
           const items = trimmed
-            .slice(1, -1)
-            .split(',')
-            .map((item) => item.trim().replace(/^["']|["']$/g, ''))
-            .filter((item) => item !== '');
+              .slice(1, -1)
+              .split(',')
+              .map((item) => item.trim().replace(/^["']|["']$/g, ''))
+              .filter((item) => item !== '');
           return items;
         }
         return [trimmed];
@@ -276,7 +329,7 @@ exports.detail = async (req, res, next) => {
     };
 
     const formatValue = (value) =>
-      value === null || value === undefined || value === '' ? 'N/A' : value;
+        value === null || value === undefined || value === '' ? 'N/A' : value;
 
     const genres = normalizeList(raw.genres);
     const themes = normalizeList(raw.themes);
@@ -303,9 +356,9 @@ exports.detail = async (req, res, next) => {
       status_display: formatValue(raw.status),
       episodes_display: formatValue(raw.episodes),
       episodes_text:
-        raw.episodes === null || raw.episodes === undefined || raw.episodes === ''
-          ? 'N/A'
-          : `${raw.episodes} episodes`,
+          raw.episodes === null || raw.episodes === undefined || raw.episodes === ''
+              ? 'N/A'
+              : `${raw.episodes} episodes`,
       season_display: formatValue(raw.season),
       year_display: formatValue(raw.year),
       rating_display: formatValue(raw.rating),
@@ -334,9 +387,22 @@ exports.detail = async (req, res, next) => {
     res.render('anime/anime_detail', {
       title: raw.title,
       anime,
+      ratings: ratings,
+      filters: filters,
+      ratingsPagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        hasPrev: page > 1,
+        prevPage: page - 1,
+        hasNext: page < totalPages,
+        nextPage: page + 1,
+        prevUrl: buildQueryString(page - 1),
+        nextUrl: buildQueryString(page + 1)
+      },
       currentPage: 'anime'
     });
   } catch (err) {
+    console.error('Error in detail controller:', err);
     res.render('anime/anime_detail', {
       title: 'Anime Detail',
       anime: null,
@@ -385,29 +451,60 @@ exports.getRatingsJson = async (req, res) => {
   try {
     const { id } = req.params;
     const page = parseInt(req.query.page || '1', 10);
-    const pageSize = parseInt(req.query.pageSize || '10', 10);
-    
+    const pageSize = parseInt(req.query.pageSize || '20', 10);
+
+    // Get filter parameters
+    const filters = {
+      minScore: req.query.minScore ? parseInt(req.query.minScore) : null,
+      maxScore: req.query.maxScore ? parseInt(req.query.maxScore) : null,
+      status: req.query.status || null,
+      rewatching: req.query.rewatching || null,
+      sortBy: req.query.sortBy || 'score',
+      sortOrder: req.query.sortOrder || 'desc'
+    };
+
     const params = new URLSearchParams();
     params.set('anime_id', id);
+
+    // Add filters to query params
+    if (filters.status) {
+      params.set('status', filters.status);
+    }
+
+    if (filters.rewatching) {
+      params.set('is_rewatching', filters.rewatching === 'true' ? '1' : '0');
+    }
+
+    if (filters.minScore !== null) {
+      params.set('minScore', String(filters.minScore));
+    }
+
+    if (filters.maxScore !== null) {
+      params.set('maxScore', String(filters.maxScore));
+    }
+
+    // Build sort string for MongoDB
+    if (filters.sortBy) {
+      const sortPrefix = filters.sortOrder === 'desc' ? '-' : '';
+      params.set('sort', sortPrefix + filters.sortBy);
+    }
+
+    // Use standard pagination via MongoDB
     params.set('page', String(page));
     params.set('pageSize', String(pageSize));
-    
-    if (req.query.minScore) params.set('minScore', req.query.minScore);
-    if (req.query.maxScore) params.set('maxScore', req.query.maxScore);
-    if (req.query.status) params.set('status', req.query.status);
-    if (req.query.rewatching) params.set('is_rewatching', req.query.rewatching);
-    if (req.query.sortBy) params.set('sortBy', req.query.sortBy);
-    if (req.query.sortOrder) params.set('sortOrder', req.query.sortOrder);
 
     const response = await apiMongo.get(`/api/ratings?${params.toString()}`);
     const data = response.data || {};
-    
+    const ratings = data.items || [];
+    const totalPages = data.totalPages || 1;
+    const total = data.total || 0;
+
     res.json({
-      ratings: data.items || [],
+      ratings: ratings,
       pagination: {
         currentPage: page,
-        totalPages: data.totalPages || 1,
-        total: data.total || 0
+        totalPages: totalPages,
+        total: total
       }
     });
   } catch (err) {

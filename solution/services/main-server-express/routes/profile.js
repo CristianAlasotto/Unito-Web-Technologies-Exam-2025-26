@@ -2,6 +2,8 @@ var express = require('express');
 var router = express.Router();
 const profileController = require('../controllers/profileController');
 
+router.get('/:username/ratings-json', profileController.getRatingsJson);
+
 router.get('/:username', profileController.showProfile);
 
 router.get('/', function(req, res) {
