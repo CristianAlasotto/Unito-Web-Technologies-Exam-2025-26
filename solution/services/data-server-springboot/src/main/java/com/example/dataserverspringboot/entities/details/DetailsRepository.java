@@ -44,12 +44,40 @@ public interface DetailsRepository extends JpaRepository<Details, Integer> {
     Page<Details> findBySource(String source, Pageable pageable);
 
     /**
+     * Find by episodes (exact match)
+     */
+    Page<Details> findByEpisodes(Integer episodes, Pageable pageable);
+
+    /**
+     * Find by genres (case-insensitive, partial match for genre names)
+     */
+    @Query("SELECT e FROM Details e WHERE LOWER(CAST(e.genres AS string)) LIKE LOWER(CONCAT('%', :genre, '%'))")
+    Page<Details> findByGenresContaining(@Param("genre") String genre, Pageable pageable);
+
+    /**
      * Find recommendations for a specific anime using subquery
      */
     @Query("SELECT d FROM Details d WHERE d.malId IN " +
            "(SELECT r.recommendationMalId FROM com.example.dataserverspringboot.entities.recommendations.Recommendations r WHERE r.malId = :malId) " +
            "ORDER BY d.score DESC")
     Page<Details> findRecommendationsForAnime(@Param("malId") Integer malId, Pageable pageable);
+
+    /**
+     * JOIN: Find all characters that appear in this anime
+     * details → character_anime_works → characters
+     */
+    @Query("SELECT c FROM com.example.dataserverspringboot.entities.characters.Characters c WHERE c.characterMalId IN " +
+            "(SELECT caw.characterMalId FROM com.example.dataserverspringboot.entities.characteranimeworks.CharacterAnimeWorks caw " +
+            "WHERE caw.animeMalId = :malId) " +
+            "ORDER BY c.favorites DESC NULLS LAST")
+    Page<com.example.dataserverspringboot.entities.characters.Characters> findCharactersInAnime(@Param("malId") Integer malId, Pageable pageable);
+
+    /**
+     * COUNT: Total characters in this anime
+     */
+    @Query("SELECT COUNT(DISTINCT caw.characterMalId) FROM com.example.dataserverspringboot.entities.characteranimeworks.CharacterAnimeWorks caw " +
+            "WHERE caw.animeMalId = :malId")
+    long countCharactersInAnime(@Param("malId") Integer malId);
 
     /**
      * Count recommendations for a specific anime

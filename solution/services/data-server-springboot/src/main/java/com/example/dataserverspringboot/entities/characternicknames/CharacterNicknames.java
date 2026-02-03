@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Objects;
 
-@Schema(description = "Anime character nicknames entity")  // For entity
+@Schema(description = "Anime character nicknames entity")
 @Entity
 @Table(name = "character_nicknames")
 @IdClass(CharacterNicknames.CharacterNicknamesId.class)
