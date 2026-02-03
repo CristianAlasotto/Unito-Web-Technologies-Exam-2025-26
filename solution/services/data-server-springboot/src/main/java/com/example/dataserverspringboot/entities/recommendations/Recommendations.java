@@ -5,16 +5,18 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Objects;
 
-@Schema(description = "Animes recommended for each one entity")
+@Schema(description = "Anime recommendations junction entity (Relationship between two Anime)")
 @Entity
 @Table(name = "recommendations")
 @IdClass(Recommendations.RecommendationsId.class)
 public class Recommendations {
-    
+
+    @Schema(description = "Source Anime MyAnimeList ID (Composite Key)", example = "1")
     @Id
     @Column(name = "mal_id")
     private Integer malId;
-    
+
+    @Schema(description = "Recommended Anime MyAnimeList ID (Composite Key)", example = "5")
     @Id
     @Column(name = "recommendation_mal_id")
     private Integer recommendationMalId;
@@ -87,7 +89,7 @@ public class Recommendations {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             RecommendationsId that = (RecommendationsId) o;
-            return Objects.equals(malId, that.malId) && 
+            return Objects.equals(malId, that.malId) &&
                    Objects.equals(recommendationMalId, that.recommendationMalId);
         }
 

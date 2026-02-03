@@ -5,20 +5,23 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Objects;
 
-@Schema(description = "Anime staff works entity")
+@Schema(description = "Anime staff works entity (Relationship between Person and Anime with Position)")
 @Entity
 @Table(name = "person_anime_works")
 @IdClass(PersonAnimeWorks.PersonAnimeWorksId.class)
 public class PersonAnimeWorks {
-    
+
+    @Schema(description = "Person MyAnimeList ID (Composite Key)", example = "1")
     @Id
     @Column(name = "person_mal_id")
     private Integer personMalId;
-    
+
+    @Schema(description = "Staff Position/Role (Composite Key)", example = "Director")
     @Id
     @Column(name = "position")
     private String position;
-    
+
+    @Schema(description = "Anime MyAnimeList ID (Composite Key)", example = "1")
     @Id
     @Column(name = "anime_mal_id")
     private Integer animeMalId;
@@ -111,8 +114,8 @@ public class PersonAnimeWorks {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             PersonAnimeWorksId that = (PersonAnimeWorksId) o;
-            return Objects.equals(personMalId, that.personMalId) && 
-                   Objects.equals(position, that.position) && 
+            return Objects.equals(personMalId, that.personMalId) &&
+                   Objects.equals(position, that.position) &&
                    Objects.equals(animeMalId, that.animeMalId);
         }
 

@@ -5,96 +5,124 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "Anime entity")
+@Schema(description = "Anime MyAnimeList ID (primary key)", example = "1")
 @Entity
 @Table(name = "details")
 public class Details {
-    
+
     @Id
     @Column(name = "mal_id")
     private Integer malId;
-    
+
+    @Schema(description = "Anime title", example = "Cowboy Bebop")
     @Column(name = "title")
     private String title;
-    
+
+    @Schema(description = "Japanese title", example = "カウボーイビバップ")
     @Column(name = "title_japanese")
     private String titleJapanese;
-    
+
+    @Schema(description = "MyAnimeList URL", example = "https://myanimelist.net/anime/1")
     @Column(name = "url")
     private String url;
-    
+
+    @Schema(description = "Cover image URL")
     @Column(name = "image_url")
     private String imageUrl;
-    
+
+    @Schema(description = "Anime type", example = "TV")
     @Column(name = "type")
     private String type;
-    
+
+    @Schema(description = "Airing status", example = "Finished Airing")
     @Column(name = "status")
     private String status;
-    
+
+    @Schema(description = "User rating score (0.00-10.00)", example = "8.78")
     @Column(name = "score")
     private BigDecimal score;
-    
+
+    @Schema(description = "Number of users who scored this anime", example = "500000")
     @Column(name = "scored_by")
     private Integer scoredBy;
-    
+
+    @Schema(description = "Airing start date", example = "1998-04-03")
     @Column(name = "start_date")
     private LocalDate startDate;
-    
+
+    @Schema(description = "Airing end date", example = "1999-04-24")
     @Column(name = "end_date")
     private LocalDate endDate;
-    
+
+    @Schema(description = "Plot synopsis")
     @Column(name = "synopsis")
     private String synopsis;
-    
+
+    @Schema(description = "Ranking position", example = "28")
     @Column(name = "rank")
     private Integer rank;
-    
+
+    @Schema(description = "Popularity ranking", example = "43")
     @Column(name = "popularity")
     private Integer popularity;
-    
+
+    @Schema(description = "Number of members", example = "1800000")
     @Column(name = "members")
     private Integer members;
-    
+
+    @Schema(description = "Number of users who favorited", example = "75000")
     @Column(name = "favorites")
     private Integer favorites;
-    
+
+    @Schema(description = "Comma-separated genres", example = "Action, Adventure, Sci-Fi")
     @Column(name = "genres")
     private String genres;
-    
+
+    @Schema(description = "Comma-separated studios", example = "Sunrise")
     @Column(name = "studios")
     private String studios;
-    
+
+    @Schema(description = "Comma-separated themes", example = "Adult Cast, Space")
     @Column(name = "themes")
     private String themes;
-    
+
+    @Schema(description = "Target demographic", example = "Shounen")
     @Column(name = "demographics")
     private String demographics;
-    
+
+    @Schema(description = "Source material", example = "Original")
     @Column(name = "source")
     private String source;
-    
+
+    @Schema(description = "Age rating", example = "PG-13")
     @Column(name = "rating")
     private String rating;
-    
+
+    @Schema(description = "Number of episodes", example = "26")
     @Column(name = "episodes")
     private Integer episodes;
-    
+
+    @Schema(description = "Broadcast season", example = "Spring")
     @Column(name = "season")
     private String season;
-    
+
+    @Schema(description = "Broadcast year", example = "1998")
     @Column(name = "year")
     private Integer year;
-    
+
+    @Schema(description = "Producers names", example = "Agent 21")
     @Column(name = "producers")
     private String producers;
-    
+
+    @Schema(description = "Explicit genres")
     @Column(name = "explicit_genres")
     private String explicitGenres;
-    
+
+    @Schema(description = "Licensors names", example = "Funimation")
     @Column(name = "licensors")
     private String licensors;
-    
+
+    @Schema(description = "Streaming platform names", example = "Crunchyroll")
     @Column(name = "streaming")
     private String streaming;
 

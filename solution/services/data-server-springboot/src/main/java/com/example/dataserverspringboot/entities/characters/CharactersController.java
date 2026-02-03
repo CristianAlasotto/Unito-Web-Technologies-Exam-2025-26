@@ -12,6 +12,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 /**
  * REST API Controller for Characters
@@ -29,9 +35,28 @@ public class CharactersController {
     @Autowired
     private CharactersRepository charactersRepository;
 
+    @Operation(
+            summary = "Get character by ID",
+            description = "Retrieve a single anime character by their MyAnimeList character ID"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Character found successfully",
+                    content = @Content(schema = @Schema(implementation = Characters.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Character not found",
+                    content = @Content
+            )
+    })
     @GetMapping("/{character_mal_id}")
     public ResponseEntity<?> getById(
+            @Parameter(description = "Character MAL ID", example = "1", required = true)
             @PathVariable("character_mal_id") Integer characterMalId,
+
+            @Parameter(description = "Comma-separated list of fields to return", example = "name,favorites")
             @RequestParam(required = false) String fields) {
         
         Optional<Characters> entity = service.getById(characterMalId);
@@ -54,8 +79,25 @@ public class CharactersController {
         return ResponseEntity.ok(toSnakeCaseMap(data));
     }
 
+    @Operation(
+            summary = "Get character summary",
+            description = "Retrieve a brief summary of character information"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Summary retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Character not found",
+                    content = @Content
+            )
+    })
     @GetMapping("/{character_mal_id}/summary")
-    public ResponseEntity<?> getSummary(@PathVariable("character_mal_id") Integer characterMalId) {
+    public ResponseEntity<?> getSummary(
+            @Parameter(description = "Character MAL ID", example = "1", required = true)
+            @PathVariable("character_mal_id") Integer characterMalId) {
         Optional<Characters> entity = service.getById(characterMalId);
         
         if (entity.isEmpty()) {
@@ -76,12 +118,32 @@ public class CharactersController {
      * JOIN 3: Get all anime where this character appears
      * GET /api/characters/{character_mal_id}/anime
      */
-    @GetMapping("/{character_mal_id}/anime")
+    @Operation(
+            summary = "Get anime appearances",
+            description = "Retrieve all anime where this character appears, sorted by score (highest first)"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Anime list retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Character not found",
+                    content = @Content
+            )
+    })
+    @GetMapping("/{character_mal_id}/details")
     public ResponseEntity<?> getAnimeAppearances(
+            @Parameter(description = "Character MAL ID", example = "1", required = true)
             @PathVariable("character_mal_id") Integer characterMalId,
+            @Parameter(description = "Number of returned records", example = "10")
             @RequestParam(required = false) Integer limit,
+            @Parameter(description = "Number of deviation from the first record", example = "10")
             @RequestParam(required = false) Integer offset,
+            @Parameter(description = "Page number (1-indexed)", example = "1")
             @RequestParam(required = false) Integer page,
+            @Parameter(description = "Number of results per page", example = "10")
             @RequestParam(required = false) Integer pageSize) {
         
         // Check if character exists
@@ -212,17 +274,40 @@ public class CharactersController {
         }
     }
 
+    @Operation(
+            summary = "Get all characters",
+            description = "Retrieve paginated list of characters with optional filters, sorting, and field selection. NULL values are always sorted last."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Characters retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid parameters",
+                    content = @Content
+            )
+    })
     @GetMapping
     public ResponseEntity<?> getAll(
+            @Parameter(description = "Comma-separated fields to return", example = "name,favorites")
             @RequestParam(required = false) String fields,
+            @Parameter(description = "Search character name (case-insensitive)", example = "Spike")
             @RequestParam(required = false) String search,
+            @Parameter(description = "Sort field (prefix with - for descending)", example = "-favorites")
             @RequestParam(required = false) String sort,
-            @RequestParam(required = false) String nullFilter,      // NEW
-            @RequestParam(required = false) String notNullFilter,   // NEW
-            
+            @Parameter(description = "Filter records where field IS NULL", example = "about")
+            @RequestParam(required = false) String nullFilter,
+            @Parameter(description = "Filter records where field IS NOT NULL", example = "favorites")
+            @RequestParam(required = false) String notNullFilter,
+            @Parameter(description = "Maximum number of results", example = "10")
             @RequestParam(required = false) Integer limit,
+            @Parameter(description = "Offset for pagination", example = "0")
             @RequestParam(required = false) Integer offset,
+            @Parameter(description = "Page number (1-indexed)", example = "1")
             @RequestParam(required = false) Integer page,
+            @Parameter(description = "Number of results per page", example = "10")
             @RequestParam(required = false) Integer pageSize) {
         
         boolean usePageBased = (page != null || pageSize != null);
@@ -330,6 +415,16 @@ public class CharactersController {
      * Get statistics on NULL values for various fields
      * GET /api/characters/stats/null_counts
      */
+    @Operation(
+            summary = "Get NULL value statistics",
+            description = "Get count of NULL values for each nullable field (name_kanji, image, about, favorites)"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "NULL statistics retrieved successfully"
+            )
+    })
     @GetMapping("/stats/null_counts")
     public ResponseEntity<Map<String, Object>> getNullCounts() {
         Map<String, Long> nullCounts = service.getNullCounts();
