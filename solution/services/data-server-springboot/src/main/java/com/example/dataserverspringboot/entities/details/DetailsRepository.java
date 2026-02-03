@@ -44,6 +44,17 @@ public interface DetailsRepository extends JpaRepository<Details, Integer> {
     Page<Details> findBySource(String source, Pageable pageable);
 
     /**
+     * Find by episodes (exact match)
+     */
+    Page<Details> findByEpisodes(Integer episodes, Pageable pageable);
+
+    /**
+     * Find by genres (case-insensitive, partial match for genre names)
+     */
+    @Query("SELECT e FROM Details e WHERE LOWER(CAST(e.genres AS string)) LIKE LOWER(CONCAT('%', :genre, '%'))")
+    Page<Details> findByGenresContaining(@Param("genre") String genre, Pageable pageable);
+
+    /**
      * Find recommendations for a specific anime using subquery
      */
     @Query("SELECT d FROM Details d WHERE d.malId IN " +

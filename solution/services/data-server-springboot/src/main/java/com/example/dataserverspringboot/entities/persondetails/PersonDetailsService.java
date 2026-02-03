@@ -24,9 +24,13 @@ public class PersonDetailsService {
         return repository.count();
     }
 
-    public Page<PersonDetails> findWithFilters(String search, Pageable pageable) {
+    public Page<PersonDetails> findWithFilters(String search, String city, Pageable pageable) {
         if (search != null && !search.isEmpty()) {
             return repository.searchByName(search, pageable);
+        }
+
+        if (city != null && !city.isEmpty()) {
+            return repository.findByCityContaining(city, pageable);
         }
 
         return repository.findAll(pageable);
@@ -35,7 +39,7 @@ public class PersonDetailsService {
     /**
      * Find records with filters including NULL/NOT NULL filters
      */
-    public Page<PersonDetails> findWithFilters(String search,
+    public Page<PersonDetails> findWithFilters(String search, String city,
                                                String nullFilter, String notNullFilter,
                                                Pageable pageable) {
         
@@ -50,7 +54,7 @@ public class PersonDetailsService {
         }
         
         // Fall back to regular filters
-        return findWithFilters(search, pageable);
+        return findWithFilters(search, city, pageable);
     }
 
     /**

@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
 import java.util.stream.Collectors;
-import com.example.dataserverspringboot.entities.details.Details;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -146,9 +145,9 @@ public class PersonDetailsController {
             @RequestParam(required = false) String fields,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String city,
             @RequestParam(required = false) String nullFilter,
             @RequestParam(required = false) String notNullFilter,
-            
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -166,6 +165,7 @@ public class PersonDetailsController {
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
             Page<PersonDetails> pageResult = service.findWithFilters(
                 search,
+                city,
                 nullFilter,
                 notNullFilter,
                 pageable);
@@ -205,6 +205,7 @@ public class PersonDetailsController {
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<PersonDetails> pageResult = service.findWithFilters(
                 search,
+                city,
                 nullFilter,
                 notNullFilter,
                 pageable);
@@ -241,6 +242,7 @@ public class PersonDetailsController {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
             Page<PersonDetails> pageResult = service.findWithFilters(
                 search,
+                city,
                 nullFilter,
                 notNullFilter,
                 pageable);

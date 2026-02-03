@@ -183,8 +183,10 @@ public class DetailsController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String rating,
             @RequestParam(required = false) String source,
-            @RequestParam(required = false) String nullFilter,      // NEW: Filter for NULL values
-            @RequestParam(required = false) String notNullFilter,   // NEW: Filter for NOT NULL values
+            @RequestParam(required = false) String genres,
+            @RequestParam(required = false) Integer episodes,
+            @RequestParam(required = false) String nullFilter,
+            @RequestParam(required = false) String notNullFilter,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -207,8 +209,10 @@ public class DetailsController {
                 status,
                 rating,
                 source,
-                nullFilter,       // NEW
-                notNullFilter,    // NEW
+                genres,
+                episodes,
+                nullFilter,
+                notNullFilter,
                 pageable);
             
             List<Details> results = pageResult.getContent();
@@ -251,8 +255,10 @@ public class DetailsController {
                 status,
                 rating,
                 source,
-                nullFilter,       // NEW
-                notNullFilter,    // NEW
+                genres,
+                episodes,
+                nullFilter,
+                notNullFilter,
                 pageable);
             
             List<Details> results = pageResult.getContent();
@@ -292,8 +298,10 @@ public class DetailsController {
                 status,
                 rating,
                 source,
-                nullFilter,       // NEW
-                notNullFilter,    // NEW
+                genres,
+                episodes,
+                nullFilter,
+                notNullFilter,
                 pageable);
             
             List<Details> results = pageResult.getContent();
