@@ -4,9 +4,8 @@ const router = express.Router();
 
 /**
  * @swagger
- * path:
- *   /staff:
- *     get:
+ * /staff:
+ *   get:
  *       summary: Restituisce la lista dello staff.
  *       description: Recupera l’elenco dello staff con filtri opzionali.
  *       tags:
@@ -39,9 +38,8 @@ router.get('/', staffController.list);
 
 /**
  * @swagger
- * path:
- *   /staff/{id}:
- *     get:
+ * /staff/{id}:
+ *   get:
  *       summary: Restituisce i dettagli di un membro dello staff.
  *       description: Recupera le informazioni dettagliate del membro dello staff identificato da {id}.
  *       tags:

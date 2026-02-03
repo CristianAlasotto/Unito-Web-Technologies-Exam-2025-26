@@ -1,32 +1,33 @@
 {{!-- views/profile/login.hbs --}}
 
-<div class="anime-container" style="max-width: 500px; margin: 0 auto; padding-top: 2rem;">
-    <h1 style="text-align: center;">Login</h1>
+<div class="profile-container" style="max-width: 520px;">
+    <div class="profile-section" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
+        <h2 style="margin-bottom: 0.5rem;">Login</h2>
+        <p class="username" style="margin-bottom: 1.5rem;">Sign in to view your profile and ratings.</p>
 
-    {{!-- Error handling using your existing styles --}}
-    {{#if error}}
-        <div class="error-message" style="margin-bottom: 1.5rem;">
-            {{error}}
-        </div>
-    {{/if}}
+        {{!-- Error handling using your existing styles --}}
+        {{#if error}}
+            <div class="error-message" style="margin-bottom: 1.5rem;">
+                {{error}}
+            </div>
+        {{/if}}
 
-    <form action="/users/login" method="POST" class="login-form"
-          style="background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <form action="/users/login" method="POST" class="login-form"
+              style="background: #1f1f1f; padding: 1.75rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.35); display: grid; gap: 1rem;">
 
-        <div class="form-group" style="margin-bottom: 1.5rem;">
-            <label for="username" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Username</label>
-            <input type="text" id="username" name="username" required placeholder="Enter your username"
-                   value="{{username}}"
-                   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
-            <small style="color: #666; display: block; margin-top: 5px;">
-                (Demo: Enter your profile username)
-            </small>
-        </div>
+            <div class="form-group">
+                <label for="username" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Username</label>
+                <input type="text" id="username" name="username" required placeholder="Enter your username"
+                       value="{{username}}"
+                       style="width: 100%; padding: 10px 12px; border: 1px solid #333; border-radius: 4px; font-size: 1rem; background: #111; color: #fff;">
+                <small style="color: #888; display: block; margin-top: 6px;">
+                    Demo: Enter your profile username.
+                </small>
+            </div>
 
-        {{!-- Reusing your 'pagination-btn' class for consistency --}}
-        <button type="submit" class="pagination-btn"
-                style="width: 100%; justify-content: center; margin-top: 1rem; font-size: 1.1rem;">
-            Sign In
-        </button>
-    </form>
+            <button type="submit" class="btn-secondary" style="width: 100%; justify-content: center; font-size: 1rem;">
+                Sign In
+            </button>
+        </form>
+    </div>
 </div>

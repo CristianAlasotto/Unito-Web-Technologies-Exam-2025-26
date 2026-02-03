@@ -7,9 +7,8 @@ router.get('/:username/ratings-json', profileController.getRatingsJson);
 
 /**
  * @swagger
- * path:
- *   /profile/{username}:
- *     get:
+ * /profile/{username}:
+ *   get:
  *       summary: Mostra il profilo utente.
  *       description: Renderizza la pagina profilo per lo username specificato.
  *       tags:
@@ -31,9 +30,8 @@ router.get('/:username', profileController.showProfile);
 
 /**
  * @swagger
- * path:
- *   /profile:
- *     get:
+ * /profile:
+ *   get:
  *       summary: Reindirizza al login.
  *       description: Reindirizza alla pagina di login utenti.
  *       tags:

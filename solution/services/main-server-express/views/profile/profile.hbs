@@ -187,12 +187,13 @@
             (function() {
                 const username = '{{profile.username}}';
                 let currentPage = {{pagination.page}};
+                const pageSize = {{pagination.pageSize}};
 
                 window.loadRatings = async function(page = 1) {
                     try {
                         document.getElementById('ratings-container').innerHTML = '<div style="text-align: center; padding: 2rem; color: #aaa;">Loading...</div>';
 
-                        const response = await fetch(`/profile/${username}/ratings-json?page=${page}`);
+                        const response = await fetch(`/profile/${username}/ratings-json?page=${page}&pageSize=${pageSize}`);
                         const data = await response.json();
 
                         renderRatings(data.ratings, data.pagination);

@@ -3,6 +3,7 @@ const { apiPostgres, apiMongo } = require('./apiClients');
 exports.showProfile = async (req, res, next) => {
     const username = req.params.username;
     const pageSize = 6; // 6 items per carousel (3x2 grid)
+    const reviewPageSize = 10;
 
     try {
         // Handle AJAX request for carousel (anime or character only)
@@ -14,13 +15,12 @@ exports.showProfile = async (req, res, next) => {
         const animePage = parseInt(req.query.animePage) || 1;
         const characterPage = parseInt(req.query.characterPage) || 1;
         const reviewPage = 1; // Initial load, page 1
-        const reviewLimit = 20;
 
         const [profileResult, animeFavIdsResult, charFavIdsResult, reviewsResult] = await Promise.allSettled([
             apiPostgres.get(`/api/profiles/${username}`),
             apiMongo.get(`/api/favorites`, { params: { username: username, fav_type: 'anime' } }),
             apiMongo.get(`/api/favorites`, { params: { username: username, fav_type: 'character' } }),
-            apiMongo.get(`/api/ratings`, { params: { username: username } })
+            apiMongo.get(`/api/ratings`, { params: { username: username, page: reviewPage, pageSize: reviewPageSize } })
         ]);
 
         if (profileResult.status === 'rejected') {
@@ -39,7 +39,8 @@ exports.showProfile = async (req, res, next) => {
 
         const allAnimeIds = extractArray(animeFavIdsResult);
         const allCharIds = extractArray(charFavIdsResult);
-        const allReviews = extractArray(reviewsResult);
+        const reviewsData = reviewsResult.status === 'fulfilled' ? reviewsResult.value.data : null;
+        const userReviews = extractArray(reviewsResult);
 
         // Pagination for anime favorites (carousel)
         const animeStartIndex = (animePage - 1) * pageSize;
@@ -54,10 +55,9 @@ exports.showProfile = async (req, res, next) => {
         const charTotalPages = Math.ceil(allCharIds.length / pageSize);
 
         // Pagination for reviews (AJAX will handle further pages)
-        const reviewStartIndex = 0;
-        const reviewEndIndex = reviewLimit;
-        const userReviews = allReviews.slice(reviewStartIndex, reviewEndIndex);
-        const reviewTotalPages = Math.ceil(allReviews.length / reviewLimit);
+        const reviewTotalPages = reviewsData?.totalPages
+            || (reviewsData?.total ? Math.ceil(reviewsData.total / reviewPageSize) : Math.ceil(userReviews.length / reviewPageSize))
+            || 1;
 
         // Fetch anime details
         let favoriteAnimes = [];
@@ -136,7 +136,8 @@ exports.showProfile = async (req, res, next) => {
                 totalPages: reviewTotalPages,
                 hasPrev: false,
                 hasNext: reviewPage < reviewTotalPages,
-                nextPage: 2
+                nextPage: 2,
+                pageSize: reviewPageSize
             }
         });
 
@@ -156,20 +157,20 @@ exports.getRatingsJson = async (req, res) => {
     try {
         const { username } = req.params;
         const page = parseInt(req.query.page || '1', 10);
-        const pageSize = 20;
+        const pageSize = parseInt(req.query.pageSize || '10', 10);
 
         // Get all ratings for user
         const reviewsResult = await apiMongo.get(`/api/ratings`, {
-            params: { username: username }
+            params: { username: username, page: page, pageSize: pageSize }
         });
 
-        const allReviews = Array.isArray(reviewsResult.data) ? reviewsResult.data :
-            (reviewsResult.data?.items || reviewsResult.data?.data || []);
-
-        const totalPages = Math.ceil(allReviews.length / pageSize);
-        const startIndex = (page - 1) * pageSize;
-        const endIndex = page * pageSize;
-        const userReviews = allReviews.slice(startIndex, endIndex);
+        const reviewsData = reviewsResult.data || {};
+        const userReviews = Array.isArray(reviewsData) ? reviewsData :
+            (reviewsData.items || reviewsData.data || []);
+        const totalPages = reviewsData.totalPages
+            || (reviewsData.total ? Math.ceil(reviewsData.total / pageSize) : Math.ceil(userReviews.length / pageSize))
+            || 1;
+        const total = reviewsData.total || userReviews.length;
 
         // Enhance with anime titles (only for current page)
         let enhancedReviews = [...userReviews];
@@ -193,7 +194,7 @@ exports.getRatingsJson = async (req, res) => {
             pagination: {
                 currentPage: page,
                 totalPages: totalPages,
-                total: allReviews.length
+                total: total
             }
         });
     } catch (err) {
