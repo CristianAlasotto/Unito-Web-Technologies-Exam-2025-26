@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * REST API Controller for Details
@@ -53,9 +54,27 @@ public class DetailsController {
     @Autowired
     private PersonDetailsRepository personDetailsRepository;
 
+    @Operation(
+            summary = "Get anime by ID",
+            description = "Retrieve detailed information about a specific anime by its MyAnimeList ID"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Anime found successfully",
+                    content = @Content(schema = @Schema(implementation = Details.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Anime not found",
+                    content = @Content
+            )
+    })
     @GetMapping("/{mal_id}")
     public ResponseEntity<?> getById(
+            @Parameter(description = "Anime MAL ID", example = "1", required = true)
             @PathVariable("mal_id") Integer malId,
+            @Parameter(description = "Comma-separated fields to return", example = "title,score,genres")
             @RequestParam(required = false) String fields,
             @RequestParam(required = false) String include) {
         
@@ -106,15 +125,22 @@ public class DetailsController {
         return result;
     }
 
-    @GetMapping("/{mal_id}/characters")
     @Operation(
             summary = "Get characters in anime",
             description = "Retrieve all characters that appear in this anime, sorted by favorites"
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Characters retrieved"),
-            @ApiResponse(responseCode = "404", description = "Anime not found", content = @Content)
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Characters retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Anime not found",
+                    content = @Content
+            )
     })
+    @GetMapping("/{mal_id}/characters")
     public ResponseEntity<?> getCharacters(
             @Parameter(description = "Anime MAL ID", example = "1", required = true)
             @PathVariable Integer mal_id,
@@ -155,8 +181,25 @@ public class DetailsController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(
+            summary = "Get anime summary",
+            description = "Retrieve a brief summary of anime information (title, type, score, episodes)"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Summary retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Anime not found",
+                    content = @Content
+            )
+    })
     @GetMapping("/{mal_id}/summary")
-    public ResponseEntity<?> getSummary(@PathVariable("mal_id") Integer malId) {
+    public ResponseEntity<?> getSummary(
+            @Parameter(description = "Anime MAL ID", example = "1", required = true)
+            @PathVariable("mal_id") Integer malId) {
         Optional<Details> entity = service.getById(malId);
         
         if (entity.isEmpty()) {
@@ -173,23 +216,69 @@ public class DetailsController {
         return ResponseEntity.ok(summary);
     }
 
+    @Operation(
+            summary = "Get all anime",
+            description = "Retrieve paginated list of anime with optional filters (type, year, status, rating, source, genres, episodes), sorting, and field selection"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Anime list retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid parameters",
+                    content = @Content
+            )
+    })
     @GetMapping
     public ResponseEntity<?> getAll(
+            @Parameter(description = "Comma-separated fields to return", example = "title,score,genres")
             @RequestParam(required = false) String fields,
+
+            @Parameter(description = "Search anime title (case-insensitive)", example = "Cowboy Bebop")
             @RequestParam(required = false) String search,
+
+            @Parameter(description = "Sort field (prefix with - for descending)", example = "-score")
             @RequestParam(required = false) String sort,
+
+            @Parameter(description = "Filter by anime type", example = "TV")
             @RequestParam(required = false) String type,
+
+            @Parameter(description = "Filter by release year", example = "1998")
             @RequestParam(required = false) Integer year,
+
+            @Parameter(description = "Filter by airing status", example = "Finished Airing")
             @RequestParam(required = false) String status,
+
+            @Parameter(description = "Filter by age rating", example = "PG-13")
             @RequestParam(required = false) String rating,
+
+            @Parameter(description = "Filter by source material", example = "Manga")
             @RequestParam(required = false) String source,
+
+            @Parameter(description = "Filter by genre (partial match)", example = "Action")
             @RequestParam(required = false) String genres,
+
+            @Parameter(description = "Filter by exact episode count", example = "26")
             @RequestParam(required = false) Integer episodes,
+
+            @Parameter(description = "Filter records where field IS NULL", example = "synopsis")
             @RequestParam(required = false) String nullFilter,
+
+            @Parameter(description = "Filter records where field IS NOT NULL", example = "score")
             @RequestParam(required = false) String notNullFilter,
+
+            @Parameter(description = "Maximum number of results", example = "10")
             @RequestParam(required = false) Integer limit,
+
+            @Parameter(description = "Offset for pagination", example = "0")
             @RequestParam(required = false) Integer offset,
+
+            @Parameter(description = "Page number (1-indexed)", example = "1")
             @RequestParam(required = false) Integer page,
+
+            @Parameter(description = "Number of results per page", example = "10")
             @RequestParam(required = false) Integer pageSize) {
         
         boolean usePageBased = (page != null || pageSize != null);
@@ -322,6 +411,16 @@ public class DetailsController {
         }
     }
 
+    @Operation(
+            summary = "Get statistics",
+            description = "Get total count of anime in the database"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Statistics retrieved successfully"
+            )
+    })
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
         Map<String, Object> stats = new HashMap<>();
@@ -333,6 +432,16 @@ public class DetailsController {
      * Get statistics on NULL values for various fields
      * GET /api/details/stats/null_counts
      */
+    @Operation(
+            summary = "Get NULL value statistics",
+            description = "Get count of NULL values for nullable fields (synopsis, score, end_date, title_japanese, season, favorites)"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "NULL statistics retrieved successfully"
+            )
+    })
     @GetMapping("/stats/null_counts")
     public ResponseEntity<Map<String, Object>> getNullCounts() {
         Map<String, Long> nullCounts = service.getNullCounts();
@@ -361,8 +470,30 @@ public class DetailsController {
      *   "anime": { ... full anime details ... }
      * }
      */
+    @Operation(
+            summary = "Update anime score",
+            description = "Update the score for a specific anime (value must be between 0.00 and 10.00)"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Score updated successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Anime not found",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid score value",
+                    content = @Content
+            )
+    })
     @PostMapping("/update_score")
-    public ResponseEntity<?> updateScore(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<?> updateScore(
+            @Parameter(description = "New score value (0.00-10.00)", example = "8.50", required = true)
+            @RequestBody Map<String, Object> request) {
         Map<String, Object> response = new HashMap<>();
         
         try {
@@ -743,12 +874,32 @@ public class DetailsController {
      * Get recommendations for a specific anime (JPA version)
      * GET /api/details/{mal_id}/recommendations
      */
+    @Operation(
+            summary = "Get anime recommendations",
+            description = "Get recommended anime similar to the specified anime, sorted by score"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Recommendations retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Anime not found",
+                    content = @Content
+            )
+    })
     @GetMapping("/{mal_id}/recommendations")
     public ResponseEntity<?> getRecommendations(
+            @Parameter(description = "Anime MAL ID", example = "1", required = true)
             @PathVariable("mal_id") Integer malId,
+            @Parameter(description = "Number of returned records", example = "10")
             @RequestParam(required = false) Integer limit,
+            @Parameter(description = "Number of deviation from the first record", example = "10")
             @RequestParam(required = false) Integer offset,
+            @Parameter(description = "Page number (1-indexed)", example = "1")
             @RequestParam(required = false) Integer page,
+            @Parameter(description = "Number of results per page", example = "10")
             @RequestParam(required = false) Integer pageSize) {
         
         // Check if anime exists

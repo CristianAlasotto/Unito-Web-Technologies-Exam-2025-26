@@ -5,23 +5,27 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Objects;
 
-@Schema(description = "Anime character works entity")
+@Schema(description = "Anime character works entity (Relationship between Character and Anime)")
 @Entity
 @Table(name = "character_anime_works")
 @IdClass(CharacterAnimeWorks.CharacterAnimeWorksId.class)
 public class CharacterAnimeWorks {
 
+    @Schema(description = "Character MyAnimeList ID (Composite Key)", example = "1")
     @Id
     @Column(name = "character_mal_id")
     private Integer characterMalId;
 
+    @Schema(description = "Anime MyAnimeList ID (Composite Key)", example = "1")
     @Id
     @Column(name = "anime_mal_id")
     private Integer animeMalId;
 
+    @Schema(description = "Character name as credited in this specific anime", example = "Spike Spiegel")
     @Column(name = "character_name")
     private String characterName;
 
+    @Schema(description = "Role of the character in the anime (e.g., Main, Supporting)", example = "Main")
     @Column(name = "role")
     private String role;
 

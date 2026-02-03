@@ -7,26 +7,33 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "characters")
 public class Characters {
-    
+
+    @Schema(description = "Character MyAnimeList ID (primary key)", example = "1")
     @Id
     @Column(name = "character_mal_id")
     private Integer characterMalId;
-    
+
+    @Schema(description = "MyAnimeList character URL", example = "https://myanimelist.net/character/1")
     @Column(name = "url")
     private String url;
-    
+
+    @Schema(description = "Character name", example = "Spike Spiegel")
     @Column(name = "name")
     private String name;
-    
+
+    @Schema(description = "Character name in Japanese/Kanji", example = "スパイク・スピーゲル")
     @Column(name = "name_kanji")
     private String nameKanji;
-    
+
+    @Schema(description = "Character image URL", example = "https://cdn.myanimelist.net/images/characters/1/1.jpg")
     @Column(name = "image")
     private String image;
-    
+
+    @Schema(description = "Number of users who favorited this character", example = "50000")
     @Column(name = "favorites")
     private Integer favorites;
-    
+
+    @Schema(description = "Character biography/description")
     @Column(name = "about")
     private String about;
 
