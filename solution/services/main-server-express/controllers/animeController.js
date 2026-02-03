@@ -238,50 +238,9 @@ exports.detail = async (req, res, next) => {
         ? recommendationsData
         : recommendationsData?.recommendations || [];
 
-    // Fetch ratings
-    let ratings = [];
+    // Ratings are loaded asynchronously on the client after page load.
+    let ratings = null;
     let totalPages = 1;
-
-    try {
-      const params = new URLSearchParams({
-        anime_id: id,
-        page: page,
-        limit: limit
-      });
-
-      if (filters.status) {
-        params.append('status', filters.status);
-      }
-
-      if (filters.rewatching) {
-        params.append('is_rewatching', filters.rewatching === 'true' ? 1 : 0);
-      }
-
-      // Add score range filters directly to params
-      if (filters.minScore !== null) {
-        params.append('minScore', filters.minScore);
-      }
-      if (filters.maxScore !== null) {
-        params.append('maxScore', filters.maxScore);
-      }
-
-      if (filters.sortBy) {
-        const sortPrefix = filters.sortOrder === 'desc' ? '-' : '';
-        params.append('sort', sortPrefix + filters.sortBy);
-      }
-
-      const ratingsResponse = await apiMongo.get(`/api/ratings?${params.toString()}`);
-
-      if (ratingsResponse.data.items) {
-        ratings = ratingsResponse.data.items;
-        totalPages = ratingsResponse.data.totalPages || 1;
-      } else if (Array.isArray(ratingsResponse.data)) {
-        ratings = ratingsResponse.data;
-      }
-
-    } catch (error) {
-      console.warn(`Ratings fetch failed for anime ${id}:`, error.message);
-    }
 
     const buildQueryString = (pageNum) => {
       const params = new URLSearchParams({ page: pageNum });
