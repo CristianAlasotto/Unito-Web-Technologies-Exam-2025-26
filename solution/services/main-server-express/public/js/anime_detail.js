@@ -191,7 +191,7 @@
         ratings.forEach(rating => {
             html += '<tr style="border-bottom: 1px solid #2d2d2d; color: #ccc;">';
             html += `<td style="padding: 12px 15px;"><span style="font-weight: bold; color: #fff;">${rating.username}</span></td>`;
-            html += `<td style="padding: 12px 15px;"><span style="color: #ff9800; font-weight: bold;">⭐ ${rating.score}</span></td>`;
+            html += `<td style="padding: 12px 15px;"><span style="color: #d50415; font-weight: bold;">⭐ ${rating.score}</span></td>`;
             html += `<td style="padding: 12px 15px; text-transform: capitalize;">${rating.status}</td>`;
             html += `<td style="padding: 12px 15px;">${rating.is_rewatching ? '<span style="color: #4caf50; font-weight: bold;">Yes</span>' : '<span style="color: #888;">No</span>'}</td>`;
             html += `<td style="padding: 12px 15px;">${rating.num_watched_episodes}</td>`;
