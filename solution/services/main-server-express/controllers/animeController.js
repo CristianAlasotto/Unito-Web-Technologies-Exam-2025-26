@@ -67,26 +67,34 @@ const GENRE_OPTIONS = [
   { value: '', label: 'Tutti' },
   { value: 'action', label: 'Action' },
   { value: 'adventure', label: 'Adventure' },
-  { value: 'avant-garde', label: 'Avant Garde' },
-  { value: 'award-winning', label: 'Award Winning' },
-  { value: 'boys-love', label: 'Boys Love' },
+  { value: 'avant garde', label: 'Avant Garde' },
+  { value: 'award winning', label: 'Award Winning' },
+  { value: 'boys love', label: 'Boys Love' },
   { value: 'comedy', label: 'Comedy' },
   { value: 'drama', label: 'Drama' },
   { value: 'ecchi', label: 'Ecchi' },
   { value: 'erotica', label: 'Erotica' },
   { value: 'fantasy', label: 'Fantasy' },
-  { value: 'girls-love', label: 'Girls Love' },
+  { value: 'girls love', label: 'Girls Love' },
   { value: 'gourmet', label: 'Gourmet' },
   { value: 'hentai', label: 'Hentai' },
   { value: 'horror', label: 'Horror' },
   { value: 'mystery', label: 'Mystery' },
   { value: 'romance', label: 'Romance' },
-  { value: 'sci-fi', label: 'Sci-Fi' },
-  { value: 'slice-of-life', label: 'Slice of Life' },
+  { value: 'sci fi', label: 'Sci-Fi' },
+  { value: 'slice of life', label: 'Slice of Life' },
   { value: 'sports', label: 'Sports' },
   { value: 'supernatural', label: 'Supernatural' },
   { value: 'suspense', label: 'Suspense' }
 ];
+
+const normalizeEpisodes = (value) => {
+  if (value === null || value === undefined || value === '') return '';
+  const parsed = parseInt(value, 10);
+  if (Number.isNaN(parsed)) return '';
+  const normalized = Math.min(Math.max(parsed, 1), 3000);
+  return String(normalized);
+};
 
 const buildFiltersModel = (query) => {
   const activeSort = query.sort || '';
@@ -96,7 +104,7 @@ const buildFiltersModel = (query) => {
   const activeStatus = query.status || '';
   const activeRating = query.rating || '';
   const activeSource = query.source || '';
-  const activeEpisodes = query.episodes || '';
+  const activeEpisodes = normalizeEpisodes(query.episodes ?? query.episode);
   const activeGenres = query.genres || query.genre || '';
 
   return {
@@ -146,13 +154,8 @@ exports.list = async (req, res, next) => {
     if (!req.query.genres && req.query.genre) params.set('genres', req.query.genre);
     if (req.query.source) params.set('source', req.query.source);
     if (req.query.sort) params.set('sort', req.query.sort);
-    if (req.query.episodes) {
-      const episodes = parseInt(req.query.episodes, 10);
-      if (!Number.isNaN(episodes)) {
-        const normalized = Math.min(Math.max(episodes, 1), 3000);
-        params.set('episodes', String(normalized));
-      }
-    }
+    const episodesParam = normalizeEpisodes(req.query.episodes ?? req.query.episode);
+    if (episodesParam) params.set('episodes', episodesParam);
 
     params.set('page', String(page));
     params.set('pageSize', String(pageSize));
@@ -166,12 +169,16 @@ exports.list = async (req, res, next) => {
     Object.entries(req.query).forEach(([key, value]) => {
       if (!value) return;
       if (key === 'page') return;
+      if (key === 'episode' || key === 'episodes') return;
       if (key === 'genre') {
         if (!req.query.genres) paginationQuery.set('genres', value);
         return;
       }
       paginationQuery.set(key, value);
     });
+    if (episodesParam) {
+      paginationQuery.set('episodes', episodesParam);
+    }
     const filtersQuery = paginationQuery.toString() ? `&${paginationQuery.toString()}` : '';
 
     res.render('anime/anime_list', {
@@ -205,19 +212,34 @@ exports.detail = async (req, res, next) => {
   try {
     const { id } = req.params;
     const response = await apiPostgres.get(`/api/details/${id}`);
-    const charactersResponse = await apiMongo.get('/api/characters?page=1&pageSize=12');
-    const recommendationsResponse = await apiPostgres.get(
-      `/api/details/${id}/recommendations`
-    );
     const raw = response.data || {};
-    const charactersData = charactersResponse?.data;
-    const relatedCharacters = Array.isArray(charactersData)
-      ? charactersData
-      : charactersData?.items || charactersData?.related_characters || [];
-    const recommendationsData = recommendationsResponse?.data;
-    const recommendations = Array.isArray(recommendationsData)
-      ? recommendationsData
-      : recommendationsData?.recommendations || [];
+    let relatedCharacters = [];
+    let recommendations = [];
+
+    try {
+      const charactersResponse = await apiPostgres.get(`/api/details/${id}/characters`);
+      const charactersData = charactersResponse?.data;
+      relatedCharacters = Array.isArray(charactersData)
+        ? charactersData
+        : charactersData?.characters ||
+            charactersData?.items ||
+            charactersData?.related_characters ||
+            [];
+    } catch (err) {
+      console.warn('Unable to load related characters:', err.message);
+    }
+
+    try {
+      const recommendationsResponse = await apiPostgres.get(
+        `/api/details/${id}/recommendations`
+      );
+      const recommendationsData = recommendationsResponse?.data;
+      recommendations = Array.isArray(recommendationsData)
+        ? recommendationsData
+        : recommendationsData?.recommendations || [];
+    } catch (err) {
+      console.warn('Unable to load recommendations:', err.message);
+    }
 
     const normalizeList = (value) => {
       if (Array.isArray(value)) {

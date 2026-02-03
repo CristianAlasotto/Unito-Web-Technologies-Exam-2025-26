@@ -166,9 +166,9 @@
 
 		<br>
 		<h3 class="recommendationsTitle">Related Characters</h3>
-		<section class="recommendations">
+		<section class="recommendations" id="related-characters-section">
 			{{#if anime.has_related_characters}}
-			<div class="cardsContainer">
+			<div class="cardsContainer" id="related-characters-container">
 				{{#each anime.related_characters}}
 				<div class="card">
 					{{#if this.character_mal_id}}
@@ -195,7 +195,7 @@
 				{{/each}}
 			</div>
 			{{else}}
-			<p>No related_characters available.</p>
+			<p id="related-characters-empty">No related_characters available.</p>
 			{{/if}}
 		</section>
 
@@ -242,3 +242,5 @@
 	{{/unless}}
 	{{/if}}
 </div>
+
+<script src="/js/anime_detail.js" defer></script>

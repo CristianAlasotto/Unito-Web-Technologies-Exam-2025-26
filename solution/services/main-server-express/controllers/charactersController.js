@@ -43,7 +43,7 @@ exports.list = async (req, res, next) => {
 		params.set('page', String(page));
 		params.set('pageSize', String(pageSize));
 
-		const response = await apiMongo.get(`/api/characters?${params.toString()}`);
+		const response = await apiPostgres.get(`/api/characters?${params.toString()}`);
 		const characters = response.data.items || [];
 		const totalPages = response.data.totalPages || 1;
 		const favMaxLimit = response.data.favMaxLimit || response.data.maxFavorites || 50000;

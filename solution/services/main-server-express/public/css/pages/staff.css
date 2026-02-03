@@ -263,3 +263,96 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* RECCOMENDATIONS */
+.recommendationsTitle {
+  margin-bottom: 1rem;
+}
+
+.recommendations {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: stretch;
+  align-content: flex-start;
+  gap: 1rem;
+}
+
+.recommendations .cardsContainer {
+  display: contents;
+  padding: 0;
+}
+
+.reccomendations .cardsContainer .card {
+  background-color: #2a2a2a;
+}
+
+.anime-detail .recommendations .card,
+.character-detail .recommendations .card,
+.staff-detail .recommendations .card {
+  background: #2a2a2a;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  overflow: hidden;
+  transition: transform 0.2s;
+  width: 160px;
+  height: 260px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.anime-detail .recommendations .card:hover,
+.character-detail .recommendations .card:hover,
+.staff-detail .recommendations .card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.anime-detail .recommendations .card img,
+.character-detail .recommendations .card img,
+.staff-detail .recommendations .card img {
+  display: block;
+  flex: 0 0 75%;
+  height: 75%;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+.anime-detail .recommendations .card a,
+.character-detail .recommendations .card a,
+.staff-detail .recommendations .card a {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.anime-detail .recommendations .card-body,
+.character-detail .recommendations .card-body,
+.staff-detail .recommendations .card-body {
+  flex: 0 0 25%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.5rem;
+}
+
+.anime-detail .recommendations .card-body p,
+.character-detail .recommendations .card-body p,
+.staff-detail .recommendations .card-body p {
+  font-size: 0.75rem;
+  min-height: 1.6rem;
+  color: #fff;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mal-link {
+  background-color: #3a3a3a;
+}
