@@ -2,7 +2,7 @@
     display: flex;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch; /* Per uno scorrimento fluido su iOS */
+    -webkit-overflow-scrolling: touch;
     padding-bottom: 1rem;
 
 	display: flex;
@@ -36,7 +36,7 @@
 }
 
 .carousel_titleContainer h3 {
-  margin: 0; /* remove default h3 margins so it aligns nicely */
+  margin: 0;
 }
 
 .see-all-link {
@@ -68,7 +68,7 @@
     overflow: hidden;
     transition: transform 0.2s;
     width: 200px;
-    height: 320px; /* Adjusted height */
+    height: 320px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -111,7 +111,7 @@
     color: #fff;
     font-size: 0.875rem;
     line-height: 1.2;
-    min-height: 2.1rem; /* 2 lines of text */
+    min-height: 2.1rem;
 }
 
 .carousel {

@@ -19,6 +19,12 @@ public interface PersonDetailsRepository extends JpaRepository<PersonDetails, In
     Page<PersonDetails> searchByName(@Param("search") String search, Pageable pageable);
 
     /**
+     * Find by city/location (case-insensitive, partial match)
+     */
+    @Query("SELECT e FROM PersonDetails e WHERE LOWER(CAST(e.relevantLocation AS string)) LIKE LOWER(CONCAT('%', :city, '%'))")
+    Page<PersonDetails> findByCityContaining(@Param("city") String city, Pageable pageable);
+
+    /**
      * JOIN 2: Find all anime works for this person
      * person_details → person_voice_works → details
      */

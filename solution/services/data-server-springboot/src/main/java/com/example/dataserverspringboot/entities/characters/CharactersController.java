@@ -2,6 +2,7 @@ package com.example.dataserverspringboot.entities.characters;
 
 import com.example.dataserverspringboot.entities.details.Details;
 import com.example.dataserverspringboot.entities.persondetails.PersonDetails;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
  * REST API Controller for Characters
  * Returns field names in snake_case to match database columns
  */
+@Tag(name = "Characters", description = "Anime characters and relationships API")
 @RestController
 @RequestMapping("/api/characters")
 @CrossOrigin(origins = "*")

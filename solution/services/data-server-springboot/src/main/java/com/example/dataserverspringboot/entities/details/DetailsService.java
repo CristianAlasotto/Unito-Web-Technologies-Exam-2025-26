@@ -25,7 +25,7 @@ public class DetailsService {
         return repository.count();
     }
 
-    public Page<Details> findWithFilters(String search, String type, Integer year, String status, String rating, String source, Pageable pageable) {
+    public Page<Details> findWithFilters(String search, String type, Integer year, String status, String rating, String source, String genres, Integer episodes, Pageable pageable) {
         if (search != null && !search.isEmpty()) {
             return repository.searchByTitle(search, pageable);
         }
@@ -50,6 +50,14 @@ public class DetailsService {
             return repository.findBySource(source, pageable);
         }
 
+        if (genres != null) {
+            return repository.findByGenresContaining(genres, pageable);
+        }
+
+        if (episodes != null) {
+            return repository.findByEpisodes(episodes, pageable);
+        }
+
         return repository.findAll(pageable);
     }
 
@@ -57,7 +65,7 @@ public class DetailsService {
      * Find records with filters including NULL/NOT NULL filters
      */
     public Page<Details> findWithFilters(String search, String type, Integer year, String status, 
-                                        String rating, String source, 
+                                        String rating, String source, String genres, Integer episodes,
                                         String nullFilter, String notNullFilter, 
                                         Pageable pageable) {
         
@@ -72,7 +80,7 @@ public class DetailsService {
         }
         
         // Fall back to regular filters
-        return findWithFilters(search, type, year, status, rating, source, pageable);
+        return findWithFilters(search, type, year, status, rating, source, genres, episodes, pageable);
     }
 
     /**

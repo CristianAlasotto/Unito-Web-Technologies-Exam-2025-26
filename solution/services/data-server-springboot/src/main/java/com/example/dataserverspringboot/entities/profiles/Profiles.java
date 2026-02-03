@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
-@Schema(description = "Anime user profile entity")  // For entity
+@Schema(description = "Website user profile entity")
 @Entity
 @Table(name = "profiles")
 public class Profiles {

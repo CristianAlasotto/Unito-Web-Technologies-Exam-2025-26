@@ -13,15 +13,45 @@
     };
     currentPage = parseInt(urlParams.get('page')) || 1;
 
-    document.getElementById('filter-minScore').value = filters.minScore;
-    document.getElementById('filter-maxScore').value = filters.maxScore;
-    document.getElementById('filter-status').value = filters.status;
-    document.getElementById('filter-rewatching').value = filters.rewatching;
-    document.getElementById('filter-sortBy').value = filters.sortBy;
-    document.getElementById('filter-sortOrder').value = filters.sortOrder;
+    const filterMinScore = document.getElementById('filter-minScore');
+    const filterMaxScore = document.getElementById('filter-maxScore');
+    const filterStatus = document.getElementById('filter-status');
+    const filterRewatching = document.getElementById('filter-rewatching');
+    const filterSortBy = document.getElementById('filter-sortBy');
+    const filterSortOrder = document.getElementById('filter-sortOrder');
+    const ratingForm = document.getElementById('add-rating-form');
+    const submitRatingBtn = document.getElementById('submit-rating-btn');
+    const applyFiltersBtn = document.getElementById('apply-filters-btn');
+    const clearFiltersBtn = document.getElementById('clear-filters-btn');
+    const ratingsContainer = document.getElementById('ratings-container');
+    const ratingMessage = document.getElementById('rating-message');
+
+    const hasRatingsUI = Boolean(
+        ratingForm &&
+        submitRatingBtn &&
+        filterMinScore &&
+        filterMaxScore &&
+        filterStatus &&
+        filterRewatching &&
+        filterSortBy &&
+        filterSortOrder &&
+        ratingsContainer
+    );
+
+    if (hasRatingsUI) {
+        filterMinScore.value = filters.minScore;
+        filterMaxScore.value = filters.maxScore;
+        filterStatus.value = filters.status;
+        filterRewatching.value = filters.rewatching;
+        filterSortBy.value = filters.sortBy;
+        filterSortOrder.value = filters.sortOrder;
+    }
 
     function showMessage(message, type) {
-        const messageEl = document.getElementById('rating-message');
+        const messageEl = ratingMessage;
+        if (!messageEl) {
+            return;
+        }
         messageEl.textContent = message;
         messageEl.style.display = 'block';
         messageEl.style.background = type === 'success' ? '#4caf50' : '#f44336';
@@ -33,80 +63,84 @@
         }, 5000);
     }
 
-    // Handle rating form submission
-    document.getElementById('add-rating-form').addEventListener('submit', async function(e) {
-        e.preventDefault();
+    if (hasRatingsUI) {
+        // Handle rating form submission
+        ratingForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-        const submitBtn = document.getElementById('submit-rating-btn');
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Submitting...';
+            submitRatingBtn.disabled = true;
+            submitRatingBtn.textContent = 'Submitting...';
 
-        const formData = {
-            username: document.getElementById('rating-username').value,
-            anime_id: parseInt(animeId),
-            score: parseInt(document.getElementById('rating-score').value),
-            status: document.getElementById('rating-status').value,
-            num_watched_episodes: parseInt(document.getElementById('rating-episodes').value),
-            is_rewatching: parseInt(document.getElementById('rating-rewatching').value)
-        };
+            const formData = {
+                username: document.getElementById('rating-username').value,
+                anime_id: parseInt(animeId),
+                score: parseInt(document.getElementById('rating-score').value),
+                status: document.getElementById('rating-status').value,
+                num_watched_episodes: parseInt(document.getElementById('rating-episodes').value),
+                is_rewatching: parseInt(document.getElementById('rating-rewatching').value)
+            };
 
-        try {
-            console.log('Submitting rating:', formData);
-
-            const response = await fetch(`/anime/${animeId}/ratings`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData)
-            });
-
-            console.log('Response status:', response.status);
-            console.log('Response ok:', response.ok);
-
-            const responseText = await response.text();
-            console.log('Response text:', responseText);
-
-            let result;
             try {
-                result = JSON.parse(responseText);
-            } catch (e) {
-                console.error('Response is not JSON:', responseText);
-                throw new Error('Server returned non-JSON response: ' + responseText.substring(0, 100));
+                console.log('Submitting rating:', formData);
+
+                const response = await fetch(`/anime/${animeId}/ratings`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+
+                const responseText = await response.text();
+                console.log('Response text:', responseText);
+
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (e) {
+                    console.error('Response is not JSON:', responseText);
+                    throw new Error('Server returned non-JSON response: ' + responseText.substring(0, 100));
+                }
+
+                console.log('Response data:', result);
+
+                if (!response.ok) {
+                    const errorMsg = result.message || result.error || 'Failed to submit rating (status ' + response.status + ')';
+                    throw new Error(errorMsg);
+                }
+
+                showMessage('Rating submitted successfully!', 'success');
+
+                ratingForm.reset();
+
+                // Reload ratings to show the new one
+                loadRatings(1);
+
+            } catch (error) {
+                console.error('Error submitting rating:', error);
+                showMessage('Error: ' + error.message, 'error');
+            } finally {
+                submitRatingBtn.disabled = false;
+                submitRatingBtn.textContent = 'Submit Rating';
             }
-
-            console.log('Response data:', result);
-
-            if (!response.ok) {
-                const errorMsg = result.message || result.error || 'Failed to submit rating (status ' + response.status + ')';
-                throw new Error(errorMsg);
-            }
-
-            showMessage('Rating submitted successfully!', 'success');
-
-            document.getElementById('add-rating-form').reset();
-
-            // Reload ratings to show the new one
-            loadRatings(1);
-
-        } catch (error) {
-            console.error('Error submitting rating:', error);
-            showMessage('Error: ' + error.message, 'error');
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Submit Rating';
-        }
-    });
+        });
+    }
 
     async function loadRatings(page = 1) {
+        if (!hasRatingsUI) {
+            return;
+        }
         const params = new URLSearchParams({ page: page });
 
-        const minScore = document.getElementById('filter-minScore').value;
-        const maxScore = document.getElementById('filter-maxScore').value;
-        const status = document.getElementById('filter-status').value;
-        const rewatching = document.getElementById('filter-rewatching').value;
-        const sortBy = document.getElementById('filter-sortBy').value;
-        const sortOrder = document.getElementById('filter-sortOrder').value;
+        const minScore = filterMinScore.value;
+        const maxScore = filterMaxScore.value;
+        const status = filterStatus.value;
+        const rewatching = filterRewatching.value;
+        const sortBy = filterSortBy.value;
+        const sortOrder = filterSortOrder.value;
 
         if (minScore) params.append('minScore', minScore);
         if (maxScore) params.append('maxScore', maxScore);
@@ -121,7 +155,7 @@
 
         try {
             // Show loading indicator
-            document.getElementById('ratings-container').innerHTML = '<div style="text-align: center; padding: 2rem; color: #aaa;">Loading...</div>';
+            ratingsContainer.innerHTML = '<div style="text-align: center; padding: 2rem; color: #aaa;">Loading...</div>';
 
             // Fetch ratings via AJAX
             const response = await fetch(`/anime/${animeId}/ratings-json?${params.toString()}`);
@@ -131,13 +165,13 @@
             renderRatings(data.ratings, data.pagination, params);
         } catch (error) {
             console.error('Error loading ratings:', error);
-            document.getElementById('ratings-container').innerHTML = '<p style="color: #f44; margin-bottom: 2rem;">Error loading ratings.</p>';
+            ratingsContainer.innerHTML = '<p style="color: #f44; margin-bottom: 2rem;">Error loading ratings.</p>';
         }
     }
 
     // Function to render ratings HTML
     function renderRatings(ratings, pagination, params) {
-        const container = document.getElementById('ratings-container');
+        const container = ratingsContainer;
 
         if (!ratings || ratings.length === 0) {
             container.innerHTML = '<p style="color: #888; font-style: italic; margin-bottom: 2rem;">No ratings available for this anime yet.</p>';
@@ -194,19 +228,120 @@
         });
     }
 
-    // Apply filters button
-    document.getElementById('apply-filters-btn').addEventListener('click', function() {
-        loadRatings(1); // Reset to page 1 when applying filters
-    });
+    if (hasRatingsUI) {
+        // Apply filters button
+        applyFiltersBtn.addEventListener('click', function() {
+            loadRatings(1); // Reset to page 1 when applying filters
+        });
 
-    // Clear filters button
-    document.getElementById('clear-filters-btn').addEventListener('click', function() {
-        document.getElementById('filter-minScore').value = '';
-        document.getElementById('filter-maxScore').value = '';
-        document.getElementById('filter-status').value = '';
-        document.getElementById('filter-rewatching').value = '';
-        document.getElementById('filter-sortBy').value = 'score';
-        document.getElementById('filter-sortOrder').value = 'desc';
-        loadRatings(1);
-    });
+        // Clear filters button
+        clearFiltersBtn.addEventListener('click', function() {
+            filterMinScore.value = '';
+            filterMaxScore.value = '';
+            filterStatus.value = '';
+            filterRewatching.value = '';
+            filterSortBy.value = 'score';
+            filterSortOrder.value = 'desc';
+            loadRatings(1);
+        });
+    }
+
+    function isHttpUrl(value) {
+        return typeof value === 'string' && /^https?:\/\//i.test(value.trim());
+    }
+
+    function normalizeRelatedCharacters(payload) {
+        if (!payload) {
+            return [];
+        }
+        if (Array.isArray(payload)) {
+            return payload;
+        }
+        return payload.characters || payload.items || payload.related_characters || [];
+    }
+
+    function buildCharacterCard(character) {
+        const characterId = character.character_mal_id || character.character_id;
+        const href = characterId ? `/characters/${characterId}` : '#';
+        const imageSrc = isHttpUrl(character.image)
+            ? character.image
+            : isHttpUrl(character.image_url)
+                ? character.image_url
+                : null;
+
+        return `
+            <div class="card">
+                <a href="${href}">
+                    ${imageSrc
+                        ? `<img src="${imageSrc}" alt="${character.name || 'Character'}">`
+                        : `<div class="card-image-placeholder">
+                                <img src="/images/logo.png" alt="Logo">
+                           </div>`}
+                    <div class="card-body">
+                        <p>${character.name || 'Unknown'}</p>
+                    </div>
+                </a>
+            </div>
+        `;
+    }
+
+    function renderRelatedCharacters(characters) {
+        const section = document.getElementById('related-characters-section');
+        if (!section) {
+            return;
+        }
+
+        let container = document.getElementById('related-characters-container');
+        let emptyMessage = document.getElementById('related-characters-empty');
+
+        if (!characters || characters.length === 0) {
+            if (container) {
+                container.innerHTML = '';
+            }
+            if (!emptyMessage) {
+                emptyMessage = document.createElement('p');
+                emptyMessage.id = 'related-characters-empty';
+                section.appendChild(emptyMessage);
+            }
+            emptyMessage.textContent = 'No related characters available.';
+            return;
+        }
+
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'related-characters-container';
+            container.className = 'cardsContainer';
+            section.appendChild(container);
+        }
+
+        container.innerHTML = characters.map(buildCharacterCard).join('');
+        if (emptyMessage) {
+            emptyMessage.remove();
+        }
+    }
+
+    async function loadRelatedCharacters() {
+        const section = document.getElementById('related-characters-section');
+        if (!section || !animeId) {
+            return;
+        }
+        const existingContainer = document.getElementById('related-characters-container');
+        if (existingContainer && existingContainer.children.length > 0) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/anime/${animeId}/characters`);
+            if (!response.ok) {
+                throw new Error(`Failed to load related characters (status ${response.status})`);
+            }
+            const data = await response.json();
+            const characters = normalizeRelatedCharacters(data);
+            renderRelatedCharacters(characters);
+        } catch (error) {
+            console.error('Error loading related characters:', error);
+        }
+    }
+
+    loadRelatedCharacters();
 })();

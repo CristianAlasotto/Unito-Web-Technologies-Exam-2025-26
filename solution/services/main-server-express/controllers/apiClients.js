@@ -1,7 +1,3 @@
-/* 
-	NB LEGGERE LE PORTE DA .env
-*/
-
 const axios = require('axios');
 
 function setupLogging(clientName, instance) {
@@ -53,7 +49,7 @@ function setupLogging(clientName, instance) {
 }
 
 const apiMongo = axios.create({
-    baseURL: process.env.DATA_MONGO_URL || 'http://localhost:3001'   // server MongoDB REST (FIXED PORT)
+  baseURL: process.env.DATA_EXPRESS_URL || 'http://localhost:3001'   // server MongoDB REST
 });
 
 const apiPostgres = axios.create({
@@ -63,7 +59,6 @@ const apiPostgres = axios.create({
 setupLogging('Mongo-API', apiMongo);
 setupLogging('Postgres-API', apiPostgres);
 
-// Intercettore per verificare la connessione
 apiMongo.interceptors.response.use(
     response => response,
     error => {

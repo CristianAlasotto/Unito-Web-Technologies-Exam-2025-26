@@ -1,5 +1,6 @@
 package com.example.dataserverspringboot.entities.persondetails;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -9,11 +10,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 /**
  * REST API Controller for PersonDetails
  * Returns field names in snake_case to match database columns
  */
+@Tag(name = "Person Details", description = "Voice actor and staff information API")
 @RestController
 @RequestMapping("/api/person_details")
 @CrossOrigin(origins = "*")
@@ -21,6 +28,9 @@ public class PersonDetailsController {
 
     @Autowired
     private PersonDetailsService service;
+
+    @Autowired
+    private PersonDetailsRepository personDetailsRepository;
 
     @GetMapping("/{person_mal_id}")
     public ResponseEntity<?> getById(
@@ -65,14 +75,79 @@ public class PersonDetailsController {
         return ResponseEntity.ok(summary);
     }
 
+    /**
+     * Convert Details entity to Map with snake_case field names
+     */
+    private Map<String, Object> detailsToSnakeCaseMap(com.example.dataserverspringboot.entities.details.Details entity) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("mal_id", entity.getMalId());
+        result.put("title", entity.getTitle());
+        result.put("title_japanese", entity.getTitleJapanese());
+        result.put("type", entity.getType());
+        result.put("score", entity.getScore());
+        result.put("image_url", entity.getImageUrl());
+        result.put("url", entity.getUrl());
+        return result;
+    }
+
+    @GetMapping("/{person_mal_id}/details")
+    @Operation(
+            summary = "Get anime works",
+            description = "Retrieve all anime this person has worked on (voice acting roles)"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Anime list retrieved"),
+            @ApiResponse(responseCode = "404", description = "Person not found", content = @Content)
+    })
+    public ResponseEntity<?> getAnimeWorks(
+            @Parameter(description = "Person MAL ID", example = "1", required = true)
+            @PathVariable Integer person_mal_id,
+
+            @Parameter(description = "Page number (1-indexed)", example = "1")
+            @RequestParam(required = false) Integer page,
+
+            @Parameter(description = "Results per page", example = "10")
+            @RequestParam(required = false) Integer pageSize) {
+
+        // Check if person exists
+        Optional<PersonDetails> personOpt = service.getById(person_mal_id);
+        if (personOpt.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Person not found");
+            error.put("person_mal_id", person_mal_id);
+            return ResponseEntity.status(404).body(error);
+        }
+
+        int finalPage = (page != null) ? page : 1;
+        int finalPageSize = (pageSize != null) ? pageSize : 10;
+
+        Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize);
+        Page<com.example.dataserverspringboot.entities.details.Details> animePage =
+                personDetailsRepository.findAnimeWorks(person_mal_id, pageable);
+
+        List<Map<String, Object>> animeList = animePage.getContent().stream()
+                .map(this::detailsToSnakeCaseMap)
+                .collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("person_mal_id", person_mal_id);
+        response.put("page", finalPage);
+        response.put("pageSize", finalPageSize);
+        response.put("totalPages", animePage.getTotalPages());
+        response.put("totalItems", animePage.getTotalElements());
+        response.put("items", animeList);
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping
     public ResponseEntity<?> getAll(
             @RequestParam(required = false) String fields,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String city,
             @RequestParam(required = false) String nullFilter,
             @RequestParam(required = false) String notNullFilter,
-            
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer page,
@@ -90,6 +165,7 @@ public class PersonDetailsController {
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
             Page<PersonDetails> pageResult = service.findWithFilters(
                 search,
+                city,
                 nullFilter,
                 notNullFilter,
                 pageable);
@@ -129,6 +205,7 @@ public class PersonDetailsController {
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<PersonDetails> pageResult = service.findWithFilters(
                 search,
+                city,
                 nullFilter,
                 notNullFilter,
                 pageable);
@@ -165,6 +242,7 @@ public class PersonDetailsController {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
             Page<PersonDetails> pageResult = service.findWithFilters(
                 search,
+                city,
                 nullFilter,
                 notNullFilter,
                 pageable);
