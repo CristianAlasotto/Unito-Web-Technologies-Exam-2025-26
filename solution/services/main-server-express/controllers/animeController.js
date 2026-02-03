@@ -1,11 +1,11 @@
 const { apiMongo, apiPostgres } = require('./apiClients.js');
 
 const SORT_OPTIONS = [
-  { value: '', label: 'Default' },
-  { value: '-popularity', label: 'Più popolari' },
-  { value: 'popularity', label: 'Meno popolari' },
-  { value: 'title', label: 'Nome A-Z' },
-  { value: '-title', label: 'Nome Z-A' }
+	{ value: '', label: 'Default' },
+	{ value: 'popularity', label: 'Most Popular' },
+	{ value: '-popularity', label: 'Less Popular' },
+	{ value: 'title', label: 'Name A-Z' },
+	{ value: '-title', label: 'Name Z-A' }
 ];
 
 const TYPE_OPTIONS = [
