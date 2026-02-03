@@ -89,7 +89,7 @@ exports.detail = async (req, res, next) => {
 		const { id } = req.params;
 		const [characterResponse, animeResponse, voiceActorsResponse] = await Promise.all([
 			apiPostgres.get(`/api/characters/${id}`),
-			apiPostgres.get(`/api/characters/${id}/anime`),
+			apiPostgres.get(`/api/characters/${id}/details`),
 			apiPostgres.get(`/api/characters/${id}/voice_actors`)
 		]);
 		const raw = characterResponse.data || {};
