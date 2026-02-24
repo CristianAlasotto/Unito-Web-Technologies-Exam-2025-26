@@ -224,7 +224,7 @@ exports.detail = async (req, res, next) => {
     };
 
     const response = await apiPostgres.get(`/api/details/${id}`);
-    const charactersResponse = await apiPostgres.get('/api/characters?page=1&pageSize=12');
+    const charactersResponse = await apiPostgres.get(`/api/details/${id}/characters`);
     const recommendationsResponse = await apiPostgres.get(
         `/api/details/${id}/recommendations`
     );
@@ -232,7 +232,10 @@ exports.detail = async (req, res, next) => {
     const charactersData = charactersResponse?.data;
     const relatedCharacters = Array.isArray(charactersData)
         ? charactersData
-        : charactersData?.items || charactersData?.related_characters || [];
+        : charactersData?.related_characters ||
+          charactersData?.characters ||
+          charactersData?.items ||
+          [];
     const recommendationsData = recommendationsResponse?.data;
     const recommendations = Array.isArray(recommendationsData)
         ? recommendationsData
