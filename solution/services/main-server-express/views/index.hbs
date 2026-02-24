@@ -125,11 +125,14 @@
         const type = carouselId.split('-')[0]; // anime, character, or staff
 
         try {
-          const response = await fetch(`/?carouselType=${type}&page=${page}&pageSize=${pageSize}`);
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          const data = await response.json();
+          const response = await axios.get('/', {
+            params: {
+              carouselType: type,
+              page,
+              pageSize
+            }
+          });
+          const data = response.data;
 
           const carouselContainer = carousel.querySelector('.carousel-container');
           carouselContainer.innerHTML = data.html;

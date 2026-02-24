@@ -83,34 +83,10 @@
             try {
                 console.log('Submitting rating:', formData);
 
-                const response = await fetch(`/anime/${animeId}/ratings`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
-                });
+                const response = await axios.post(`/anime/${animeId}/ratings`, formData);
 
                 console.log('Response status:', response.status);
-                console.log('Response ok:', response.ok);
-
-                const responseText = await response.text();
-                console.log('Response text:', responseText);
-
-                let result;
-                try {
-                    result = JSON.parse(responseText);
-                } catch (e) {
-                    console.error('Response is not JSON:', responseText);
-                    throw new Error('Server returned non-JSON response: ' + responseText.substring(0, 100));
-                }
-
-                console.log('Response data:', result);
-
-                if (!response.ok) {
-                    const errorMsg = result.message || result.error || 'Failed to submit rating (status ' + response.status + ')';
-                    throw new Error(errorMsg);
-                }
+                console.log('Response data:', response.data);
 
                 showMessage('Rating submitted successfully!', 'success');
 
@@ -120,8 +96,12 @@
                 loadRatings(1);
 
             } catch (error) {
+                const errorMsg =
+                    error.response?.data?.message ||
+                    error.response?.data?.error ||
+                    error.message;
                 console.error('Error submitting rating:', error);
-                showMessage('Error: ' + error.message, 'error');
+                showMessage('Error: ' + errorMsg, 'error');
             } finally {
                 submitRatingBtn.disabled = false;
                 submitRatingBtn.textContent = 'Submit Rating';
@@ -158,8 +138,8 @@
             ratingsContainer.innerHTML = '<div style="text-align: center; padding: 2rem; color: #aaa;">Loading...</div>';
 
             // Fetch ratings via AJAX
-            const response = await fetch(`/anime/${animeId}/ratings-json?${params.toString()}`);
-            const data = await response.json();
+            const response = await axios.get(`/anime/${animeId}/ratings-json?${params.toString()}`);
+            const data = response.data;
 
             // Update ratings table
             renderRatings(data.ratings, data.pagination, params);
@@ -331,11 +311,8 @@
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/api/anime/${animeId}/characters`);
-            if (!response.ok) {
-                throw new Error(`Failed to load related characters (status ${response.status})`);
-            }
-            const data = await response.json();
+            const response = await axios.get(`http://localhost:8080/api/anime/${animeId}/characters`);
+            const data = response.data;
             const characters = normalizeRelatedCharacters(data);
             renderRelatedCharacters(characters);
         } catch (error) {
