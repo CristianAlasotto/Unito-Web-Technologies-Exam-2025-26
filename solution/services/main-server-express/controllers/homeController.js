@@ -1,5 +1,20 @@
+/**
+ * Home controller for the main landing page.
+ *
+ * Responsibilities:
+ * - loads popular anime, characters and staff sections
+ * - serves initial page rendering and AJAX carousel updates
+ * - maps frontend carousel types to backend API routes and defaults
+ */
+
 const { apiPostgres } = require('./apiClients');
 
+/**
+ * Returns API path and default query params for a given homepage section.
+ *
+ * @param {string} type Section type (anime, character, staff).
+ * @returns {{path: string, params: Object}|null} Request config or null when unsupported.
+ */
 const getApiRequestConfig = (type) => {
   switch (type) {
     case 'anime':
@@ -30,6 +45,14 @@ const getApiRequestConfig = (type) => {
   }
 };
 
+/**
+ * Renders the home page or a single carousel partial for AJAX requests.
+ *
+ * @param {import('express').Request} req Express request.
+ * @param {import('express').Response} res Express response.
+ * @param {import('express').NextFunction} next Express next middleware function.
+ * @returns {Promise<void>} Resolves when HTML/JSON response is sent.
+ */
 exports.preview = async (req, res, next) => {
   try {
     const { carouselType, page, pageSize: pageSizeQuery } = req.query;

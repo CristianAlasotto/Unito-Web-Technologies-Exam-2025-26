@@ -1,3 +1,12 @@
+/**
+ * Staff controller for list and detail pages.
+ *
+ * Responsibilities:
+ * - applies search, city and sorting filters for staff listing
+ * - renders list and detail templates for staff members
+ * - enriches detail pages with linked anime works
+ */
+
 const { apiMongo, apiPostgres } = require('./apiClients.js');
 
 const CITIES_OPTIONS = [
@@ -32,6 +41,12 @@ const SORT_OPTIONS = [
   { value: '-name', label: 'Name Z-A' }
 ];
 
+/**
+ * Builds UI filter state for the staff list template.
+ *
+ * @param {Record<string, string|undefined>} query Request query object.
+ * @returns {Object} Filter model consumed by the view.
+ */
 const buildFiltersModel = (query) => {
   const activeSearch = query.search || query.q || '';
   const activeCity = query.city || '';
@@ -50,7 +65,14 @@ const buildFiltersModel = (query) => {
   };
 };
 
-// Lista di tutto lo staff
+/**
+ * Renders the paginated staff list.
+ *
+ * @param {import('express').Request} req Express request.
+ * @param {import('express').Response} res Express response.
+ * @param {import('express').NextFunction} next Express next middleware function.
+ * @returns {Promise<void>} Resolves when the response is rendered.
+ */
 exports.list = async (req, res, next) => {
 	try {
 		const page = parseInt(req.query.page || '1', 10);
@@ -105,7 +127,14 @@ exports.list = async (req, res, next) => {
 	}
 };
 
-// Dettaglio di uno staff
+/**
+ * Renders the staff detail page with related anime works.
+ *
+ * @param {import('express').Request} req Express request.
+ * @param {import('express').Response} res Express response.
+ * @param {import('express').NextFunction} next Express next middleware function.
+ * @returns {Promise<void>} Resolves when the response is rendered.
+ */
 exports.detail = async (req, res, next) => {
 	try {
 		const { id } = req.params;
@@ -115,6 +144,12 @@ exports.detail = async (req, res, next) => {
 		]);
 		const raw = personResponse.data || {};
 		const worksPayload = worksResponse.data || {};
+		/**
+		 * Converts empty values to a fallback string for UI rendering.
+		 *
+		 * @param {unknown} value Raw value.
+		 * @returns {unknown} 'N/A' for empty values, original value otherwise.
+		 */
 		const formatValue = (value) =>
 			value === null || value === undefined || value === '' ? 'N/A' : value;
 		const staffInfo = [

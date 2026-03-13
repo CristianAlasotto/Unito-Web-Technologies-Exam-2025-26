@@ -1,3 +1,16 @@
+/**
+ * Anime controller for the main Express server of the Anime Database project.
+ *
+ * Responsibilities:
+ * - handles anime list and anime detail web routes
+ * - validates and normalizes filter/pagination query parameters
+ * - renders Handlebars views for list, detail, characters and recommendations
+ * - coordinates data access between PostgreSQL-backed and MongoDB-backed services
+ *
+ * This controller keeps business logic lightweight and delegates heavy
+ * data operations to dedicated backend data servers.
+ */
+
 const { apiMongo, apiPostgres } = require('./apiClients.js');
 
 const SORT_OPTIONS = [
@@ -88,6 +101,12 @@ const GENRE_OPTIONS = [
   { value: 'suspense', label: 'Suspense' }
 ];
 
+/**
+ * Normalizes the episodes filter to a safe integer string in range [1, 3000].
+ *
+ * @param {string|number|null|undefined} value Raw episodes value from query params.
+ * @returns {string} Normalized episodes value, or empty string when invalid.
+ */
 const normalizeEpisodes = (value) => {
   if (value === null || value === undefined || value === '') return '';
   const parsed = parseInt(value, 10);
@@ -96,6 +115,12 @@ const normalizeEpisodes = (value) => {
   return String(normalized);
 };
 
+/**
+ * Builds the UI filter model used by the anime list template.
+ *
+ * @param {Record<string, string|undefined>} query Incoming request query object.
+ * @returns {Object} Filter model with selected options for each dropdown.
+ */
 const buildFiltersModel = (query) => {
   const activeSort = query.sort || '';
   const activeSearch = query.search || query.q || '';
@@ -138,6 +163,14 @@ const buildFiltersModel = (query) => {
   };
 };
 
+/**
+ * Renders the paginated anime list, applying query filters and sort options.
+ *
+ * @param {import('express').Request} req Express request.
+ * @param {import('express').Response} res Express response.
+ * @param {import('express').NextFunction} next Express next middleware function.
+ * @returns {Promise<void>} Resolves when the response is rendered.
+ */
 exports.list = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page || '1', 10);
@@ -208,6 +241,14 @@ exports.list = async (req, res, next) => {
   }
 };
 
+/**
+ * Renders the anime detail page with related characters and recommendations.
+ *
+ * @param {import('express').Request} req Express request.
+ * @param {import('express').Response} res Express response.
+ * @param {import('express').NextFunction} next Express next middleware function.
+ * @returns {Promise<void>} Resolves when the response is rendered.
+ */
 exports.detail = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -245,6 +286,12 @@ exports.detail = async (req, res, next) => {
     let ratings = null;
     let totalPages = 1;
 
+    /**
+     * Builds a query string preserving current rating filters for pagination links.
+     *
+     * @param {number|string} pageNum Destination page number.
+     * @returns {string} Query string starting with '?'.
+     */
     const buildQueryString = (pageNum) => {
       const params = new URLSearchParams({ page: pageNum });
       if (filters.minScore !== null) params.append('minScore', filters.minScore);
@@ -256,6 +303,12 @@ exports.detail = async (req, res, next) => {
       return '?' + params.toString();
     };
 
+    /**
+     * Normalizes a generic field to an array of non-empty string values.
+     *
+     * @param {unknown} value Raw value from API payload.
+     * @returns {string[]} Normalized list.
+     */
     const normalizeList = (value) => {
       if (Array.isArray(value)) {
         return value.filter((item) => item !== null && item !== undefined && item !== '');
@@ -290,6 +343,12 @@ exports.detail = async (req, res, next) => {
       return [String(value)];
     };
 
+    /**
+     * Converts empty values to a human-readable fallback for the UI.
+     *
+     * @param {unknown} value Raw value to display.
+     * @returns {unknown} 'N/A' for empty values, otherwise the original value.
+     */
     const formatValue = (value) =>
         value === null || value === undefined || value === '' ? 'N/A' : value;
 
@@ -373,6 +432,13 @@ exports.detail = async (req, res, next) => {
   }
 };
 
+/**
+ * Renders the page with characters related to a specific anime.
+ *
+ * @param {import('express').Request} req Express request.
+ * @param {import('express').Response} res Express response.
+ * @returns {Promise<void>} Resolves when the response is rendered.
+ */
 exports.characters = async (req, res) => {
   try {
     const { id } = req.params;
@@ -391,6 +457,13 @@ exports.characters = async (req, res) => {
   }
 };
 
+/**
+ * Renders the page with recommendations for a specific anime.
+ *
+ * @param {import('express').Request} req Express request.
+ * @param {import('express').Response} res Express response.
+ * @returns {Promise<void>} Resolves when the response is rendered.
+ */
 exports.reccomendations = async (req, res) => {
   try {
     const { id } = req.params;
@@ -409,6 +482,13 @@ exports.reccomendations = async (req, res) => {
   }
 };
 
+/**
+ * Returns ratings data as JSON for asynchronous loading in the detail page.
+ *
+ * @param {import('express').Request} req Express request.
+ * @param {import('express').Response} res Express response.
+ * @returns {Promise<void>} Resolves when the JSON response is sent.
+ */
 exports.getRatingsJson = async (req, res) => {
   try {
     const { id } = req.params;

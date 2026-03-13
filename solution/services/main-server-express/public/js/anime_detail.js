@@ -265,6 +265,7 @@
         `;
     }
 
+    
     function renderRelatedCharacters(characters) {
         const section = document.getElementById('related-characters-section');
         if (!section) {

@@ -1,3 +1,12 @@
+/**
+ * Characters controller for list and detail pages.
+ *
+ * Responsibilities:
+ * - validates and forwards character filters/pagination to backend services
+ * - renders list and detail templates for characters
+ * - enriches detail pages with related anime and voice actor information
+ */
+
 const { apiMongo, apiPostgres } = require('./apiClients.js');
 
 const SORT_OPTIONS = [
@@ -8,6 +17,13 @@ const SORT_OPTIONS = [
 	{ value: '-name', label: 'Name Z-A' }
 ];
 
+/**
+ * Builds UI filter state for the character list template.
+ *
+ * @param {Record<string, string|undefined>} query Request query object.
+ * @param {number} favMaxLimit Maximum favorites value for range controls.
+ * @returns {Object} Filter model consumed by the view.
+ */
 const buildFiltersModel = (query, favMaxLimit) => {
 	const favMinValue = Number.isFinite(Number(query.favMin)) ? Number(query.favMin) : 0;
 	const activeSort = query.sort || '';
@@ -27,6 +43,14 @@ const buildFiltersModel = (query, favMaxLimit) => {
 	};
 };
 
+/**
+ * Renders the paginated characters list.
+ *
+ * @param {import('express').Request} req Express request.
+ * @param {import('express').Response} res Express response.
+ * @param {import('express').NextFunction} next Express next middleware function.
+ * @returns {Promise<void>} Resolves when the response is rendered.
+ */
 exports.list = async (req, res, next) => {
 	try {
 		const page = parseInt(req.query.page || '1', 10);
@@ -84,6 +108,14 @@ exports.list = async (req, res, next) => {
 	}
 };
 
+/**
+ * Renders the character detail page with related anime and voice actors.
+ *
+ * @param {import('express').Request} req Express request.
+ * @param {import('express').Response} res Express response.
+ * @param {import('express').NextFunction} next Express next middleware function.
+ * @returns {Promise<void>} Resolves when the response is rendered.
+ */
 exports.detail = async (req, res, next) => {
 	try {
 		const { id } = req.params;
@@ -95,6 +127,13 @@ exports.detail = async (req, res, next) => {
 		const raw = characterResponse.data || {};
 		const animePayload = animeResponse.data || {};
 		const voiceActorsPayload = voiceActorsResponse.data || {};
+
+		/**
+		 * Converts empty values to a fallback string for UI rendering.
+		 *
+		 * @param {unknown} value Raw value.
+		 * @returns {unknown} 'N/A' for empty values, original value otherwise.
+		 */
 		const formatValue = (value) =>
 			value === null || value === undefined || value === '' ? 'N/A' : value;
 		const characterInfo = [

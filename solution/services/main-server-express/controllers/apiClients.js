@@ -1,5 +1,24 @@
+/**
+ * Shared API clients for the main Express server.
+ *
+ * Responsibilities:
+ * - creates Axios instances for MongoDB and PostgreSQL data services
+ * - configures request/response logging for debugging and timing
+ * - normalizes connection error logging for upstream failures
+ *
+ * Business logic is not implemented here. This module only exposes
+ * configured HTTP clients used by route controllers.
+ */
+
 const axios = require('axios');
 
+/**
+ * Attaches request/response logging interceptors to an Axios instance.
+ *
+ * @param {string} clientName Human-readable client name for log prefixes.
+ * @param {import('axios').AxiosInstance} instance Axios instance to configure.
+ * @returns {void}
+ */
 function setupLogging(clientName, instance) {
 
     // REQUEST

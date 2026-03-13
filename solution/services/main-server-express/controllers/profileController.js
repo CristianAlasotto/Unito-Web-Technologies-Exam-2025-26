@@ -1,5 +1,22 @@
+/**
+ * Profile controller for user profile pages.
+ *
+ * Responsibilities:
+ * - renders the profile page with favorite anime/characters and ratings
+ * - serves AJAX endpoints for ratings pagination and carousel pages
+ * - aggregates data from PostgreSQL-backed and MongoDB-backed services
+ */
+
 const { apiPostgres, apiMongo } = require('./apiClients');
 
+/**
+ * Renders a user profile page or handles profile carousel AJAX requests.
+ *
+ * @param {import('express').Request} req Express request.
+ * @param {import('express').Response} res Express response.
+ * @param {import('express').NextFunction} next Express next middleware function.
+ * @returns {Promise<void>} Resolves when HTML/JSON response is sent.
+ */
 exports.showProfile = async (req, res, next) => {
     const username = req.params.username;
     const pageSize = 6; // 6 items per carousel (3x2 grid)
@@ -28,6 +45,12 @@ exports.showProfile = async (req, res, next) => {
         }
         const profileData = profileResult.value.data;
 
+        /**
+         * Extracts a normalized list from Promise.allSettled results.
+         *
+         * @param {PromiseSettledResult<any>} result Settled promise result.
+         * @returns {Array<any>} Extracted items array or empty array.
+         */
         const extractArray = (result) => {
             if (result.status === 'rejected') return [];
             const data = result.value.data;
@@ -152,7 +175,13 @@ exports.showProfile = async (req, res, next) => {
     }
 };
 
-// New endpoint for ratings JSON (AJAX pagination)
+/**
+ * Returns paginated user ratings as JSON for asynchronous profile updates.
+ *
+ * @param {import('express').Request} req Express request.
+ * @param {import('express').Response} res Express response.
+ * @returns {Promise<void>} Resolves when JSON response is sent.
+ */
 exports.getRatingsJson = async (req, res) => {
     try {
         const { username } = req.params;
@@ -207,6 +236,15 @@ exports.getRatingsJson = async (req, res) => {
     }
 };
 
+/**
+ * Handles AJAX requests for anime/character profile carousels.
+ *
+ * @param {import('express').Request} req Express request.
+ * @param {import('express').Response} res Express response.
+ * @param {string} username Profile username.
+ * @param {number} pageSize Number of items per carousel page.
+ * @returns {Promise<void>} Resolves when JSON response is sent.
+ */
 async function handleCarouselRequest(req, res, username, pageSize) {
     const { carouselType, page } = req.query;
     const currentPage = parseInt(page || '1', 10);
