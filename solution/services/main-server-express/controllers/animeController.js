@@ -37,14 +37,6 @@ const TYPE_OPTIONS = [
   { value: '[Mecha]', label: 'Mecha' }
 ];
 
-const STATUS_OPTIONS = [
-  { value: '', label: 'Tutti' },
-  { value: 'Currently Airing', label: 'Currently Airing' },
-  { value: 'Finished Airing', label: 'Finished Airing' },
-  { value: 'Not yet aired', label: 'Not yet aired' },
-  { value: '[Shin-Ei Animation]', label: 'Shin-Ei Animation' }
-];
-
 const RATING_OPTIONS = [
   { value: '', label: 'Tutti' },
   { value: 'G - All Ages', label: 'G - All Ages' },
@@ -53,27 +45,6 @@ const RATING_OPTIONS = [
   { value: 'R - 17+ (violence & profanity)', label: 'R - 17+ (violence & profanity)' },
   { value: 'R+ - Mild Nudity', label: 'R+ - Mild Nudity' },
   { value: 'Rx - Hentai', label: 'Rx - Hentai' }
-];
-
-const SOURCE_OPTIONS = [
-  { value: '', label: 'Tutti' },
-  { value: '4-koma manga', label: '4-koma manga' },
-  { value: 'Book', label: 'Book' },
-  { value: 'Card game', label: 'Card game' },
-  { value: 'Game', label: 'Game' },
-  { value: 'Light novel', label: 'Light novel' },
-  { value: 'Manga', label: 'Manga' },
-  { value: 'Mixed media', label: 'Mixed media' },
-  { value: 'Music', label: 'Music' },
-  { value: 'Novel', label: 'Novel' },
-  { value: 'Original', label: 'Original' },
-  { value: 'Other', label: 'Other' },
-  { value: 'Picture book', label: 'Picture book' },
-  { value: 'Radio', label: 'Radio' },
-  { value: 'Unknown', label: 'Unknown' },
-  { value: 'Visual novel', label: 'Visual novel' },
-  { value: 'Web manga', label: 'Web manga' },
-  { value: 'Web novel', label: 'Web novel' },
 ];
 
 const GENRE_OPTIONS = [
@@ -102,20 +73,6 @@ const GENRE_OPTIONS = [
 ];
 
 /**
- * Normalizes the episodes filter to a safe integer string in range [1, 3000].
- *
- * @param {string|number|null|undefined} value Raw episodes value from query params.
- * @returns {string} Normalized episodes value, or empty string when invalid.
- */
-const normalizeEpisodes = (value) => {
-  if (value === null || value === undefined || value === '') return '';
-  const parsed = parseInt(value, 10);
-  if (Number.isNaN(parsed)) return '';
-  const normalized = Math.min(Math.max(parsed, 1), 3000);
-  return String(normalized);
-};
-
-/**
  * Builds the UI filter model used by the anime list template.
  *
  * @param {Record<string, string|undefined>} query Incoming request query object.
@@ -126,16 +83,12 @@ const buildFiltersModel = (query) => {
   const activeSearch = query.search || query.q || '';
   const activeType = query.type || '';
   const activeYear = query.year || '';
-  const activeStatus = query.status || '';
   const activeRating = query.rating || '';
-  const activeSource = query.source || '';
-  const activeEpisodes = normalizeEpisodes(query.episodes ?? query.episode);
   const activeGenres = query.genres || query.genre || '';
 
   return {
     search: activeSearch,
     year: activeYear,
-    episodes: activeEpisodes,
     sortOptions: SORT_OPTIONS.map((option) => ({
       ...option,
       selected: option.value === activeSort
@@ -144,10 +97,6 @@ const buildFiltersModel = (query) => {
       ...option,
       selected: option.value === activeType
     })),
-    statusOptions: STATUS_OPTIONS.map((option) => ({
-      ...option,
-      selected: option.value === activeStatus
-    })),
     ratingOptions: RATING_OPTIONS.map((option) => ({
       ...option,
       selected: option.value === activeRating
@@ -155,10 +104,6 @@ const buildFiltersModel = (query) => {
     genreOptions: GENRE_OPTIONS.map((option) => ({
       ...option,
       selected: option.value === activeGenres
-    })),
-    sourceOptions: SOURCE_OPTIONS.map((option) => ({
-      ...option,
-      selected: option.value === activeSource
     }))
   };
 };
@@ -181,14 +126,10 @@ exports.list = async (req, res, next) => {
     if (searchTerm) params.set('search', searchTerm);
     if (req.query.type) params.set('type', req.query.type);
     if (req.query.year) params.set('year', req.query.year);
-    if (req.query.status) params.set('status', req.query.status);
     if (req.query.rating) params.set('rating', req.query.rating);
     if (req.query.genres) params.set('genres', req.query.genres);
     if (!req.query.genres && req.query.genre) params.set('genres', req.query.genre);
-    if (req.query.source) params.set('source', req.query.source);
     if (req.query.sort) params.set('sort', req.query.sort);
-    const episodesParam = normalizeEpisodes(req.query.episodes ?? req.query.episode);
-    if (episodesParam) params.set('episodes', episodesParam);
 
     params.set('page', String(page));
     params.set('pageSize', String(pageSize));
@@ -199,19 +140,18 @@ exports.list = async (req, res, next) => {
     const filters = buildFiltersModel(req.query);
 
     const paginationQuery = new URLSearchParams();
+    // Exclude removed/legacy filters from pagination links.
+    const removedFilterParams = new Set(['status', 'source', 'episode', 'episodes']);
     Object.entries(req.query).forEach(([key, value]) => {
       if (!value) return;
       if (key === 'page') return;
-      if (key === 'episode' || key === 'episodes') return;
+      if (removedFilterParams.has(key)) return;
       if (key === 'genre') {
         if (!req.query.genres) paginationQuery.set('genres', value);
         return;
       }
       paginationQuery.set(key, value);
     });
-    if (episodesParam) {
-      paginationQuery.set('episodes', episodesParam);
-    }
     const filtersQuery = paginationQuery.toString() ? `&${paginationQuery.toString()}` : '';
 
     res.render('anime/anime_list', {
