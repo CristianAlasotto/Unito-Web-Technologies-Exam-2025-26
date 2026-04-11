@@ -15,10 +15,24 @@
 }
 
 .navbar .container {
-  color: aqua;
+  color: rgb(255, 255, 255);
 }
 
-.logo {
+.logo-container {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: flex-start;
+	align-items: center;
+	align-content: stretch;
+}
+
+.logo-img {
+  height: 70px;
+  padding-right: 1rem;
+}
+
+.logo_title {
   font-size: 1.5rem;
   font-weight: bold;
 }

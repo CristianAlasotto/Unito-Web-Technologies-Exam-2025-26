@@ -1,0 +1,145 @@
+.carousel-container {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 1rem;
+
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: center;
+	align-items: center;
+	align-content: stretch;
+}
+
+.carousel-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.carousel-container::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+.carousel-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.carousel_titleContainer {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.carousel_titleContainer h3 {
+  margin: 0;
+}
+
+.see-all-link {
+  cursor: pointer;
+  color: var(--link-color);
+  text-decoration: underline;
+  margin-left: 0;
+}
+
+.see-all-link:hover {
+  text-decoration: none;
+}
+
+.cardsContainer {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: center;
+	align-items: center;
+	align-content: stretch;
+}
+
+.card {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    background: #2a2a2a;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    overflow: hidden;
+    transition: transform 0.2s;
+    width: 200px;
+    height: 320px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin: 0.7rem;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card a {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.card img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+}
+
+.card-body {
+    padding: 0.75rem;
+    background: #2a2a2a;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.card-body p {
+    margin: 0;
+    font-weight: bold;
+    white-space: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #fff;
+    font-size: 0.875rem;
+    line-height: 1.2;
+    min-height: 2.1rem;
+}
+
+.carousel {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.carousel h3 {
+    margin-bottom: 1rem;
+}
+
+.btn-left, .btn-right {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    z-index: 10;
+    text-decoration: none;
+}
+
+.btn-left {
+    left: -40px;
+}
+
+.btn-right {
+    right: -40px;
+}

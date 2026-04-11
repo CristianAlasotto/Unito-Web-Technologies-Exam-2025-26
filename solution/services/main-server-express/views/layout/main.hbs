@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{title}} - Anime DB</title>
+  <link rel="icon" href="/images/logo.png" type="image/png">
   <link rel="stylesheet" href="/css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,25 +17,41 @@
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/navbar.css">
   <link rel="stylesheet" href="/css/hero.css">
+  <link rel="stylesheet" href="/css/carousels.css">
   <link rel="stylesheet" href="/css/footer.css">
+  <link rel="stylesheet" href="/css/filters.css">
 
   <!-- CSS for reusable components -->
   <link rel="stylesheet" href="/css/cards.css">
   <link rel="stylesheet" href="/css/forms.css">
+  <link rel="stylesheet" href="/css/pages/anime.css">
+  <link rel="stylesheet" href="/css/pages/characters.css">
+  <link rel="stylesheet" href="/css/pages/staff.css">
 
-  <!-- Page-specific CSS (optional, if different for each route) -->
+  {{#if currentPage}}
   <link rel="stylesheet" href="/css/pages/{{currentPage}}.css">
+  {{/if}}
+
+  <script src="/vendor/axios/axios.min.js"></script>
+</head>
 
 <body>
   <nav class="navbar">
     <div class="container">
-      <h1 class="logo">Anime Database</h1>
+      <div class="logo-container">
+        <div>
+            <a href="/"><img src="/images/logo.png" alt="Logo" class="logo-img"></a>
+        </div>
+        <div>
+          <h1 class="logo_title">Anime Database</h1>
+        </div>
+      </div>
       <ul class="nav-links">
-        <li><a href="/">home</a></li>
-        <li><a href="/characters">characters</a></li>
-        <li><a href="/staff">staff</a></li>
-        <li><a href="/profile">profile</a></li>
-        <li><a href="/favourites">favourites</a></li>
+        <li><a href="/">Home</a></li>
+        <li><a href="/anime">Anime</a></li>
+        <li><a href="/characters">Characters</a></li>
+        <li><a href="/staff">Staff</a></li>
+        <li><a href="/profile">Profile</a></li>
       </ul>
     </div>
   </nav>
@@ -47,7 +64,8 @@
     <p>&copy; 2025 Anime Database. All rights reserved.</p>
   </footer>
 
-  <script src="/js/main.js"></script>
+  {{!--
+  <script src="/js/main.js"></script> --}}
 </body>
 
 </html>

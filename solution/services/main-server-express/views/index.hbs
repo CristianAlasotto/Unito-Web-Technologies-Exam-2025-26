@@ -1,0 +1,180 @@
+<div class="hero">
+  <h2>Welcome to Anime Database</h2>
+  <div class="hero-description">
+    <p>Explore a vast collection of anime, each with unique stories and characters that captivate audiences worldwide.
+    </p>
+  </div>
+</div>
+{{#if warning}}
+<div class="warning-banner"
+  style="background: #d50415; color: #000; padding: 1rem; text-align: center; margin-bottom: 1rem;">
+  ⚠️ {{warning}}
+</div>
+{{/if}}
+
+{{#if error}}
+<div class="error-message">{{error}}</div>
+{{/if}}
+
+{{!-- Anime carousel --}}
+<div class="carousel" id="anime-carousel" data-current-page="{{animeCarousel.currentPage}}"
+  data-page-size="{{animeCarousel.pageSize}}">
+  <div class="carousel_titleContainer">
+    <h3>Top Rated animes</h3>
+    <span class="see-all-link" role="link" tabindex="0" onclick="window.location.href='/anime?search=&sort=popularity'"
+      onkeydown="if(event.key === 'Enter') window.location.href='/anime?search=&sort=popularity'">
+      See all
+    </span>
+  </div>
+  {{#if animeCarousel.hasPrev}}
+  <button class="btn-left" data-prev-page="{{animeCarousel.prevPage}}">
+    ←
+  </button>
+  {{/if}}
+
+  <div class="carousel-container">
+    {{> anime_carousel_items items=popularAnimes}}
+  </div>
+
+  {{#if animeCarousel.hasNext}}
+  <button class="btn-right" data-next-page="{{animeCarousel.nextPage}}">
+    →
+  </button>
+  {{/if}}
+</div>
+
+{{!-- Characters carousel --}}
+<div class="carousel" id="character-carousel" data-current-page="{{characterCarousel.currentPage}}"
+  data-page-size="{{characterCarousel.pageSize}}">
+  <div class="carousel_titleContainer">
+    <h3>Most popular Characters</h3>
+    <span class="see-all-link" role="link" tabindex="0" onclick="window.location.href='/characters?character_mal_id=&sort=-favorites'"
+      onkeydown="if(event.key === 'Enter') window.location.href='/characters?character_mal_id=&sort=-favorites'">
+      See all
+    </span>
+  </div>
+  {{#if characterCarousel.hasPrev}}
+  <button class="btn-left" data-prev-page="{{characterCarousel.prevPage}}">
+    ←
+  </button>
+  {{/if}}
+
+  <div class="carousel-container">
+    {{> characters_carousel_items items=popularCharacters}}
+  </div>
+
+  {{#if characterCarousel.hasNext}}
+  <button class="btn-right" data-next-page="{{characterCarousel.nextPage}}">
+    →
+  </button>
+  {{/if}}
+</div>
+
+{{!-- Staff carousel --}}
+<div class="carousel" id="staff-carousel" data-current-page="{{staffCarousel.currentPage}}"
+  data-page-size="{{staffCarousel.pageSize}}">
+  <div class="carousel_titleContainer">
+    <h3>Some of our best Creators/Staff</h3>
+    <span class="see-all-link" role="link" tabindex="0" onclick="window.location.href='/staff?sort=-favorites'"
+      onkeydown="if(event.key === 'Enter') window.location.href='/staff'">
+      See all
+    </span>
+  </div>
+  {{#if staffCarousel.hasPrev}}
+  <button class="btn-left" data-prev-page="{{staffCarousel.prevPage}}">
+    ←
+  </button>
+  {{/if}}
+
+  <div class="carousel-container">
+    {{> staff_carousel_items items=popularStaff}}
+  </div>
+
+  {{#if staffCarousel.hasNext}}
+  <button class="btn-right" data-next-page="{{staffCarousel.nextPage}}">
+    →
+  </button>
+  {{/if}}
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const carousels = document.querySelectorAll('.carousel');
+
+    carousels.forEach(carousel => {
+      const carouselId = carousel.id;
+
+      carousel.addEventListener('click', (event) => {
+        const button = event.target.closest('.btn-left, .btn-right');
+        if (!button || !carousel.contains(button)) {
+          return;
+        }
+
+        const page = button.classList.contains('btn-left')
+          ? button.dataset.prevPage
+          : button.dataset.nextPage;
+
+        if (page) {
+          fetchCarouselData(carouselId, page);
+        }
+      });
+
+      async function fetchCarouselData(carouselId, page) {
+        const carousel = document.getElementById(carouselId);
+        const pageSize = carousel.dataset.pageSize;
+        const type = carouselId.split('-')[0]; // anime, character, or staff
+
+        try {
+          const response = await axios.get('/', {
+            params: {
+              carouselType: type,
+              page,
+              pageSize
+            }
+          });
+          const data = response.data;
+
+          const carouselContainer = carousel.querySelector('.carousel-container');
+          carouselContainer.innerHTML = data.html;
+
+          carousel.dataset.currentPage = data.currentPage;
+
+          // Update or create prev button
+          let prevButton = carousel.querySelector('.btn-left');
+          if (data.hasPrev) {
+            if (!prevButton) {
+              prevButton = document.createElement('button');
+              prevButton.className = 'btn-left';
+              carousel.insertBefore(prevButton, carouselContainer);
+            }
+            prevButton.innerHTML = '←';
+            prevButton.dataset.prevPage = data.prevPage;
+            prevButton.style.display = 'block';
+          } else if (prevButton) {
+            prevButton.style.display = 'none';
+          }
+
+          // Update or create next button
+          let nextButton = carousel.querySelector('.btn-right');
+          if (data.hasNext) {
+            if (!nextButton) {
+              nextButton = document.createElement('button');
+              nextButton.className = 'btn-right';
+              carousel.appendChild(nextButton);
+            }
+            nextButton.innerHTML = '→';
+            nextButton.dataset.nextPage = data.nextPage;
+            nextButton.style.display = 'block';
+          } else if (nextButton) {
+            nextButton.style.display = 'none';
+          }
+
+        } catch (error) {
+          console.error('Failed to fetch carousel data:', error);
+          const carouselContainer = carousel.querySelector('.carousel-container');
+          carouselContainer.innerHTML = '<p class="error-message">Error loading items.</p>';
+        }
+      }
+    });
+  });
+</script>
