@@ -12,8 +12,9 @@
 <div class="characters-container">
 	<h1>Characters</h1>
 
-	{{#if characters}}
 	{{> charactersFilter}}
+
+	{{#if characters}}
 	<section class="characters-grid">
 		{{#each characters}}
 		<article class="character-card">

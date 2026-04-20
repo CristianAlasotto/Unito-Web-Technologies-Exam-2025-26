@@ -12,8 +12,9 @@
 <div class="anime-container">
   <h1>Animes</h1>
 
-  {{#if animes}}
   {{> animeFilter}}
+
+  {{#if animes}}
   <section class="anime-grid">
     {{#each animes}}
     <article class="anime-card">

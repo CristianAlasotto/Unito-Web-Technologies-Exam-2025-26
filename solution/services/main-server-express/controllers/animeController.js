@@ -173,7 +173,7 @@ exports.list = async (req, res, next) => {
     res.render('anime/anime_list', {
       title: 'Anime',
       animes: [],
-      filters: buildFiltersModel({}),
+      filters: buildFiltersModel(req.query),
       filtersQuery: '',
       currentPage: 'anime',
       error: 'Impossibile caricare i dati degli anime. Il server potrebbe non essere disponibile.'

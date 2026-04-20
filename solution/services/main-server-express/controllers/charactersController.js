@@ -100,7 +100,7 @@ exports.list = async (req, res, next) => {
 		res.render('characters/characters_list', {
 			title: 'Personaggi',
 			characters: [],
-			filters: buildFiltersModel({}, 50000),
+			filters: buildFiltersModel(req.query, 50000),
 			filtersQuery: '',
 			currentPage: 'characters',
 			error: 'Impossibile caricare i dati dei personaggi. Il server potrebbe non essere disponibile.'
