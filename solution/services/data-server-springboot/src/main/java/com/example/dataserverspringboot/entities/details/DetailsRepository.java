@@ -13,10 +13,46 @@ import org.springframework.stereotype.Repository;
 public interface DetailsRepository extends JpaRepository<Details, Integer> {
 
     /**
-     * Search by title (case-insensitive, partial match)
+     * COMBINED FILTER QUERY - All filters applied with AND logic.
+     *
+     * FIX: Back to pure JPQL (no nativeQuery) to avoid the "column e.malid does
+     * not exist" pagination bug that native queries cause with camelCase field names.
+     *
+     * The "lower(bytea)" fix is handled upstream: DetailsService pre-builds the
+     * wildcard strings (e.g. "%attack%") before calling this method, so we use a
+     * plain LIKE instead of LOWER(CONCAT(...)). Hibernate can always infer the type
+     * of a non-null String parameter correctly, so the bytea error never occurs.
+     *
+     * Parameters:
+     *   searchPattern - already wrapped with %, e.g. "%naruto%", or null to skip
+     *   genresPattern - already wrapped with %, e.g. "%action%", or null to skip
      */
-    @Query("SELECT e FROM Details e WHERE LOWER(CAST(e.title AS string)) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<Details> searchByTitle(@Param("search") String search, Pageable pageable);
+    @Query("SELECT e FROM Details e WHERE " +
+            "(:searchPattern IS NULL OR LOWER(e.title) LIKE :searchPattern) AND " +
+            "(:type IS NULL OR e.type = :type) AND " +
+            "(:year IS NULL OR e.year = :year) AND " +
+            "(:status IS NULL OR e.status = :status) AND " +
+            "(:rating IS NULL OR e.rating = :rating) AND " +
+            "(:source IS NULL OR e.source = :source) AND " +
+            "(:genresPattern IS NULL OR LOWER(e.genres) LIKE :genresPattern) AND " +
+            "(:episodes IS NULL OR e.episodes = :episodes)")
+    Page<Details> findWithCombinedFilters(
+            @Param("searchPattern") String searchPattern,
+            @Param("type") String type,
+            @Param("year") Integer year,
+            @Param("status") String status,
+            @Param("rating") String rating,
+            @Param("source") String source,
+            @Param("genresPattern") String genresPattern,
+            @Param("episodes") Integer episodes,
+            Pageable pageable);
+
+    /**
+     * Search by title (case-insensitive, partial match).
+     * FIX: Accepts pre-built wildcard pattern from service layer.
+     */
+    @Query("SELECT e FROM Details e WHERE LOWER(e.title) LIKE :searchPattern")
+    Page<Details> searchByTitle(@Param("searchPattern") String searchPattern, Pageable pageable);
 
     /**
      * Find by type
@@ -49,17 +85,18 @@ public interface DetailsRepository extends JpaRepository<Details, Integer> {
     Page<Details> findByEpisodes(Integer episodes, Pageable pageable);
 
     /**
-     * Find by genres (case-insensitive, partial match for genre names)
+     * Find by genres (case-insensitive, partial match).
+     * FIX: Accepts pre-built wildcard pattern from service layer.
      */
-    @Query("SELECT e FROM Details e WHERE LOWER(CAST(e.genres AS string)) LIKE LOWER(CONCAT('%', :genre, '%'))")
-    Page<Details> findByGenresContaining(@Param("genre") String genre, Pageable pageable);
+    @Query("SELECT e FROM Details e WHERE LOWER(e.genres) LIKE :genrePattern")
+    Page<Details> findByGenresContaining(@Param("genrePattern") String genrePattern, Pageable pageable);
 
     /**
      * Find recommendations for a specific anime using subquery
      */
     @Query("SELECT d FROM Details d WHERE d.malId IN " +
-           "(SELECT r.recommendationMalId FROM com.example.dataserverspringboot.entities.recommendations.Recommendations r WHERE r.malId = :malId) " +
-           "ORDER BY d.score DESC")
+            "(SELECT r.recommendationMalId FROM com.example.dataserverspringboot.entities.recommendations.Recommendations r WHERE r.malId = :malId) " +
+            "ORDER BY d.score DESC")
     Page<Details> findRecommendationsForAnime(@Param("malId") Integer malId, Pageable pageable);
 
     /**
@@ -89,95 +126,28 @@ public interface DetailsRepository extends JpaRepository<Details, Integer> {
     // NULL FILTERING METHODS
     // ============================================================
 
-    /**
-     * Find all anime where synopsis IS NULL
-     */
     Page<Details> findBySynopsisIsNull(Pageable pageable);
-
-    /**
-     * Find all anime where synopsis IS NOT NULL
-     */
     Page<Details> findBySynopsisIsNotNull(Pageable pageable);
 
-    /**
-     * Find all anime where score IS NULL (unrated)
-     */
     Page<Details> findByScoreIsNull(Pageable pageable);
-
-    /**
-     * Find all anime where score IS NOT NULL (rated)
-     */
     Page<Details> findByScoreIsNotNull(Pageable pageable);
 
-    /**
-     * Find all anime where end_date IS NULL (currently airing or unknown)
-     */
     Page<Details> findByEndDateIsNull(Pageable pageable);
-
-    /**
-     * Find all anime where end_date IS NOT NULL (finished airing)
-     */
     Page<Details> findByEndDateIsNotNull(Pageable pageable);
 
-    /**
-     * Find all anime where title_japanese IS NULL
-     */
     Page<Details> findByTitleJapaneseIsNull(Pageable pageable);
-
-    /**
-     * Find all anime where title_japanese IS NOT NULL
-     */
     Page<Details> findByTitleJapaneseIsNotNull(Pageable pageable);
 
-    /**
-     * Find all anime where season IS NULL (movies, OVAs, etc.)
-     */
     Page<Details> findBySeasonIsNull(Pageable pageable);
-
-    /**
-     * Find all anime where season IS NOT NULL (seasonal anime)
-     */
     Page<Details> findBySeasonIsNotNull(Pageable pageable);
 
-    // Count methods for statistics
-
-    /**
-     * Find all characters where favorites IS NULL
-     */
     Page<Details> findByFavoritesIsNull(Pageable pageable);
-
-    /**
-     * Find all characters where favorites IS NOT NULL
-     */
     Page<Details> findByFavoritesIsNotNull(Pageable pageable);
 
-    /**
-     * Count characters with null favorites
-     */
     long countByFavoritesIsNull();
-
-    /**
-     * Count anime with null synopsis
-     */
     long countBySynopsisIsNull();
-
-    /**
-     * Count anime with null score
-     */
     long countByScoreIsNull();
-
-    /**
-     * Count anime with null end_date
-     */
     long countByEndDateIsNull();
-
-    /**
-     * Count anime with null title_japanese
-     */
     long countByTitleJapaneseIsNull();
-
-    /**
-     * Count anime with null season
-     */
     long countBySeasonIsNull();
 }

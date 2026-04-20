@@ -1,5 +1,11 @@
 package com.example.dataserverspringboot.entities.recommendations;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -27,41 +33,66 @@ public class RecommendationsController {
     @Autowired
     private RecommendationsRepository recommendationsRepository;
 
+    @Operation(
+            summary = "Get all recommendations",
+            description = "Retrieve paginated list of simple ID pairs (Source -> Recommended)"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List retrieved successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid parameters", content = @Content)
+    })
     @GetMapping
     public ResponseEntity<?> getAll(
+            @Parameter(description = "Comma-separated fields to return", example = "mal_id,recommendation_mal_id")
             @RequestParam(required = false) String fields,
+
+            @Parameter(description = "Search by ID (string match)", example = "1")
             @RequestParam(required = false) String search,
+
+            @Parameter(description = "Sort field", example = "mal_id")
             @RequestParam(required = false) String sort,
+
+            @Parameter(description = "Filter by Source Anime ID", example = "1")
             @RequestParam(value = "mal_id", required = false) Integer malId,
+
+            @Parameter(description = "Filter by Recommended Anime ID", example = "5")
             @RequestParam(value = "recommendation_mal_id", required = false) Integer recommendationMalId,
+
+            @Parameter(description = "Maximum number of results", example = "10")
             @RequestParam(required = false) Integer limit,
+
+            @Parameter(description = "Offset for pagination", example = "0")
             @RequestParam(required = false) Integer offset,
+
+            @Parameter(description = "Page number (1-indexed)", example = "1")
             @RequestParam(required = false) Integer page,
+
+            @Parameter(description = "Number of results per page", example = "10")
             @RequestParam(required = false) Integer pageSize) {
-        
+
         boolean usePageBased = (page != null || pageSize != null);
         boolean useLimitOffset = (limit != null || offset != null) && !usePageBased;
-        
+
         Sort sortObj = parseSortParameter(sort);
-        
+
         if (useLimitOffset) {
             int finalLimit = (limit != null) ? limit : 10;
             int finalOffset = (offset != null) ? offset : 0;
-            
+
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
             Page<Recommendations> pageResult = service.findWithFilters(
                 search,
                 malId, recommendationMalId,
                 pageable);
-            
+
             List<Recommendations> results = pageResult.getContent();
             long totalCount = pageResult.getTotalElements();
-            
+
             if (fields != null && !fields.isEmpty()) {
                 List<Map<String, Object>> filteredResults = results.stream()
                     .map(entity -> filterFields(entity, fields))
                     .collect(Collectors.toList());
-                
+
                 Map<String, Object> response = new HashMap<>();
                 response.put("limit", finalLimit);
                 response.put("offset", finalOffset);
@@ -69,36 +100,36 @@ public class RecommendationsController {
                 response.put("items", filteredResults);
                 return ResponseEntity.ok(response);
             }
-            
+
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("limit", finalLimit);
             response.put("offset", finalOffset);
             response.put("total", totalCount);
             response.put("items", snakeCaseResults);
             return ResponseEntity.ok(response);
-            
+
         } else if (usePageBased) {
             int finalPage = (page != null) ? page : 1;
             int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
-            
+
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<Recommendations> pageResult = service.findWithFilters(
                 search,
                 malId, recommendationMalId,
                 pageable);
-            
+
             List<Recommendations> results = pageResult.getContent();
             long totalPages = pageResult.getTotalPages();
-            
+
             if (fields != null && !fields.isEmpty()) {
                 List<Map<String, Object>> filteredResults = results.stream()
                     .map(entity -> filterFields(entity, fields))
                     .collect(Collectors.toList());
-                
+
                 Map<String, Object> response = new HashMap<>();
                 response.put("page", finalPage);
                 response.put("pageSize", finalPageSize);
@@ -106,38 +137,38 @@ public class RecommendationsController {
                 response.put("items", filteredResults);
                 return ResponseEntity.ok(response);
             }
-            
+
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("page", finalPage);
             response.put("pageSize", finalPageSize);
             response.put("totalPages", totalPages);
             response.put("items", snakeCaseResults);
             return ResponseEntity.ok(response);
-            
+
         } else {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
             Page<Recommendations> pageResult = service.findWithFilters(
                 search,
                 malId, recommendationMalId,
                 pageable);
-            
+
             List<Recommendations> results = pageResult.getContent();
-            
+
             if (fields != null && !fields.isEmpty()) {
                 List<Map<String, Object>> filteredResults = results.stream()
                     .map(entity -> filterFields(entity, fields))
                     .collect(Collectors.toList());
                 return ResponseEntity.ok(filteredResults);
             }
-            
+
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
-            
+
             return ResponseEntity.ok(snakeCaseResults);
         }
     }
@@ -154,12 +185,26 @@ public class RecommendationsController {
      * Get single resource by composite key (using query parameters)
      * GET /api/recommendations/single?mal_id&recommendation_mal_id
      */
+    @Operation(
+            summary = "Get specific recommendation",
+            description = "Retrieve a single recommendation link using the composite key"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Found successfully", content = @Content(schema = @Schema(implementation = Recommendations.class))),
+            @ApiResponse(responseCode = "400", description = "Missing key fields", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Not found", content = @Content)
+    })
     @GetMapping("/single")
     public ResponseEntity<?> getSingle(
+            @Parameter(description = "Source Anime ID", required = true)
             @RequestParam(value = "mal_id", required = false) Integer malId,
+
+            @Parameter(description = "Recommended Anime ID", required = true)
             @RequestParam(value = "recommendation_mal_id", required = false) Integer recommendationMalId,
+
+            @Parameter(description = "Comma-separated fields to return")
             @RequestParam(required = false) String fields) {
-        
+
         // Check if all key fields are provided
         if (malId == null || recommendationMalId == null) {
             Map<String, Object> error = new HashMap<>();
@@ -167,25 +212,25 @@ public class RecommendationsController {
             error.put("usage", "GET /api/recommendations/single?mal_id&recommendation_mal_id");
             return ResponseEntity.status(400).body(error);
         }
-        
+
         // Create composite key
         Recommendations.RecommendationsId id = new Recommendations.RecommendationsId(malId, recommendationMalId);
         Optional<Recommendations> entity = service.getById(id);
-        
+
         if (entity.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "Recommendations not found");
             error.put("mal_id", malId); error.put("recommendation_mal_id", recommendationMalId);
             return ResponseEntity.status(404).body(error);
         }
-        
+
         Recommendations data = entity.get();
-        
+
         if (fields != null && !fields.isEmpty()) {
             Map<String, Object> filtered = filterFields(data, fields);
             return ResponseEntity.ok(filtered);
         }
-        
+
         return ResponseEntity.ok(toSnakeCaseMap(data));
     }
 
@@ -194,11 +239,22 @@ public class RecommendationsController {
      * Get summary by composite key (using query parameters)
      * GET /api/recommendations/summary?mal_id&recommendation_mal_id
      */
+    @Operation(
+            summary = "Get recommendation summary",
+            description = "Retrieve a brief summary of the recommendation"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Found successfully"),
+            @ApiResponse(responseCode = "404", description = "Not found")
+    })
     @GetMapping("/summary")
     public ResponseEntity<?> getSummary(
+            @Parameter(description = "Source Anime ID", required = true)
             @RequestParam(value = "mal_id", required = false) Integer malId,
+
+            @Parameter(description = "Recommended Anime ID", required = true)
             @RequestParam(value = "recommendation_mal_id", required = false) Integer recommendationMalId) {
-        
+
         // Check if all key fields are provided
         if (malId == null || recommendationMalId == null) {
             Map<String, Object> error = new HashMap<>();
@@ -206,23 +262,23 @@ public class RecommendationsController {
             error.put("usage", "GET /api/recommendations/summary?mal_id&recommendation_mal_id");
             return ResponseEntity.status(400).body(error);
         }
-        
+
         // Create composite key
         Recommendations.RecommendationsId id = new Recommendations.RecommendationsId(malId, recommendationMalId);
         Optional<Recommendations> entity = service.getById(id);
-        
+
         if (entity.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "Recommendations not found");
             error.put("mal_id", malId); error.put("recommendation_mal_id", recommendationMalId);
             return ResponseEntity.status(404).body(error);
         }
-        
+
         Recommendations data = entity.get();
         Map<String, Object> summary = new HashMap<>();
         summary.put("mal_id", data.getMalId());
         summary.put("recommendation_mal_id", data.getRecommendationMalId());
-        
+
         return ResponseEntity.ok(summary);
     }
 
@@ -236,7 +292,7 @@ public class RecommendationsController {
     private Map<String, Object> filterFields(Recommendations entity, String fields) {
         Map<String, Object> result = new HashMap<>();
         String[] requestedFields = fields.split(",");
-        
+
         for (String field : requestedFields) {
             field = field.trim();
             switch (field) {
@@ -248,7 +304,7 @@ public class RecommendationsController {
                     break;
             }
         }
-        
+
         return result;
     }
 
@@ -274,13 +330,13 @@ public class RecommendationsController {
                 // ✅ FIX: NULL values always sorted LAST
                 orders.add(Sort.Order.by(actualField)
                         .with(direction)
-                        .nullsLast());  // ← ADD THIS
+                        .nullsLast());
             }
         }
 
         // Add primary keys as tiebreaker
         orders.add(Sort.Order.asc("malId"));
-        orders.add(Sort.Order.asc("recommendationsMalId"));
+        orders.add(Sort.Order.asc("recommendationMalId"));
 
         return Sort.by(orders);
     }
@@ -289,29 +345,51 @@ public class RecommendationsController {
      * Get all recommendations with full anime details (JPA version)
      * GET /api/recommendations/details
      */
+    @Operation(
+            summary = "Get recommendations with full details",
+            description = "Retrieve list of recommendations including full details of both the source and recommended anime (Joined Data)"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "List retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = RecommendationWithDetails.class))
+            )
+    })
     @GetMapping("/details")
     public ResponseEntity<?> getAllWithDetails(
+            @Parameter(description = "Filter by Source Anime ID", example = "1")
             @RequestParam(value = "mal_id", required = false) Integer malId,
+
+            @Parameter(description = "Filter by Recommended Anime ID", example = "5")
             @RequestParam(value = "recommendation_mal_id", required = false) Integer recommendationMalId,
+
+            @Parameter(description = "Maximum number of results", example = "10")
             @RequestParam(required = false) Integer limit,
+
+            @Parameter(description = "Offset for pagination", example = "0")
             @RequestParam(required = false) Integer offset,
+
+            @Parameter(description = "Page number (1-indexed)", example = "1")
             @RequestParam(required = false) Integer page,
+
+            @Parameter(description = "Number of results per page", example = "10")
             @RequestParam(required = false) Integer pageSize) {
-        
+
         boolean usePageBased = (page != null || pageSize != null);
-        
+
         if (usePageBased) {
             int finalPage = (page != null) ? page : 1;
             int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
-            
+
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize);
             Page<RecommendationWithDetails> results = service.findAllWithDetails(malId, recommendationMalId, pageable);
-            
+
             // Convert to response format
             List<Map<String, Object>> items = results.getContent().stream()
                 .map(this::convertToDetailsMap)
                 .collect(Collectors.toList());
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("page", finalPage);
             response.put("pageSize", finalPageSize);
@@ -319,32 +397,32 @@ public class RecommendationsController {
             response.put("total", results.getTotalElements());
             response.put("items", items);
             return ResponseEntity.ok(response);
-            
+
         } else {
             int finalLimit = (limit != null) ? limit : 10;
             int finalOffset = (offset != null) ? offset : 0;
             int pageNum = finalOffset / finalLimit;
-            
+
             Pageable pageable = PageRequest.of(pageNum, finalLimit);
             Page<RecommendationWithDetails> results = service.findAllWithDetails(malId, recommendationMalId, pageable);
-            
+
             List<Map<String, Object>> items = results.getContent().stream()
                 .map(this::convertToDetailsMap)
                 .collect(Collectors.toList());
-            
+
             Map<String, Object> response = new HashMap<>();
-            
+
             if (limit != null || offset != null) {
                 response.put("limit", finalLimit);
                 response.put("offset", finalOffset);
             }
-            
+
             response.put("total", results.getTotalElements());
             response.put("items", items);
             return ResponseEntity.ok(response);
         }
     }
-    
+
     /**
      * Helper method to convert RecommendationWithDetails to Map with snake_case and flattened structure
      */
@@ -352,7 +430,7 @@ public class RecommendationsController {
         Map<String, Object> result = new HashMap<>();
         result.put("mal_id", dto.getMalId());
         result.put("recommendation_mal_id", dto.getRecommendationMalId());
-        
+
         // Add source anime details with "source_" prefix
         if (dto.getSourceAnime() != null) {
             com.example.dataserverspringboot.entities.details.Details source = dto.getSourceAnime();
@@ -365,7 +443,7 @@ public class RecommendationsController {
             result.put("source_year", source.getYear());
             result.put("source_status", source.getStatus());
         }
-        
+
         // Add recommended anime details with "recommendation_" prefix
         if (dto.getRecommendedAnime() != null) {
             com.example.dataserverspringboot.entities.details.Details recommended = dto.getRecommendedAnime();
@@ -378,7 +456,7 @@ public class RecommendationsController {
             result.put("recommendation_year", recommended.getYear());
             result.put("recommendation_status", recommended.getStatus());
         }
-        
+
         return result;
     }
 

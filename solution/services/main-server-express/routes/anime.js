@@ -5,9 +5,8 @@ const router = express.Router();
 
 /**
  * @swagger
- * path:
- *   /anime:
- *     get:
+ * /anime:
+ *   get:
  *       summary: Restituisce la lista degli anime.
  *       description: Recupera l’elenco degli anime con filtri opzionali su genere, anno, rating, ecc.
  *       tags:
@@ -40,9 +39,8 @@ router.get('/', animeController.list);
 
 /**
  * @swagger
- * path:
- *   /anime/{id}/ratings-json:
- *     get:
+ * /anime/{id}/ratings-json:
+ *   get:
  *       summary: Recupera i rating in formato JSON per un anime.
  *       description: Restituisce i rating associati all’anime identificato da {id}.
  *       tags:
@@ -81,9 +79,8 @@ router.get('/:id/ratings-json', animeController.getRatingsJson);
 
 /**
  * @swagger
- * path:
- *   /anime/{id}/ratings:
- *     post:
+ * /anime/{id}/ratings:
+ *   post:
  *       summary: Registra un rating per un anime.
  *       description: Inserisce un nuovo rating per l’anime identificato da {id}.
  *       tags:
@@ -180,9 +177,8 @@ router.post('/:id/ratings', async function(req, res) {
 
 /**
  * @swagger
- * path:
- *   /anime/{id}:
- *     get:
+ * /anime/{id}:
+ *   get:
  *       summary: Restituisce i dettagli di un anime.
  *       description: Recupera le informazioni dettagliate dell’anime identificato da {id}.
  *       tags:
@@ -219,9 +215,8 @@ router.get('/:id', animeController.detail);
 
 /**
  * @swagger
- * path:
- *   /anime/{id}/recommendations:
- *     get:
+ * /anime/{id}/recommendations:
+ *   get:
  *       summary: Restituisce raccomandazioni per un anime.
  *       description: Recupera una lista di anime consigliati in base all’anime identificato da {id}.
  *       tags:

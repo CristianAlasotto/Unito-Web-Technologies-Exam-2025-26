@@ -5,27 +5,32 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Objects;
 
-@Schema(description = "Anime staff voice characters entity")
+@Schema(description = "Anime staff voice characters entity (Relationship between Person, Character, and Anime)")
 @Entity
 @Table(name = "person_voice_works")
 @IdClass(PersonVoiceWorks.PersonVoiceWorksId.class)
 public class PersonVoiceWorks {
-    
+
+    @Schema(description = "Person MyAnimeList ID (Composite Key)", example = "1")
     @Id
     @Column(name = "person_mal_id")
     private Integer personMalId;
-    
+
+    @Schema(description = "Character MyAnimeList ID (Composite Key)", example = "1")
     @Id
     @Column(name = "character_mal_id")
     private Integer characterMalId;
-    
+
+    @Schema(description = "Anime MyAnimeList ID (Composite Key)", example = "1")
     @Id
     @Column(name = "anime_mal_id")
     private Integer animeMalId;
-    
+
+    @Schema(description = "Role type (e.g., Main, Supporting)", example = "Main")
     @Column(name = "role")
     private String role;
-    
+
+    @Schema(description = "Language of the voice work", example = "Japanese")
     @Column(name = "language")
     private String language;
 
@@ -33,7 +38,7 @@ public class PersonVoiceWorks {
     public PersonVoiceWorks() {
     }
 
-    public PersonVoiceWorks(Integer personMalId, Integer characterMalId, 
+    public PersonVoiceWorks(Integer personMalId, Integer characterMalId,
                               Integer animeMalId, String role, String language) {
         this.personMalId = personMalId;
         this.characterMalId = characterMalId;
@@ -138,8 +143,8 @@ public class PersonVoiceWorks {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             PersonVoiceWorksId that = (PersonVoiceWorksId) o;
-            return Objects.equals(personMalId, that.personMalId) && 
-                   Objects.equals(characterMalId, that.characterMalId) && 
+            return Objects.equals(personMalId, that.personMalId) &&
+                   Objects.equals(characterMalId, that.characterMalId) &&
                    Objects.equals(animeMalId, that.animeMalId);
         }
 

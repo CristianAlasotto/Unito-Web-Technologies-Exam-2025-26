@@ -4,9 +4,8 @@ const router = express.Router();
 
 /**
  * @swagger
- * path:
- *   /characters:
- *     get:
+ * /characters:
+ *   get:
  *       summary: Restituisce la lista dei personaggi.
  *       description: Recupera l’elenco dei personaggi con filtri opzionali.
  *       tags:
@@ -39,9 +38,8 @@ router.get('/', charactersController.list);
 
 /**
  * @swagger
- * path:
- *   /characters/{id}:
- *     get:
+ * /characters/{id}:
+ *   get:
  *       summary: Restituisce i dettagli di un personaggio.
  *       description: Recupera le informazioni dettagliate del personaggio identificato da {id}.
  *       tags:

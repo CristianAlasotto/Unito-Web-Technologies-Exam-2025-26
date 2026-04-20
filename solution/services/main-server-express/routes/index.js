@@ -4,9 +4,8 @@ const homeController = require('../controllers/homeController');
 
 /**
  * @swagger
- * path:
- *   /:
- *     get:
+ * /:
+ *   get:
  *       summary: Mostra la pagina di anteprima.
  *       description: Renderizza la home/preview del servizio.
  *       tags:

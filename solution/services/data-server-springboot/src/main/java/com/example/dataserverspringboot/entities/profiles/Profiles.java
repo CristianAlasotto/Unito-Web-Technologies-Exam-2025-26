@@ -9,34 +9,44 @@ import java.time.LocalDate;
 @Table(name = "profiles")
 public class Profiles {
     
+    @Schema(description = "User unique username (Primary Key)", example = "Xinil")
     @Id
     @Column(name = "username")
     private String username;
-    
+
+    @Schema(description = "User gender", example = "Male")
     @Column(name = "gender")
     private String gender;
-    
+
+    @Schema(description = "User birthday", example = "1990-01-01")
     @Column(name = "birthday")
     private LocalDate birthday;
-    
+
+    @Schema(description = "User location", example = "California")
     @Column(name = "location")
     private String location;
-    
+
+    @Schema(description = "Date user joined the site", example = "2007-05-23")
     @Column(name = "joined")
     private LocalDate joined;
-    
+
+    @Schema(description = "Number of anime currently watching", example = "5")
     @Column(name = "watching")
     private Integer watching;
-    
+
+    @Schema(description = "Number of anime completed", example = "100")
     @Column(name = "completed")
     private Integer completed;
-    
+
+    @Schema(description = "Number of anime on hold", example = "2")
     @Column(name = "on_hold")
     private Integer onHold;
-    
+
+    @Schema(description = "Number of anime dropped", example = "1")
     @Column(name = "dropped")
     private Integer dropped;
-    
+
+    @Schema(description = "Number of anime planned to watch", example = "50")
     @Column(name = "plan_to_watch")
     private Integer planToWatch;
 
@@ -44,8 +54,8 @@ public class Profiles {
     public Profiles() {
     }
 
-    public Profiles(String username, String gender, LocalDate birthday, String location, 
-                    LocalDate joined, Integer watching, Integer completed, Integer onHold, 
+    public Profiles(String username, String gender, LocalDate birthday, String location,
+                    LocalDate joined, Integer watching, Integer completed, Integer onHold,
                     Integer dropped, Integer planToWatch) {
         this.username = username;
         this.gender = gender;

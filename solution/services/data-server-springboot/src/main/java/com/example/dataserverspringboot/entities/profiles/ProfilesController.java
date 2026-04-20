@@ -1,5 +1,11 @@
 package com.example.dataserverspringboot.entities.profiles;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -25,39 +31,60 @@ public class ProfilesController {
     @Autowired
     private ProfilesService service;
 
+    @Operation(
+            summary = "Get profile by Username",
+            description = "Retrieve a single user profile using their username"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Profile found successfully", content = @Content(schema = @Schema(implementation = Profiles.class))),
+            @ApiResponse(responseCode = "404", description = "Profile not found", content = @Content)
+    })
     @GetMapping("/{username}")
     public ResponseEntity<?> getById(
+            @Parameter(description = "Username (Primary Key)", example = "Xinil", required = true)
             @PathVariable("username") String username,
+
+            @Parameter(description = "Comma-separated fields to return", example = "username,joined")
             @RequestParam(required = false) String fields) {
-        
+
         Optional<Profiles> entity = service.getById(username);
-        
+
         if (entity.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "Profiles not found");
             error.put("username", username);
             return ResponseEntity.status(404).body(error);
         }
-        
+
         Profiles data = entity.get();
-        
+
         if (fields != null && !fields.isEmpty()) {
             Map<String, Object> filtered = filterFields(data, fields);
             return ResponseEntity.ok(filtered);
         }
-        
+
         // Return all fields with snake_case names
         return ResponseEntity.ok(toSnakeCaseMap(data));
     }
 
+    @Operation(
+            summary = "Get profile summary",
+            description = "Retrieve a brief summary of the user profile"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Summary retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Profile not found", content = @Content)
+    })
     @GetMapping("/{username}/summary")
-    public ResponseEntity<?> getSummary(@PathVariable("username") String username) {
+    public ResponseEntity<?> getSummary(
+            @Parameter(description = "Username", required = true)
+            @PathVariable("username") String username) {
         Optional<Profiles> entity = service.getById(username);
-        
+
         if (entity.isEmpty()) {
             return ResponseEntity.status(404).build();
         }
-        
+
         Profiles data = entity.get();
         Map<String, Object> summary = new HashMap<>();
         summary.put("username", data.getUsername());
@@ -65,50 +92,79 @@ public class ProfilesController {
         summary.put("joined", data.getJoined());
         summary.put("watching", data.getWatching());
         summary.put("completed", data.getCompleted());
-        
+
         return ResponseEntity.ok(summary);
     }
 
+    @Operation(
+            summary = "Get all profiles",
+            description = "Retrieve paginated list of profiles with optional filters, sorting, and field selection. NULL values are always sorted last."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Profiles retrieved successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid parameters", content = @Content)
+    })
     @GetMapping
     public ResponseEntity<?> getAll(
+            @Parameter(description = "Comma-separated fields to return", example = "username,gender")
             @RequestParam(required = false) String fields,
+
+            @Parameter(description = "Search by username (case-insensitive)", example = "Xinil")
             @RequestParam(required = false) String search,
+
+            @Parameter(description = "Sort field (prefix with - for descending)", example = "-joined")
             @RequestParam(required = false) String sort,
+
+            @Parameter(description = "Filter by Gender", example = "Male")
             @RequestParam(required = false) String gender,
+
+            @Parameter(description = "Filter by Location", example = "California")
             @RequestParam(required = false) String location,
-            @RequestParam(required = false) String nullFilter,      // NEW: Filter for NULL values
-            @RequestParam(required = false) String notNullFilter,   // NEW: Filter for NOT NULL values
+
+            @Parameter(description = "Filter records where field IS NULL", example = "location")
+            @RequestParam(required = false) String nullFilter,
+
+            @Parameter(description = "Filter records where field IS NOT NULL", example = "gender")
+            @RequestParam(required = false) String notNullFilter,
+
+            @Parameter(description = "Maximum number of results", example = "10")
             @RequestParam(required = false) Integer limit,
+
+            @Parameter(description = "Offset for pagination", example = "0")
             @RequestParam(required = false) Integer offset,
+
+            @Parameter(description = "Page number (1-indexed)", example = "1")
             @RequestParam(required = false) Integer page,
+
+            @Parameter(description = "Number of results per page", example = "10")
             @RequestParam(required = false) Integer pageSize) {
-        
+
         boolean usePageBased = (page != null || pageSize != null);
         boolean useLimitOffset = (limit != null || offset != null) && !usePageBased;
-        
+
         Sort sortObj = parseSortParameter(sort);
-        
+
         if (useLimitOffset) {
             int finalLimit = (limit != null) ? limit : 10;
             int finalOffset = (offset != null) ? offset : 0;
-            
+
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
             Page<Profiles> pageResult = service.findWithFilters(
                 search,
                 gender,
                 location,
-                nullFilter,       // NEW
-                notNullFilter,    // NEW
+                nullFilter,
+                notNullFilter,
                 pageable);
-            
+
             List<Profiles> results = pageResult.getContent();
             long totalCount = pageResult.getTotalElements();
-            
+
             if (fields != null && !fields.isEmpty()) {
                 List<Map<String, Object>> filteredResults = results.stream()
                     .map(entity -> filterFields(entity, fields))
                     .collect(Collectors.toList());
-                
+
                 Map<String, Object> response = new HashMap<>();
                 response.put("limit", finalLimit);
                 response.put("offset", finalOffset);
@@ -116,40 +172,40 @@ public class ProfilesController {
                 response.put("items", filteredResults);
                 return ResponseEntity.ok(response);
             }
-            
+
             // Convert all entities to snake_case
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("limit", finalLimit);
             response.put("offset", finalOffset);
             response.put("total", totalCount);
             response.put("items", snakeCaseResults);
             return ResponseEntity.ok(response);
-            
+
         } else if (usePageBased) {
             int finalPage = (page != null) ? page : 1;
             int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
-            
+
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
             Page<Profiles> pageResult = service.findWithFilters(
                 search,
                 gender,
                 location,
-                nullFilter,       // NEW
-                notNullFilter,    // NEW
+                nullFilter,
+                notNullFilter,
                 pageable);
-            
+
             List<Profiles> results = pageResult.getContent();
             long totalPages = pageResult.getTotalPages();
-            
+
             if (fields != null && !fields.isEmpty()) {
                 List<Map<String, Object>> filteredResults = results.stream()
                     .map(entity -> filterFields(entity, fields))
                     .collect(Collectors.toList());
-                
+
                 Map<String, Object> response = new HashMap<>();
                 response.put("page", finalPage);
                 response.put("pageSize", finalPageSize);
@@ -157,43 +213,43 @@ public class ProfilesController {
                 response.put("items", filteredResults);
                 return ResponseEntity.ok(response);
             }
-            
+
             // Convert all entities to snake_case
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("page", finalPage);
             response.put("pageSize", finalPageSize);
             response.put("totalPages", totalPages);
             response.put("items", snakeCaseResults);
             return ResponseEntity.ok(response);
-            
+
         } else {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
             Page<Profiles> pageResult = service.findWithFilters(
                 search,
                 gender,
                 location,
-                nullFilter,       // NEW
-                notNullFilter,    // NEW
+                nullFilter,
+                notNullFilter,
                 pageable);
-            
+
             List<Profiles> results = pageResult.getContent();
-            
+
             if (fields != null && !fields.isEmpty()) {
                 List<Map<String, Object>> filteredResults = results.stream()
                     .map(entity -> filterFields(entity, fields))
                     .collect(Collectors.toList());
                 return ResponseEntity.ok(filteredResults);
             }
-            
+
             // Convert all entities to snake_case
             List<Map<String, Object>> snakeCaseResults = results.stream()
                 .map(this::toSnakeCaseMap)
                 .collect(Collectors.toList());
-            
+
             return ResponseEntity.ok(snakeCaseResults);
         }
     }
@@ -209,14 +265,21 @@ public class ProfilesController {
      * Get statistics on NULL values for various fields
      * GET /api/profiles/stats/null_counts
      */
+    @Operation(
+            summary = "Get NULL value statistics",
+            description = "Get count of NULL values for each nullable field (gender, birthday, location)"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "NULL statistics retrieved successfully")
+    })
     @GetMapping("/stats/null_counts")
     public ResponseEntity<Map<String, Object>> getNullCounts() {
         Map<String, Long> nullCounts = service.getNullCounts();
-        
+
         Map<String, Object> response = new HashMap<>();
         response.put("null_counts", nullCounts);
         response.put("total_records", service.count());
-        
+
         return ResponseEntity.ok(response);
     }
 
@@ -245,7 +308,7 @@ public class ProfilesController {
     private Map<String, Object> filterFields(Profiles entity, String fields) {
         Map<String, Object> result = new HashMap<>();
         String[] requestedFields = fields.split(",");
-        
+
         for (String field : requestedFields) {
             field = field.trim();
             switch (field) {
@@ -281,7 +344,7 @@ public class ProfilesController {
                     break;
             }
         }
-        
+
         return result;
     }
 
@@ -307,7 +370,7 @@ public class ProfilesController {
                 // ✅ FIX: NULL values always sorted LAST
                 orders.add(Sort.Order.by(actualField)
                         .with(direction)
-                        .nullsLast());  // ← ADD THIS
+                        .nullsLast());
             }
         }
 

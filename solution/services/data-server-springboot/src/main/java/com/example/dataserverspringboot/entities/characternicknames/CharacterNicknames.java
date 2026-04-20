@@ -11,10 +11,12 @@ import java.util.Objects;
 @IdClass(CharacterNicknames.CharacterNicknamesId.class)
 public class CharacterNicknames {
     
+    @Schema(description = "Character MyAnimeList ID (Composite Key)", example = "1")
     @Id
     @Column(name = "character_mal_id")
     private Integer characterMalId;
-    
+
+    @Schema(description = "Nickname associated with the character (Composite Key)", example = "Spike")
     @Id
     @Column(name = "nickname")
     private String nickname;
@@ -87,7 +89,7 @@ public class CharacterNicknames {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             CharacterNicknamesId that = (CharacterNicknamesId) o;
-            return Objects.equals(characterMalId, that.characterMalId) && 
+            return Objects.equals(characterMalId, that.characterMalId) &&
                    Objects.equals(nickname, that.nickname);
         }
 

@@ -1,5 +1,20 @@
+/**
+ * Carousel controller for asynchronous homepage carousel updates.
+ *
+ * Responsibilities:
+ * - resolves the backend endpoint and query defaults for each carousel type
+ * - fetches (with axios) paginated data from the PostgreSQL-backed service
+ * - renders Handlebars partials and returns HTML plus pagination metadata
+ */
+
 const { apiPostgres } = require('./apiClients');
 
+/**
+ * Returns API path and default query params for a carousel type.
+ *
+ * @param {string} type Carousel type (anime, character, staff).
+ * @returns {{path: string, params: Object}|null} Request config or null when invalid.
+ */
 const getApiRequestConfig = (type) => {
     switch (type) {
         case 'anime':
@@ -31,6 +46,14 @@ const getApiRequestConfig = (type) => {
     }
 };
 
+/**
+ * Fetches and renders a single carousel page.
+ *
+ * @param {import('express').Request} req Express request.
+ * @param {import('express').Response} res Express response.
+ * @param {import('express').NextFunction} next Express next middleware function.
+ * @returns {Promise<void>} Resolves when HTML/JSON response is sent.
+ */
 exports.getCarouselData = async (req, res, next) => {
     try {
         const { type } = req.params;

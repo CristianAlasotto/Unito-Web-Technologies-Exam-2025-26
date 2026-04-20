@@ -4,9 +4,8 @@ const { apiPostgres } = require('../controllers/apiClients');
 
 /**
  * @swagger
- * path:
- *   /users/login:
- *     get:
+ * /users/login:
+ *   get:
  *       summary: Mostra la pagina di login.
  *       description: Renderizza il form di login utenti.
  *       tags:
@@ -24,9 +23,8 @@ router.get('/login', function(req, res, next) {
 
 /**
  * @swagger
- * path:
- *   /users/login:
- *     post:
+ * /users/login:
+ *   post:
  *       summary: Effettua il login.
  *       description: Verifica l’esistenza dello username e reindirizza al profilo.
  *       tags:

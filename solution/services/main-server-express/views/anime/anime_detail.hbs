@@ -398,39 +398,28 @@
                             };
 
                             try {
-                                const response = await fetch(`/anime/${animeId}/ratings`, {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify(formData)
-                                });
+                                await axios.post(`/anime/${animeId}/ratings`, formData);
 
-                                const data = await response.json();
+                                messageDiv.style.display = 'block';
+                                messageDiv.style.background = '#4caf50';
+                                messageDiv.style.color = '#fff';
+                                messageDiv.textContent = '✓ Rating submitted successfully!';
 
-                                if (response.ok) {
-                                    messageDiv.style.display = 'block';
-                                    messageDiv.style.background = '#4caf50';
-                                    messageDiv.style.color = '#fff';
-                                    messageDiv.textContent = '✓ Rating submitted successfully!';
+                                form.reset();
 
-                                    form.reset();
-
-                                    // Reload ratings if the function exists
-                                    if (typeof loadRatings === 'function') {
-                                        setTimeout(() => loadRatings(1), 1000);
-                                    }
-                                } else {
-                                    messageDiv.style.display = 'block';
-                                    messageDiv.style.background = '#f44336';
-                                    messageDiv.style.color = '#fff';
-                                    messageDiv.textContent = '✗ ' + (data.message || 'Failed to submit rating');
+                                // Reload ratings if the function exists
+                                if (typeof loadRatings === 'function') {
+                                    setTimeout(() => loadRatings(1), 1000);
                                 }
                             } catch (error) {
+                                const message =
+                                    error.response?.data?.message ||
+                                    error.response?.data?.error ||
+                                    error.message;
                                 messageDiv.style.display = 'block';
                                 messageDiv.style.background = '#f44336';
                                 messageDiv.style.color = '#fff';
-                                messageDiv.textContent = '✗ Error: ' + error.message;
+                                messageDiv.textContent = '✗ ' + message;
                             } finally {
                                 submitBtn.disabled = false;
                                 submitBtn.textContent = 'Submit Rating';
@@ -637,8 +626,8 @@
                                 const fetchUrl = `/anime/${animeId}/ratings-json?${params.toString()}`;
                                 console.log('Fetching ratings from:', fetchUrl);
 
-                                const response = await fetch(fetchUrl);
-                                const data = await response.json();
+                                const response = await axios.get(fetchUrl);
+                                const data = response.data;
 
                                 console.log('Received data:', data);
 

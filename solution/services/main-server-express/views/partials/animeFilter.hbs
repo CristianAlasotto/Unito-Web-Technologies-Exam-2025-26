@@ -18,20 +18,9 @@
       </section>
 
       <section class="filters__section">
-        <div class="filters__title">Formato</div>
+        <div class="filters__title">Format</div>
         <select name="type" class="filters__select">
           {{#each filters.typeOptions}}
-          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>
-            {{this.label}}
-          </option>
-          {{/each}}
-        </select>
-      </section>
-
-      <section class="filters__section">
-        <div class="filters__title">Status</div>
-        <select name="status" class="filters__select">
-          {{#each filters.statusOptions}}
           <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>
             {{this.label}}
           </option>
@@ -50,7 +39,7 @@
         </select>
       </section>
 
-        <section class="filters__section">
+      <section class="filters__section">
         <div class="filters__title">Genre</div>
         <select name="genres" class="filters__select">
           {{#each filters.genreOptions}}
@@ -59,32 +48,6 @@
           </option>
           {{/each}}
         </select>
-      </section>
-
-      <section class="filters__section">
-        <div class="filters__title">Source</div>
-        <select name="source" class="filters__select">
-          {{#each filters.sourceOptions}}
-          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>
-            {{this.label}}
-          </option>
-          {{/each}}
-        </select>
-      </section>
-
-      <section class="filters__section">
-        <div class="filters__title">Episodes</div>
-        <input
-          type="number"
-          name="episodes"
-          min="1"
-          max="3000"
-          step="1"
-          value="{{filters.episodes}}"
-          inputmode="numeric"
-          placeholder="Es. 4 (max 3000)"
-          class="filters__input"
-        />
       </section>
     </div>
 
