@@ -34,8 +34,6 @@ const swaggerSpec = swaggerJSDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 require('dotenv').config();
-const mockDataStatus = process.env.USE_MOCK_DATA === 'true';
-app.MockDataStatus = mockDataStatus;
 
 // view engine setup just for server start
 app.set('views', path.join(__dirname, 'views'));
