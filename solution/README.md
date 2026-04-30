@@ -40,12 +40,12 @@ DATA_SPRING_URL=http://localhost:8080
 
 ## Starting Manual Multi-Platform Development Environment
 
-### Starting Docker + PostgreSQL Database Population
+### Starting Only Databases + Local Servers
 
 ```bash
-# 1. Start container + DB population (first time)
-docker compose up -d postgres
-docker compose up -d
+# 1. Start database/admin containers. PostgreSQL is populated only the first
+#    time the pgdata volume is created.
+docker compose up -d postgres mongo pgadmin mongoexpress dozzle
 
 # 2. Install dependencies (first time)
 cd services/main-server-express
@@ -53,6 +53,12 @@ npm install
 
 # 3. Start development server
 npm run dev
+```
+
+### Starting Everything In Docker
+
+```bash
+docker compose --profile app up --build
 ```
 
 > Tip: copy `.env.example` to `.env` and adapt the values.
@@ -158,6 +164,14 @@ docker compose ps -a   # Container status
 docker compose exec postgres psql -U anime_user -d anime_db -c "SELECT count(*) FROM profiles;"
 ```
 
+If PostgreSQL is healthy but the counts are zero, the named volume was likely
+created before the CSV files were present or after a failed import. Recreate it:
+
+```bash
+docker compose down -v
+./start-dev.sh
+```
+
 ### Docker Container Removal
 
 ```bash
@@ -166,4 +180,3 @@ docker compose down -v --rmi all
 
 docker ps -a  # Verify no active containers remain
 ```
-

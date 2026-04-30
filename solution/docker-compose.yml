@@ -11,7 +11,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-anime_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-anime_pass}
     ports:
-      - "5432:5432"
+      - "${SPRING_DATASOURCE_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./db/postgres/init:/docker-entrypoint-initdb.d:ro
@@ -50,42 +50,52 @@ services:
 
   main_server:
     profiles: ["app"]
-    build: ./services/main-server-express
+    build:
+      context: ./services/main-server-express
+      dockerfile: Dockerfile
     environment:
-      DATA_EXPRESS_URL: ${DATA_EXPRESS_URL:-http://data_express:3001}
-      DATA_SPRING_URL: ${DATA_SPRING_URL:-http://data_spring:8080}
+      MAIN_EXPRESS_PORT: 3000
+      DATA_EXPRESS_URL: http://data_express:3001
+      DATA_SPRING_URL: http://data_spring:8080
       LOG_HTTP_ENABLED: ${LOG_HTTP_ENABLED:-true}
       LOG_API_ENABLED: ${LOG_API_ENABLED:-true}
     ports:
-      - "3000:3000"
+      - "${MAIN_EXPRESS_PORT:-3000}:3000"
     depends_on:
-      postgres:
-        condition: service_healthy
-      mongo:
+      data_express:
+        condition: service_started
+      data_spring:
         condition: service_started
 
   data_express:
     profiles: ["app"]
-    build: ./services/data-server-express
+    build:
+      context: ./services/data-server-mongo
+      dockerfile: Dockerfile
     environment:
-      MONGO_URL: ${MONGO_URL:-mongodb://mongo:27017/anime_dynamic}
+      DATA_EXPRESS_PORT: 3001
+      MONGO_URL: mongodb://mongo:27017/${MONGO_INITDB_DATABASE:-anime_dynamic}
       LOG_API_ENABLED: ${LOG_API_ENABLED:-true}
     ports:
-      - "3001:3001"
+      - "${DATA_EXPRESS_PORT:-3001}:3001"
     depends_on:
       - mongo
 
   data_spring:
     profiles: ["app"]
-    build: ./services/data-server-spring
+    build:
+      context: ./services/data-server-springboot
+      dockerfile: Dockerfile
     environment:
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/anime_db}
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-anime_db}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-anime_user}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-anime_pass}
     ports:
-      - "8080:8080"
+      - "${DATA_SPRING_PORT:-8080}:8080"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   dozzle:
     image: amir20/dozzle:latest
