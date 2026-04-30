@@ -119,7 +119,7 @@ exports.list = async (req, res, next) => {
 		res.render('staff/staff_list', {
 			title: 'Staff',
 			staff: [],
-			filters: buildFiltersModel({}),
+			filters: buildFiltersModel(req.query),
 			filtersQuery: '',
 			currentPage: 'staff',
 			error: 'Impossibile caricare i dati dello staff. Il server potrebbe non essere disponibile.'

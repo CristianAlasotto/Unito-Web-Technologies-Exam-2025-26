@@ -12,8 +12,9 @@
 <div class="staff-container">
 	<h1>Staff</h1>
 
-	{{#if staff}}
 	{{> staffFilter}}
+
+	{{#if staff}}
 	<section class="staff-grid">
 		{{#each staff}}
 		<article class="staff-card">
