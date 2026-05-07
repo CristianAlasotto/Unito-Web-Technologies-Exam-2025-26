@@ -69,34 +69,6 @@ public class PersonDetailsController {
         return ResponseEntity.ok(toSnakeCaseMap(data));
     }
 
-    @Operation(
-            summary = "Get person summary",
-            description = "Retrieve a brief summary of person information"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Summary retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "Person not found", content = @Content)
-    })
-    @GetMapping("/{person_mal_id}/summary")
-    public ResponseEntity<?> getSummary(
-            @Parameter(description = "Person MAL ID", example = "1", required = true)
-            @PathVariable Integer person_mal_id) {
-        Optional<PersonDetails> entity = service.getById(person_mal_id);
-
-        if (entity.isEmpty()) {
-            return ResponseEntity.status(404).build();
-        }
-
-        PersonDetails data = entity.get();
-        Map<String, Object> summary = new HashMap<>();
-        summary.put("person_mal_id", data.getPersonMalId());
-        summary.put("name", data.getName());
-        summary.put("favorites", data.getFavorites());
-        summary.put("image_url", data.getImageUrl());
-
-        return ResponseEntity.ok(summary);
-    }
-
     /**
      * Convert Details entity to Map with snake_case field names
      */

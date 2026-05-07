@@ -75,41 +75,6 @@ public class CharacterAnimeWorksController {
     }
 
     @Operation(
-            summary = "Get work summary",
-            description = "Retrieve a brief summary of the character's role in an anime"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Summary retrieved successfully"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Entry not found",
-                    content = @Content
-            )
-    })
-    @GetMapping("/{id}/summary")
-    public ResponseEntity<?> getSummary(
-            @Parameter(description = "Composite ID", required = true)
-            @PathVariable CharacterAnimeWorks.CharacterAnimeWorksId id) {
-        Optional<CharacterAnimeWorks> entity = service.getById(id);
-
-        if (entity.isEmpty()) {
-            return ResponseEntity.status(404).build();
-        }
-
-        CharacterAnimeWorks data = entity.get();
-        Map<String, Object> summary = new HashMap<>();
-        summary.put("character_mal_id", data.getCharacterMalId());
-        summary.put("anime_mal_id", data.getAnimeMalId());
-        summary.put("character_name", data.getCharacterName());
-        summary.put("role", data.getRole());
-
-        return ResponseEntity.ok(summary);
-    }
-
-    @Operation(
             summary = "Get all character works",
             description = "Retrieve paginated list of character works with optional filters, sorting, and field selection. NULL values are always sorted last."
     )

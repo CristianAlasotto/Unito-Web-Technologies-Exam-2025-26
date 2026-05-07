@@ -67,34 +67,6 @@ public class PersonVoiceWorksController {
     }
 
     @Operation(
-            summary = "Get voice work summary",
-            description = "Retrieve a brief summary of the voice acting record"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found successfully"),
-            @ApiResponse(responseCode = "404", description = "Not found")
-    })
-    @GetMapping("/{id}/summary")
-    public ResponseEntity<?> getSummary(
-            @Parameter(description = "Composite ID", required = true)
-            @PathVariable PersonVoiceWorks.PersonVoiceWorksId id) {
-        Optional<PersonVoiceWorks> entity = service.getById(id);
-
-        if (entity.isEmpty()) {
-            return ResponseEntity.status(404).build();
-        }
-
-        PersonVoiceWorks data = entity.get();
-        Map<String, Object> summary = new HashMap<>();
-        summary.put("person_mal_id", data.getPersonMalId());
-        summary.put("character_mal_id", data.getCharacterMalId());
-        summary.put("anime_mal_id", data.getAnimeMalId());
-        summary.put("language", data.getLanguage());
-
-        return ResponseEntity.ok(summary);
-    }
-
-    @Operation(
             summary = "Get all voice works",
             description = "Retrieve paginated list of voice works with optional filters, sorting, and field selection. NULL values are always sorted last."
     )

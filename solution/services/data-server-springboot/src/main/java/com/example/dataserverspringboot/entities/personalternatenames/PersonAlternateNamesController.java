@@ -229,53 +229,6 @@ public class PersonAlternateNamesController {
     }
 
 
-    /**
-     * Get summary by composite key (using query parameters)
-     * GET /api/person_alternate_names/summary?person_mal_id&alt_name
-     */
-    @Operation(
-            summary = "Get alternate name summary",
-            description = "Retrieve a brief summary of the alternate name record"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found successfully"),
-            @ApiResponse(responseCode = "404", description = "Not found")
-    })
-    @GetMapping("/summary")
-    public ResponseEntity<?> getSummary(
-            @Parameter(description = "Person MAL ID (Required)", required = true)
-            @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
-
-            @Parameter(description = "Alternate Name (Required)", required = true)
-            @RequestParam(required = false) String altName) {
-
-        // Check if all key fields are provided
-        if (personMalId == null || altName == null) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "All key fields required: personMalId, altName");
-            error.put("usage", "GET /api/person_alternate_names/summary?person_mal_id&alt_name");
-            return ResponseEntity.status(400).body(error);
-        }
-
-        // Create composite key
-        PersonAlternateNames.PersonAlternateNamesId id = new PersonAlternateNames.PersonAlternateNamesId(personMalId, altName);
-        Optional<PersonAlternateNames> entity = service.getById(id);
-
-        if (entity.isEmpty()) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "PersonAlternateNames not found");
-            error.put("person_mal_id", personMalId); error.put("alt_name", altName);
-            return ResponseEntity.status(404).body(error);
-        }
-
-        PersonAlternateNames data = entity.get();
-        Map<String, Object> summary = new HashMap<>();
-        summary.put("person_mal_id", data.getPersonMalId());
-        summary.put("alt_name", data.getAltName());
-
-        return ResponseEntity.ok(summary);
-    }
-
     private Map<String, Object> toSnakeCaseMap(PersonAlternateNames entity) {
         Map<String, Object> result = new HashMap<>();
         result.put("person_mal_id", entity.getPersonMalId());

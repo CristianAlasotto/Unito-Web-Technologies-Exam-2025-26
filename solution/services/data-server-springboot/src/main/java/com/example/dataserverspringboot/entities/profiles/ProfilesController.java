@@ -68,35 +68,6 @@ public class ProfilesController {
     }
 
     @Operation(
-            summary = "Get profile summary",
-            description = "Retrieve a brief summary of the user profile"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Summary retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "Profile not found", content = @Content)
-    })
-    @GetMapping("/{username}/summary")
-    public ResponseEntity<?> getSummary(
-            @Parameter(description = "Username", required = true)
-            @PathVariable("username") String username) {
-        Optional<Profiles> entity = service.getById(username);
-
-        if (entity.isEmpty()) {
-            return ResponseEntity.status(404).build();
-        }
-
-        Profiles data = entity.get();
-        Map<String, Object> summary = new HashMap<>();
-        summary.put("username", data.getUsername());
-        summary.put("gender", data.getGender());
-        summary.put("joined", data.getJoined());
-        summary.put("watching", data.getWatching());
-        summary.put("completed", data.getCompleted());
-
-        return ResponseEntity.ok(summary);
-    }
-
-    @Operation(
             summary = "Get all profiles",
             description = "Retrieve paginated list of profiles with optional filters, sorting, and field selection. NULL values are always sorted last."
     )
