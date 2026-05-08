@@ -49,9 +49,9 @@ const getApiRequestConfig = (type) => {
 /**
  * Fetches and renders a single carousel page.
  *
- * @param {import('express').Request} req Express request.
- * @param {import('express').Response} res Express response.
- * @param {import('express').NextFunction} next Express next middleware function.
+ * @param {Object} req Express request.
+ * @param {Object} res Express response.
+ * @param {Function} next Express next middleware function.
  * @returns {Promise<void>} Resolves when HTML/JSON response is sent.
  */
 exports.getCarouselData = async (req, res, next) => {

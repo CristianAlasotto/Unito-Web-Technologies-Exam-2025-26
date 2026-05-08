@@ -113,6 +113,13 @@ router.get('/:id/ratings-json', animeController.getRatingsJson);
  *         201:
  *           description: Rating creato con successo.
  */
+/**
+ * Validates and stores a user rating for an anime.
+ *
+ * @param {Object} req Express request with rating body.
+ * @param {Object} res Express response.
+ * @returns {Promise<void>} Resolves when the JSON response is sent.
+ */
 router.post('/:id/ratings', async function(req, res) {
     try {
         const ratingData = req.body;
