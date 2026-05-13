@@ -184,6 +184,29 @@ router.post('/:id/ratings', async function(req, res) {
 
 /**
  * @swagger
+ * /anime/{id}/characters:
+ *   get:
+ *       summary: Restituisce i personaggi collegati a un anime.
+ *       description: Recupera i personaggi collegati all'anime tramite il main server.
+ *       tags:
+ *         - Anime
+ *       parameters:
+ *         - in: path
+ *           name: id
+ *           required: true
+ *           schema:
+ *             type: string
+ *           description: ID dell'anime.
+ *       responses:
+ *         200:
+ *           description: Lista dei personaggi collegati.
+ *         404:
+ *           description: Anime non trovato.
+ */
+router.get('/:id/characters', animeController.characters);
+
+/**
+ * @swagger
  * /anime/{id}:
  *   get:
  *       summary: Restituisce i dettagli di un anime.

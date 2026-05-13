@@ -80,6 +80,22 @@ const GENRE_OPTIONS = [
 ];
 
 /**
+ * Normalizes related character API payloads into a character array.
+ *
+ * @param {Array<Object>|Object|null|undefined} payload Raw API response payload.
+ * @returns {Array<Object>} Normalized related character list.
+ */
+const normalizeRelatedCharactersPayload = (payload) => {
+  if (!payload) {
+    return [];
+  }
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  return payload.related_characters || payload.characters || payload.items || [];
+};
+
+/**
  * Builds the UI filter model used by the anime list template.
  *
  * @param {Record<string, string|undefined>} query Incoming request query object.
@@ -188,13 +204,7 @@ exports.detail = async (req, res, next) => {
         `/api/details/${id}/recommendations`
     );
     const raw = response.data || {};
-    const charactersData = charactersResponse?.data;
-    const relatedCharacters = Array.isArray(charactersData)
-        ? charactersData
-        : charactersData?.related_characters ||
-          charactersData?.characters ||
-          charactersData?.items ||
-          [];
+    const relatedCharacters = normalizeRelatedCharactersPayload(charactersResponse?.data);
     const recommendationsData = recommendationsResponse?.data;
     const recommendations = Array.isArray(recommendationsData)
         ? recommendationsData
@@ -297,26 +307,37 @@ exports.detail = async (req, res, next) => {
 };
 
 /**
- * Renders the page with characters related to a specific anime.
+ * Returns characters related to a specific anime as JSON.
  *
  * @param {Object} req Express request.
  * @param {Object} res Express response.
- * @returns {Promise<void>} Resolves when the response is rendered.
+ * @returns {Promise<void>} Resolves when the JSON response is sent.
  */
 exports.characters = async (req, res) => {
   try {
     const { id } = req.params;
-    const response = await apiPostgres.get(`/api/details/${id}/characters`);
-    res.render('anime/related_characters', {
-      title: `Recommendations for ${response.data.title}`,
-      related_characters: response.data.related_characters,
-      currentPage: 'anime'
+    const params = new URLSearchParams();
+    if (req.query.page) params.set('page', req.query.page);
+    if (req.query.pageSize) params.set('pageSize', req.query.pageSize);
+
+    const queryString = params.toString();
+    const response = await apiPostgres.get(
+        `/api/details/${id}/characters${queryString ? `?${queryString}` : ''}`
+    );
+    const payload = response.data || {};
+    const relatedCharacters = normalizeRelatedCharactersPayload(payload);
+    const responsePayload = Array.isArray(payload) ? {} : payload;
+
+    return res.json({
+      ...responsePayload,
+      characters: relatedCharacters,
+      related_characters: responsePayload.related_characters || relatedCharacters
     });
   } catch (err) {
-    res.render('related_characters', {
-      title: 'Characters',
-      recommendations: null,
-      error: 'Impossibile caricare i personaggi dell\'anime. Il server potrebbe non essere disponibile.'
+    return res.status(err.response?.status || 500).json({
+      characters: [],
+      related_characters: [],
+      error: err.response?.data?.error || 'Unable to load characters'
     });
   }
 };

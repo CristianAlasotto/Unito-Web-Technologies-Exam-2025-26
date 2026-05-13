@@ -408,7 +408,9 @@
         }
 
         try {
-            const response = await axios.get(`http://localhost:8080/api/anime/${animeId}/characters`);
+            const response = await axios.get(`/anime/${animeId}/characters`, {
+                headers: { Accept: 'application/json' }
+            });
             const data = response.data;
             const characters = normalizeRelatedCharacters(data);
             renderRelatedCharacters(characters);
