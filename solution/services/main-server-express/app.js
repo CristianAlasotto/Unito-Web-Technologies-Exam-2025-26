@@ -92,6 +92,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/jsdoc', express.static(path.join(__dirname, 'docs', 'jsdoc')));
 app.use('/vendor/axios', express.static(path.join(__dirname, 'node_modules', 'axios', 'dist')));
 
 app.use('/', indexRouter);
