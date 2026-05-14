@@ -14,6 +14,14 @@ const { apiPostgres } = require('../controllers/apiClients');
  *         200:
  *           description: Pagina di login renderizzata.
  */
+/**
+ * Renders the user login form.
+ *
+ * @param {Object} req Express request.
+ * @param {Object} res Express response.
+ * @param {Function} next Express next middleware.
+ * @returns {void}
+ */
 router.get('/login', function(req, res, next) {
   res.render('profile/login', {
     title: 'Login',
@@ -43,6 +51,14 @@ router.get('/login', function(req, res, next) {
  *           description: Reindirizzamento al profilo utente.
  *         200:
  *           description: Login fallito e form renderizzato con errore.
+ */
+/**
+ * Validates a submitted username and redirects to the matching profile.
+ *
+ * @param {Object} req Express request containing username.
+ * @param {Object} res Express response.
+ * @param {Function} next Express next middleware.
+ * @returns {Promise<void>} Resolves when the redirect or rendered response is sent.
  */
 router.post('/login', async function(req, res, next) {
   const { username } = req.body;

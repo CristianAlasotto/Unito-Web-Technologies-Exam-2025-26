@@ -79,41 +79,6 @@ public class CharactersController {
         return ResponseEntity.ok(toSnakeCaseMap(data));
     }
 
-    @Operation(
-            summary = "Get character summary",
-            description = "Retrieve a brief summary of character information"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Summary retrieved successfully"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Character not found",
-                    content = @Content
-            )
-    })
-    @GetMapping("/{character_mal_id}/summary")
-    public ResponseEntity<?> getSummary(
-            @Parameter(description = "Character MAL ID", example = "1", required = true)
-            @PathVariable("character_mal_id") Integer characterMalId) {
-        Optional<Characters> entity = service.getById(characterMalId);
-        
-        if (entity.isEmpty()) {
-            return ResponseEntity.status(404).build();
-        }
-        
-        Characters data = entity.get();
-        Map<String, Object> summary = new HashMap<>();
-        summary.put("character_mal_id", data.getCharacterMalId());
-        summary.put("name", data.getName());
-        summary.put("favorites", data.getFavorites());
-        summary.put("image", data.getImage());
-        
-        return ResponseEntity.ok(summary);
-    }
-
     /**
      * JOIN 3: Get all anime where this character appears
      * GET /api/characters/{character_mal_id}/anime

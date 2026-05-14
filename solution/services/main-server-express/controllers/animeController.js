@@ -12,6 +12,13 @@
  */
 
 const { apiMongo, apiPostgres } = require('./apiClients.js');
+const {
+  buildFiltersQuery,
+  buildPagination,
+  formatValue,
+  normalizeList,
+  withSelectedOptions
+} = require('./controllerUtils.js');
 
 const SORT_OPTIONS = [
 	{ value: '', label: 'Default' },
@@ -73,6 +80,22 @@ const GENRE_OPTIONS = [
 ];
 
 /**
+ * Normalizes related character API payloads into a character array.
+ *
+ * @param {Array<Object>|Object|null|undefined} payload Raw API response payload.
+ * @returns {Array<Object>} Normalized related character list.
+ */
+const normalizeRelatedCharactersPayload = (payload) => {
+  if (!payload) {
+    return [];
+  }
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  return payload.related_characters || payload.characters || payload.items || [];
+};
+
+/**
  * Builds the UI filter model used by the anime list template.
  *
  * @param {Record<string, string|undefined>} query Incoming request query object.
@@ -89,31 +112,19 @@ const buildFiltersModel = (query) => {
   return {
     search: activeSearch,
     year: activeYear,
-    sortOptions: SORT_OPTIONS.map((option) => ({
-      ...option,
-      selected: option.value === activeSort
-    })),
-    typeOptions: TYPE_OPTIONS.map((option) => ({
-      ...option,
-      selected: option.value === activeType
-    })),
-    ratingOptions: RATING_OPTIONS.map((option) => ({
-      ...option,
-      selected: option.value === activeRating
-    })),
-    genreOptions: GENRE_OPTIONS.map((option) => ({
-      ...option,
-      selected: option.value === activeGenres
-    }))
+    sortOptions: withSelectedOptions(SORT_OPTIONS, activeSort),
+    typeOptions: withSelectedOptions(TYPE_OPTIONS, activeType),
+    ratingOptions: withSelectedOptions(RATING_OPTIONS, activeRating),
+    genreOptions: withSelectedOptions(GENRE_OPTIONS, activeGenres)
   };
 };
 
 /**
  * Renders the paginated anime list, applying query filters and sort options.
  *
- * @param {import('express').Request} req Express request.
- * @param {import('express').Response} res Express response.
- * @param {import('express').NextFunction} next Express next middleware function.
+ * @param {Object} req Express request.
+ * @param {Object} res Express response.
+ * @param {Function} next Express next middleware function.
  * @returns {Promise<void>} Resolves when the response is rendered.
  */
 exports.list = async (req, res, next) => {
@@ -139,41 +150,24 @@ exports.list = async (req, res, next) => {
     const totalPages = response.data.totalPages;
     const filters = buildFiltersModel(req.query);
 
-    const paginationQuery = new URLSearchParams();
-    // Exclude removed/legacy filters from pagination links.
-    const removedFilterParams = new Set(['status', 'source', 'episode', 'episodes']);
-    Object.entries(req.query).forEach(([key, value]) => {
-      if (!value) return;
-      if (key === 'page') return;
-      if (removedFilterParams.has(key)) return;
-      if (key === 'genre') {
-        if (!req.query.genres) paginationQuery.set('genres', value);
-        return;
-      }
-      paginationQuery.set(key, value);
+    const filtersQuery = buildFiltersQuery(req.query, {
+      exclude: ['status', 'source', 'episode', 'episodes'],
+      aliases: { genre: 'genres' }
     });
-    const filtersQuery = paginationQuery.toString() ? `&${paginationQuery.toString()}` : '';
 
     res.render('anime/anime_list', {
       title: 'Anime',
       animes: animes,
       filters,
       filtersQuery,
-      pagination: {
-        currentPage: page,
-        totalPages: totalPages,
-        hasPrev: page > 1,
-        prevPage: page - 1,
-        hasNext: page < totalPages,
-        nextPage: parseInt(page) + 1
-      },
+      pagination: buildPagination(page, totalPages),
       warning: !animes || animes.length === 0 ? 'No anime found in database.' : null
     });
   } catch (err) {
     res.render('anime/anime_list', {
       title: 'Anime',
       animes: [],
-      filters: buildFiltersModel({}),
+      filters: buildFiltersModel(req.query),
       filtersQuery: '',
       currentPage: 'anime',
       error: 'Impossibile caricare i dati degli anime. Il server potrebbe non essere disponibile.'
@@ -184,9 +178,9 @@ exports.list = async (req, res, next) => {
 /**
  * Renders the anime detail page with related characters and recommendations.
  *
- * @param {import('express').Request} req Express request.
- * @param {import('express').Response} res Express response.
- * @param {import('express').NextFunction} next Express next middleware function.
+ * @param {Object} req Express request.
+ * @param {Object} res Express response.
+ * @param {Function} next Express next middleware function.
  * @returns {Promise<void>} Resolves when the response is rendered.
  */
 exports.detail = async (req, res, next) => {
@@ -210,13 +204,7 @@ exports.detail = async (req, res, next) => {
         `/api/details/${id}/recommendations`
     );
     const raw = response.data || {};
-    const charactersData = charactersResponse?.data;
-    const relatedCharacters = Array.isArray(charactersData)
-        ? charactersData
-        : charactersData?.related_characters ||
-          charactersData?.characters ||
-          charactersData?.items ||
-          [];
+    const relatedCharacters = normalizeRelatedCharactersPayload(charactersResponse?.data);
     const recommendationsData = recommendationsResponse?.data;
     const recommendations = Array.isArray(recommendationsData)
         ? recommendationsData
@@ -242,55 +230,6 @@ exports.detail = async (req, res, next) => {
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
       return '?' + params.toString();
     };
-
-    /**
-     * Normalizes a generic field to an array of non-empty string values.
-     *
-     * @param {unknown} value Raw value from API payload.
-     * @returns {string[]} Normalized list.
-     */
-    const normalizeList = (value) => {
-      if (Array.isArray(value)) {
-        return value.filter((item) => item !== null && item !== undefined && item !== '');
-      }
-      if (value === null || value === undefined) {
-        return [];
-      }
-      if (typeof value === 'string') {
-        const trimmed = value.trim();
-        if (trimmed === '' || trimmed === '[]') {
-          return [];
-        }
-        if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-          const normalized = trimmed.replace(/'/g, '"');
-          try {
-            const parsed = JSON.parse(normalized);
-            if (Array.isArray(parsed)) {
-              return parsed.filter((item) => item !== null && item !== undefined && item !== '');
-            }
-          } catch (err) {
-            // Fallback to splitting below.
-          }
-          const items = trimmed
-              .slice(1, -1)
-              .split(',')
-              .map((item) => item.trim().replace(/^["']|["']$/g, ''))
-              .filter((item) => item !== '');
-          return items;
-        }
-        return [trimmed];
-      }
-      return [String(value)];
-    };
-
-    /**
-     * Converts empty values to a human-readable fallback for the UI.
-     *
-     * @param {unknown} value Raw value to display.
-     * @returns {unknown} 'N/A' for empty values, otherwise the original value.
-     */
-    const formatValue = (value) =>
-        value === null || value === undefined || value === '' ? 'N/A' : value;
 
     const genres = normalizeList(raw.genres);
     const themes = normalizeList(raw.themes);
@@ -351,12 +290,7 @@ exports.detail = async (req, res, next) => {
       ratings: ratings,
       filters: filters,
       ratingsPagination: {
-        currentPage: page,
-        totalPages: totalPages,
-        hasPrev: page > 1,
-        prevPage: page - 1,
-        hasNext: page < totalPages,
-        nextPage: page + 1,
+        ...buildPagination(page, totalPages),
         prevUrl: buildQueryString(page - 1),
         nextUrl: buildQueryString(page + 1)
       },
@@ -373,26 +307,37 @@ exports.detail = async (req, res, next) => {
 };
 
 /**
- * Renders the page with characters related to a specific anime.
+ * Returns characters related to a specific anime as JSON.
  *
- * @param {import('express').Request} req Express request.
- * @param {import('express').Response} res Express response.
- * @returns {Promise<void>} Resolves when the response is rendered.
+ * @param {Object} req Express request.
+ * @param {Object} res Express response.
+ * @returns {Promise<void>} Resolves when the JSON response is sent.
  */
 exports.characters = async (req, res) => {
   try {
     const { id } = req.params;
-    const response = await apiPostgres.get(`/api/details/${id}/characters`);
-    res.render('anime/related_characters', {
-      title: `Recommendations for ${response.data.title}`,
-      related_characters: response.data.related_characters,
-      currentPage: 'anime'
+    const params = new URLSearchParams();
+    if (req.query.page) params.set('page', req.query.page);
+    if (req.query.pageSize) params.set('pageSize', req.query.pageSize);
+
+    const queryString = params.toString();
+    const response = await apiPostgres.get(
+        `/api/details/${id}/characters${queryString ? `?${queryString}` : ''}`
+    );
+    const payload = response.data || {};
+    const relatedCharacters = normalizeRelatedCharactersPayload(payload);
+    const responsePayload = Array.isArray(payload) ? {} : payload;
+
+    return res.json({
+      ...responsePayload,
+      characters: relatedCharacters,
+      related_characters: responsePayload.related_characters || relatedCharacters
     });
   } catch (err) {
-    res.render('related_characters', {
-      title: 'Characters',
-      recommendations: null,
-      error: 'Impossibile caricare i personaggi dell\'anime. Il server potrebbe non essere disponibile.'
+    return res.status(err.response?.status || 500).json({
+      characters: [],
+      related_characters: [],
+      error: err.response?.data?.error || 'Unable to load characters'
     });
   }
 };
@@ -400,8 +345,8 @@ exports.characters = async (req, res) => {
 /**
  * Renders the page with recommendations for a specific anime.
  *
- * @param {import('express').Request} req Express request.
- * @param {import('express').Response} res Express response.
+ * @param {Object} req Express request.
+ * @param {Object} res Express response.
  * @returns {Promise<void>} Resolves when the response is rendered.
  */
 exports.reccomendations = async (req, res) => {
@@ -425,8 +370,8 @@ exports.reccomendations = async (req, res) => {
 /**
  * Returns ratings data as JSON for asynchronous loading in the detail page.
  *
- * @param {import('express').Request} req Express request.
- * @param {import('express').Response} res Express response.
+ * @param {Object} req Express request.
+ * @param {Object} res Express response.
  * @returns {Promise<void>} Resolves when the JSON response is sent.
  */
 exports.getRatingsJson = async (req, res) => {

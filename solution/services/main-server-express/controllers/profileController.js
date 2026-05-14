@@ -8,13 +8,106 @@
  */
 
 const { apiPostgres, apiMongo } = require('./apiClients');
+const {
+    buildPagination,
+    extractItems,
+    extractSettledItems
+} = require('./controllerUtils');
+
+const PROFILE_CAROUSELS = {
+    anime: {
+        favType: 'anime',
+        detailPath: (id) => `/api/details/${id}`,
+        partial: 'partials/anime_carousel_items'
+    },
+    character: {
+        favType: 'character',
+        detailPath: (id) => `/api/characters/${id}`,
+        partial: 'partials/characters_carousel_items'
+    }
+};
+
+/**
+ * Returns the items that belong to one paginated page.
+ *
+ * @param {Array<Object>} items Full item list.
+ * @param {number} currentPage One-based page number.
+ * @param {number} pageSize Number of items per page.
+ * @returns {Array<Object>} Items for the selected page.
+ */
+function getItemsPage(items, currentPage, pageSize) {
+    const startIndex = (currentPage - 1) * pageSize;
+    return items.slice(startIndex, startIndex + pageSize);
+}
+
+/**
+ * Fetches favorite ids for a user and favorite type.
+ *
+ * @param {string} username Profile username.
+ * @param {'anime'|'character'} favType Favorite category.
+ * @returns {Promise<Object>} Axios response from the favorites API.
+ */
+function fetchFavorites(username, favType) {
+    return apiMongo.get('/api/favorites', {
+        params: { username: username, fav_type: favType }
+    });
+}
+
+/**
+ * Fetches detailed records for a page of favorite ids.
+ *
+ * @param {Array<{id: number|string}>} favorites Favorite records containing item ids.
+ * @param {Function} detailPath Function that returns the backend detail path.
+ * @returns {Promise<Array<Object>>} Detail records that were fetched successfully.
+ */
+async function fetchFavoriteDetails(favorites, detailPath) {
+    if (favorites.length === 0) {
+        return [];
+    }
+
+    const detailPromises = favorites.map(async (fav) => {
+        try {
+            const response = await apiPostgres.get(detailPath(fav.id));
+            return response.data;
+        } catch (err) {
+            return null;
+        }
+    });
+    const results = await Promise.all(detailPromises);
+    return results.filter((item) => item !== null);
+}
+
+/**
+ * Adds anime titles to rating records when available.
+ *
+ * @param {Array<Object>} reviews Rating records to enrich.
+ * @returns {Promise<Array<Object>>} Ratings with anime_title when lookup succeeds.
+ */
+async function enhanceReviewsWithAnimeTitles(reviews) {
+    if (reviews.length === 0) {
+        return [];
+    }
+
+    const reviewPromises = reviews.map(async (review) => {
+        try {
+            const animeResponse = await apiPostgres.get(`/api/details/${review.anime_id}`);
+            return {
+                ...review,
+                anime_title: animeResponse.data.title
+            };
+        } catch (err) {
+            return review;
+        }
+    });
+    return Promise.all(reviewPromises);
+}
 
 /**
  * Renders a user profile page or handles profile carousel AJAX requests.
  *
- * @param {import('express').Request} req Express request.
- * @param {import('express').Response} res Express response.
- * @param {import('express').NextFunction} next Express next middleware function.
+ * @param {Object} req Express request.
+ * @param {Object} res Express response.
+ * @param {Function} next Express next middleware function.
  * @returns {Promise<void>} Resolves when HTML/JSON response is sent.
  */
 exports.showProfile = async (req, res, next) => {
@@ -35,8 +128,8 @@ exports.showProfile = async (req, res, next) => {
 
         const [profileResult, animeFavIdsResult, charFavIdsResult, reviewsResult] = await Promise.allSettled([
             apiPostgres.get(`/api/profiles/${username}`),
-            apiMongo.get(`/api/favorites`, { params: { username: username, fav_type: 'anime' } }),
-            apiMongo.get(`/api/favorites`, { params: { username: username, fav_type: 'character' } }),
+            fetchFavorites(username, PROFILE_CAROUSELS.anime.favType),
+            fetchFavorites(username, PROFILE_CAROUSELS.character.favType),
             apiMongo.get(`/api/ratings`, { params: { username: username, page: reviewPage, pageSize: reviewPageSize } })
         ]);
 
@@ -45,89 +138,29 @@ exports.showProfile = async (req, res, next) => {
         }
         const profileData = profileResult.value.data;
 
-        /**
-         * Extracts a normalized list from Promise.allSettled results.
-         *
-         * @param {PromiseSettledResult<any>} result Settled promise result.
-         * @returns {Array<any>} Extracted items array or empty array.
-         */
-        const extractArray = (result) => {
-            if (result.status === 'rejected') return [];
-            const data = result.value.data;
-            if (Array.isArray(data)) return data;
-            if (data && Array.isArray(data.items)) return data.items;
-            if (data && Array.isArray(data.data)) return data.data;
-            return [];
-        };
-
-        const allAnimeIds = extractArray(animeFavIdsResult);
-        const allCharIds = extractArray(charFavIdsResult);
+        const allAnimeIds = extractSettledItems(animeFavIdsResult);
+        const allCharIds = extractSettledItems(charFavIdsResult);
         const reviewsData = reviewsResult.status === 'fulfilled' ? reviewsResult.value.data : null;
-        const userReviews = extractArray(reviewsResult);
+        const userReviews = extractSettledItems(reviewsResult);
 
-        // Pagination for anime favorites (carousel)
-        const animeStartIndex = (animePage - 1) * pageSize;
-        const animeEndIndex = animePage * pageSize;
-        const animeFavIds = allAnimeIds.slice(animeStartIndex, animeEndIndex);
         const animeTotalPages = Math.ceil(allAnimeIds.length / pageSize);
-
-        // Pagination for character favorites (carousel)
-        const charStartIndex = (characterPage - 1) * pageSize;
-        const charEndIndex = characterPage * pageSize;
-        const charFavIds = allCharIds.slice(charStartIndex, charEndIndex);
+        const animeFavIds = getItemsPage(allAnimeIds, animePage, pageSize);
         const charTotalPages = Math.ceil(allCharIds.length / pageSize);
+        const charFavIds = getItemsPage(allCharIds, characterPage, pageSize);
 
         // Pagination for reviews (AJAX will handle further pages)
         const reviewTotalPages = reviewsData?.totalPages
             || (reviewsData?.total ? Math.ceil(reviewsData.total / reviewPageSize) : Math.ceil(userReviews.length / reviewPageSize))
             || 1;
 
-        // Fetch anime details
-        let favoriteAnimes = [];
-        if (animeFavIds.length > 0) {
-            const animePromises = animeFavIds.map(async (fav) => {
-                try {
-                    const response = await apiPostgres.get(`/api/details/${fav.id}`);
-                    return response.data;
-                } catch (err) {
-                    return null;
-                }
-            });
-            const animeResults = await Promise.all(animePromises);
-            favoriteAnimes = animeResults.filter(anime => anime !== null);
-        }
+        const [favoriteAnimes, favoriteCharacters] = await Promise.all([
+            fetchFavoriteDetails(animeFavIds, PROFILE_CAROUSELS.anime.detailPath),
+            fetchFavoriteDetails(charFavIds, PROFILE_CAROUSELS.character.detailPath)
+        ]);
 
-        // Fetch character details
-        let favoriteCharacters = [];
-        if (charFavIds.length > 0) {
-            const charPromises = charFavIds.map(async (fav) => {
-                try {
-                    const response = await apiPostgres.get(`/api/characters/${fav.id}`);
-                    return response.data;
-                } catch (err) {
-                    return null;
-                }
-            });
-            const charResults = await Promise.all(charPromises);
-            favoriteCharacters = charResults.filter(char => char !== null);
-        }
-
-        // Enhance reviews with anime titles
-        let enhancedReviews = [...userReviews];
-        if (userReviews.length > 0 && userReviews.length <= 10) {
-            const reviewPromises = userReviews.map(async (review) => {
-                try {
-                    const animeResponse = await apiPostgres.get(`/api/details/${review.anime_id}`);
-                    return {
-                        ...review,
-                        anime_title: animeResponse.data.title
-                    };
-                } catch (err) {
-                    return review;
-                }
-            });
-            enhancedReviews = await Promise.all(reviewPromises);
-        }
+        const enhancedReviews = userReviews.length <= 10
+            ? await enhanceReviewsWithAnimeTitles(userReviews)
+            : userReviews;
 
         res.render('profile/profile', {
             title: `${profileData.username}'s Profile`,
@@ -137,29 +170,16 @@ exports.showProfile = async (req, res, next) => {
             favoriteCharacters: favoriteCharacters,
             userReviews: enhancedReviews,
             animeCarousel: {
-                currentPage: animePage,
-                totalPages: animeTotalPages,
-                hasPrev: animePage > 1,
-                prevPage: animePage - 1,
-                hasNext: animePage < animeTotalPages,
-                nextPage: animePage + 1,
+                ...buildPagination(animePage, animeTotalPages),
                 pageSize: pageSize
             },
             characterCarousel: {
-                currentPage: characterPage,
-                totalPages: charTotalPages,
-                hasPrev: characterPage > 1,
-                prevPage: characterPage - 1,
-                hasNext: characterPage < charTotalPages,
-                nextPage: characterPage + 1,
+                ...buildPagination(characterPage, charTotalPages),
                 pageSize: pageSize
             },
             pagination: {
                 page: reviewPage,
-                totalPages: reviewTotalPages,
-                hasPrev: false,
-                hasNext: reviewPage < reviewTotalPages,
-                nextPage: 2,
+                ...buildPagination(reviewPage, reviewTotalPages),
                 pageSize: reviewPageSize
             }
         });
@@ -178,8 +198,8 @@ exports.showProfile = async (req, res, next) => {
 /**
  * Returns paginated user ratings as JSON for asynchronous profile updates.
  *
- * @param {import('express').Request} req Express request.
- * @param {import('express').Response} res Express response.
+ * @param {Object} req Express request.
+ * @param {Object} res Express response.
  * @returns {Promise<void>} Resolves when JSON response is sent.
  */
 exports.getRatingsJson = async (req, res) => {
@@ -194,35 +214,18 @@ exports.getRatingsJson = async (req, res) => {
         });
 
         const reviewsData = reviewsResult.data || {};
-        const userReviews = Array.isArray(reviewsData) ? reviewsData :
-            (reviewsData.items || reviewsData.data || []);
+        const userReviews = extractItems(reviewsData);
         const totalPages = reviewsData.totalPages
             || (reviewsData.total ? Math.ceil(reviewsData.total / pageSize) : Math.ceil(userReviews.length / pageSize))
             || 1;
         const total = reviewsData.total || userReviews.length;
 
-        // Enhance with anime titles (only for current page)
-        let enhancedReviews = [...userReviews];
-        if (userReviews.length > 0) {
-            const reviewPromises = userReviews.map(async (review) => {
-                try {
-                    const animeResponse = await apiPostgres.get(`/api/details/${review.anime_id}`);
-                    return {
-                        ...review,
-                        anime_title: animeResponse.data.title
-                    };
-                } catch (err) {
-                    return review;
-                }
-            });
-            enhancedReviews = await Promise.all(reviewPromises);
-        }
+        const enhancedReviews = await enhanceReviewsWithAnimeTitles(userReviews);
 
         res.json({
             ratings: enhancedReviews,
             pagination: {
-                currentPage: page,
-                totalPages: totalPages,
+                ...buildPagination(page, totalPages),
                 total: total
             }
         });
@@ -239,8 +242,8 @@ exports.getRatingsJson = async (req, res) => {
 /**
  * Handles AJAX requests for anime/character profile carousels.
  *
- * @param {import('express').Request} req Express request.
- * @param {import('express').Response} res Express response.
+ * @param {Object} req Express request.
+ * @param {Object} res Express response.
  * @param {string} username Profile username.
  * @param {number} pageSize Number of items per carousel page.
  * @returns {Promise<void>} Resolves when JSON response is sent.
@@ -248,95 +251,29 @@ exports.getRatingsJson = async (req, res) => {
 async function handleCarouselRequest(req, res, username, pageSize) {
     const { carouselType, page } = req.query;
     const currentPage = parseInt(page || '1', 10);
+    const carouselConfig = PROFILE_CAROUSELS[carouselType];
+
+    if (!carouselConfig) {
+        return res.status(400).json({ error: 'Invalid carousel type' });
+    }
 
     try {
-        let items = [];
-        let totalPages = 1;
+        const favResult = await fetchFavorites(username, carouselConfig.favType);
+        const allFavs = extractItems(favResult.data);
+        const totalPages = Math.ceil(allFavs.length / pageSize);
+        const pageFavs = getItemsPage(allFavs, currentPage, pageSize);
+        const items = await fetchFavoriteDetails(pageFavs, carouselConfig.detailPath);
 
-        if (carouselType === 'anime') {
-            const favResult = await apiMongo.get(`/api/favorites`, {
-                params: { username: username, fav_type: 'anime' }
-            });
-            const allFavs = Array.isArray(favResult.data) ? favResult.data :
-                (favResult.data?.items || favResult.data?.data || []);
-
-            totalPages = Math.ceil(allFavs.length / pageSize);
-            const startIndex = (currentPage - 1) * pageSize;
-            const endIndex = currentPage * pageSize;
-            const pageFavs = allFavs.slice(startIndex, endIndex);
-
-            if (pageFavs.length > 0) {
-                const animePromises = pageFavs.map(async (fav) => {
-                    try {
-                        const response = await apiPostgres.get(`/api/details/${fav.id}`);
-                        return response.data;
-                    } catch (err) {
-                        return null;
-                    }
-                });
-                const results = await Promise.all(animePromises);
-                items = results.filter(anime => anime !== null);
+        return res.render(carouselConfig.partial, { layout: false, items }, (err, html) => {
+            if (err) {
+                console.error('Error rendering partial:', err);
+                return res.status(500).json({ error: 'Error rendering carousel' });
             }
-
-            return res.render('partials/anime_carousel_items', { layout: false, items }, (err, html) => {
-                if (err) {
-                    console.error('Error rendering partial:', err);
-                    return res.status(500).json({ error: 'Error rendering carousel' });
-                }
-                res.json({
-                    html,
-                    currentPage,
-                    totalPages,
-                    hasPrev: currentPage > 1,
-                    prevPage: currentPage - 1,
-                    hasNext: currentPage < totalPages,
-                    nextPage: currentPage + 1
-                });
+            res.json({
+                html,
+                ...buildPagination(currentPage, totalPages)
             });
-
-        } else if (carouselType === 'character') {
-            const favResult = await apiMongo.get(`/api/favorites`, {
-                params: { username: username, fav_type: 'character' }
-            });
-            const allFavs = Array.isArray(favResult.data) ? favResult.data :
-                (favResult.data?.items || favResult.data?.data || []);
-
-            totalPages = Math.ceil(allFavs.length / pageSize);
-            const startIndex = (currentPage - 1) * pageSize;
-            const endIndex = currentPage * pageSize;
-            const pageFavs = allFavs.slice(startIndex, endIndex);
-
-            if (pageFavs.length > 0) {
-                const charPromises = pageFavs.map(async (fav) => {
-                    try {
-                        const response = await apiPostgres.get(`/api/characters/${fav.id}`);
-                        return response.data;
-                    } catch (err) {
-                        return null;
-                    }
-                });
-                const results = await Promise.all(charPromises);
-                items = results.filter(char => char !== null);
-            }
-
-            return res.render('partials/characters_carousel_items', { layout: false, items }, (err, html) => {
-                if (err) {
-                    console.error('Error rendering partial:', err);
-                    return res.status(500).json({ error: 'Error rendering carousel' });
-                }
-                res.json({
-                    html,
-                    currentPage,
-                    totalPages,
-                    hasPrev: currentPage > 1,
-                    prevPage: currentPage - 1,
-                    hasNext: currentPage < totalPages,
-                    nextPage: currentPage + 1
-                });
-            });
-        }
-
-        return res.status(400).json({ error: 'Invalid carousel type' });
+        });
 
     } catch (err) {
         console.error('Carousel error:', err);

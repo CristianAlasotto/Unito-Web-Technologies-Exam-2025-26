@@ -235,53 +235,6 @@ public class RecommendationsController {
     }
 
 
-    /**
-     * Get summary by composite key (using query parameters)
-     * GET /api/recommendations/summary?mal_id&recommendation_mal_id
-     */
-    @Operation(
-            summary = "Get recommendation summary",
-            description = "Retrieve a brief summary of the recommendation"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found successfully"),
-            @ApiResponse(responseCode = "404", description = "Not found")
-    })
-    @GetMapping("/summary")
-    public ResponseEntity<?> getSummary(
-            @Parameter(description = "Source Anime ID", required = true)
-            @RequestParam(value = "mal_id", required = false) Integer malId,
-
-            @Parameter(description = "Recommended Anime ID", required = true)
-            @RequestParam(value = "recommendation_mal_id", required = false) Integer recommendationMalId) {
-
-        // Check if all key fields are provided
-        if (malId == null || recommendationMalId == null) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "All key fields required: malId, recommendationMalId");
-            error.put("usage", "GET /api/recommendations/summary?mal_id&recommendation_mal_id");
-            return ResponseEntity.status(400).body(error);
-        }
-
-        // Create composite key
-        Recommendations.RecommendationsId id = new Recommendations.RecommendationsId(malId, recommendationMalId);
-        Optional<Recommendations> entity = service.getById(id);
-
-        if (entity.isEmpty()) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "Recommendations not found");
-            error.put("mal_id", malId); error.put("recommendation_mal_id", recommendationMalId);
-            return ResponseEntity.status(404).body(error);
-        }
-
-        Recommendations data = entity.get();
-        Map<String, Object> summary = new HashMap<>();
-        summary.put("mal_id", data.getMalId());
-        summary.put("recommendation_mal_id", data.getRecommendationMalId());
-
-        return ResponseEntity.ok(summary);
-    }
-
     private Map<String, Object> toSnakeCaseMap(Recommendations entity) {
         Map<String, Object> result = new HashMap<>();
         result.put("mal_id", entity.getMalId());

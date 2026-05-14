@@ -238,57 +238,6 @@ public class PersonAnimeWorksController {
     }
 
 
-    /**
-     * Get summary by composite key (using query parameters)
-     * GET /api/person_anime_works/summary?person_mal_id&position&anime_mal_id
-     */
-    @Operation(
-            summary = "Get work summary",
-            description = "Retrieve a brief summary of the work record"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found successfully"),
-            @ApiResponse(responseCode = "404", description = "Not found")
-    })
-    @GetMapping("/summary")
-    public ResponseEntity<?> getSummary(
-            @Parameter(description = "Person MAL ID (Required)", required = true)
-            @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
-
-            @Parameter(description = "Position (Required)", required = true)
-            @RequestParam(required = false) String position,
-
-            @Parameter(description = "Anime MAL ID (Required)", required = true)
-            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId) {
-
-        // Check if all key fields are provided
-        if (personMalId == null || position == null || animeMalId == null) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "All key fields required: personMalId, position, animeMalId");
-            error.put("usage", "GET /api/person_anime_works/summary?person_mal_id&position&anime_mal_id");
-            return ResponseEntity.status(400).body(error);
-        }
-
-        // Create composite key
-        PersonAnimeWorks.PersonAnimeWorksId id = new PersonAnimeWorks.PersonAnimeWorksId(personMalId, position, animeMalId);
-        Optional<PersonAnimeWorks> entity = service.getById(id);
-
-        if (entity.isEmpty()) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "PersonAnimeWorks not found");
-            error.put("person_mal_id", personMalId); error.put("position", position); error.put("anime_mal_id", animeMalId);
-            return ResponseEntity.status(404).body(error);
-        }
-
-        PersonAnimeWorks data = entity.get();
-        Map<String, Object> summary = new HashMap<>();
-        summary.put("person_mal_id", data.getPersonMalId());
-        summary.put("position", data.getPosition());
-        summary.put("anime_mal_id", data.getAnimeMalId());
-
-        return ResponseEntity.ok(summary);
-    }
-
     private Map<String, Object> toSnakeCaseMap(PersonAnimeWorks entity) {
         Map<String, Object> result = new HashMap<>();
         result.put("person_mal_id", entity.getPersonMalId());

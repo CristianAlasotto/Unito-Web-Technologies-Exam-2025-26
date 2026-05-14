@@ -113,6 +113,13 @@ router.get('/:id/ratings-json', animeController.getRatingsJson);
  *         201:
  *           description: Rating creato con successo.
  */
+/**
+ * Validates and stores a user rating for an anime.
+ *
+ * @param {Object} req Express request with rating body.
+ * @param {Object} res Express response.
+ * @returns {Promise<void>} Resolves when the JSON response is sent.
+ */
 router.post('/:id/ratings', async function(req, res) {
     try {
         const ratingData = req.body;
@@ -174,6 +181,29 @@ router.post('/:id/ratings', async function(req, res) {
         });
     }
 });
+
+/**
+ * @swagger
+ * /anime/{id}/characters:
+ *   get:
+ *       summary: Restituisce i personaggi collegati a un anime.
+ *       description: Recupera i personaggi collegati all'anime tramite il main server.
+ *       tags:
+ *         - Anime
+ *       parameters:
+ *         - in: path
+ *           name: id
+ *           required: true
+ *           schema:
+ *             type: string
+ *           description: ID dell'anime.
+ *       responses:
+ *         200:
+ *           description: Lista dei personaggi collegati.
+ *         404:
+ *           description: Anime non trovato.
+ */
+router.get('/:id/characters', animeController.characters);
 
 /**
  * @swagger

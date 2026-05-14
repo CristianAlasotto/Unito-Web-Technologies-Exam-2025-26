@@ -8,6 +8,7 @@
  */
 
 const { apiPostgres } = require('./apiClients');
+const { buildPagination } = require('./controllerUtils');
 
 /**
  * Returns API path and default query params for a given homepage section.
@@ -48,9 +49,9 @@ const getApiRequestConfig = (type) => {
 /**
  * Renders the home page or a single carousel partial for AJAX requests.
  *
- * @param {import('express').Request} req Express request.
- * @param {import('express').Response} res Express response.
- * @param {import('express').NextFunction} next Express next middleware function.
+ * @param {Object} req Express request.
+ * @param {Object} res Express response.
+ * @param {Function} next Express next middleware function.
  * @returns {Promise<void>} Resolves when HTML/JSON response is sent.
  */
 exports.preview = async (req, res, next) => {
@@ -84,12 +85,7 @@ exports.preview = async (req, res, next) => {
         }
         res.json({
           html,
-          currentPage,
-          totalPages,
-          hasPrev: currentPage > 1,
-          prevPage: currentPage - 1,
-          hasNext: currentPage < totalPages,
-          nextPage: currentPage + 1,
+          ...buildPagination(currentPage, totalPages),
         });
       });
     }
@@ -149,30 +145,15 @@ exports.preview = async (req, res, next) => {
       popularCharacters,
       popularStaff,
       animeCarousel: {
-        currentPage: animesPage,
-        totalPages: animesTotalPages,
-        hasPrev: animesPage > 1,
-        prevPage: animesPage - 1,
-        hasNext: animesPage < animesTotalPages,
-        nextPage: animesPage + 1,
+        ...buildPagination(animesPage, animesTotalPages),
         pageSize: pageSize
       },
       characterCarousel: {
-        currentPage: charactersPage,
-        totalPages: charactersTotalPages,
-        hasPrev: charactersPage > 1,
-        prevPage: charactersPage - 1,
-        hasNext: charactersPage < charactersTotalPages,
-        nextPage: charactersPage + 1,
+        ...buildPagination(charactersPage, charactersTotalPages),
         pageSize: pageSize
       },
       staffCarousel: {
-        currentPage: staffPage,
-        totalPages: staffTotalPages,
-        hasPrev: staffPage > 1,
-        prevPage: staffPage - 1,
-        hasNext: staffPage < staffTotalPages,
-        nextPage: staffPage + 1,
+        ...buildPagination(staffPage, staffTotalPages),
         pageSize: pageSize
       },
       warningPopular:

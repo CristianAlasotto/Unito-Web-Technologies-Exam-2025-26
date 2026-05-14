@@ -1,5 +1,27 @@
 package com.example.dataserverspringboot.entities.details;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.example.dataserverspringboot.entities.characteranimeworks.CharacterAnimeWorks;
 import com.example.dataserverspringboot.entities.characteranimeworks.CharacterAnimeWorksRepository;
 import com.example.dataserverspringboot.entities.characters.Characters;
@@ -8,22 +30,14 @@ import com.example.dataserverspringboot.entities.personanimeworks.PersonAnimeWor
 import com.example.dataserverspringboot.entities.personanimeworks.PersonAnimeWorksRepository;
 import com.example.dataserverspringboot.entities.persondetails.PersonDetails;
 import com.example.dataserverspringboot.entities.persondetails.PersonDetailsRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import java.util.*;
-import java.util.stream.Collectors;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * REST API Controller for Details
@@ -179,41 +193,6 @@ public class DetailsController {
         response.put("items", charactersList);
 
         return ResponseEntity.ok(response);
-    }
-
-    @Operation(
-            summary = "Get anime summary",
-            description = "Retrieve a brief summary of anime information (title, type, score, episodes)"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Summary retrieved successfully"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Anime not found",
-                    content = @Content
-            )
-    })
-    @GetMapping("/{mal_id}/summary")
-    public ResponseEntity<?> getSummary(
-            @Parameter(description = "Anime MAL ID", example = "1", required = true)
-            @PathVariable("mal_id") Integer malId) {
-        Optional<Details> entity = service.getById(malId);
-        
-        if (entity.isEmpty()) {
-            return ResponseEntity.status(404).build();
-        }
-        
-        Details data = entity.get();
-        Map<String, Object> summary = new HashMap<>();
-        summary.put("mal_id", data.getMalId());
-        summary.put("title", data.getTitle());
-        summary.put("score", data.getScore());
-        summary.put("popularity", data.getPopularity());
-        
-        return ResponseEntity.ok(summary);
     }
 
     @Operation(

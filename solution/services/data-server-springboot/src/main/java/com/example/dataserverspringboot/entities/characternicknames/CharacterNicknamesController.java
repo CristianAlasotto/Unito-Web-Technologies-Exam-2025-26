@@ -228,53 +228,6 @@ public class CharacterNicknamesController {
     }
 
 
-    /**
-     * Get summary by composite key (using query parameters)
-     * GET /api/character_nicknames/summary?character_mal_id&nickname
-     */
-    @Operation(
-            summary = "Get nickname summary",
-            description = "Retrieve a brief summary of the nickname record"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found successfully"),
-            @ApiResponse(responseCode = "404", description = "Not found")
-    })
-    @GetMapping("/summary")
-    public ResponseEntity<?> getSummary(
-            @Parameter(description = "Character MAL ID (Required)", required = true)
-            @RequestParam(value = "character_mal_id", required = false) Integer characterMalId,
-
-            @Parameter(description = "Nickname (Required)", required = true)
-            @RequestParam(required = false) String nickname) {
-
-        // Check if all key fields are provided
-        if (characterMalId == null || nickname == null) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "All key fields required: characterMalId, nickname");
-            error.put("usage", "GET /api/character_nicknames/summary?character_mal_id&nickname");
-            return ResponseEntity.status(400).body(error);
-        }
-
-        // Create composite key
-        CharacterNicknames.CharacterNicknamesId id = new CharacterNicknames.CharacterNicknamesId(characterMalId, nickname);
-        Optional<CharacterNicknames> entity = service.getById(id);
-
-        if (entity.isEmpty()) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "CharacterNicknames not found");
-            error.put("character_mal_id", characterMalId); error.put("nickname", nickname);
-            return ResponseEntity.status(404).body(error);
-        }
-
-        CharacterNicknames data = entity.get();
-        Map<String, Object> summary = new HashMap<>();
-        summary.put("character_mal_id", data.getCharacterMalId());
-        summary.put("nickname", data.getNickname());
-
-        return ResponseEntity.ok(summary);
-    }
-
     private Map<String, Object> toSnakeCaseMap(CharacterNicknames entity) {
         Map<String, Object> result = new HashMap<>();
         result.put("character_mal_id", entity.getCharacterMalId());

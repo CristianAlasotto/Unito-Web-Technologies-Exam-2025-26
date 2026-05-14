@@ -10,10 +10,20 @@
 
 const axios = require('axios');
 
+/**
+ * Axios client for the MongoDB-backed data server.
+ *
+ * @type {Object}
+ */
 const apiMongo = axios.create({
   baseURL: process.env.DATA_EXPRESS_URL || 'http://localhost:3001'   // server MongoDB REST
 });
 
+/**
+ * Axios client for the Spring/PostgreSQL-backed data server.
+ *
+ * @type {Object}
+ */
 const apiPostgres = axios.create({
     baseURL: process.env.DATA_SPRING_URL || 'http://localhost:8080'   // server Spring Boot per Postgres
 });

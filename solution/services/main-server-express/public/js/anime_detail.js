@@ -1,3 +1,9 @@
+/**
+ * Initializes the anime detail page interactions.
+ *
+ * Handles rating submission, rating filters/pagination, and lazy loading of
+ * related character cards for the current anime detail page.
+ */
 (function() {
     const animeId = window.location.pathname.split('/')[2]; // Extract anime ID from URL
     let currentPage = 1;
@@ -19,26 +25,27 @@
     const filterRewatching = document.getElementById('filter-rewatching');
     const filterSortBy = document.getElementById('filter-sortBy');
     const filterSortOrder = document.getElementById('filter-sortOrder');
-    const ratingForm = document.getElementById('add-rating-form');
+    const ratingForm = document.getElementById('rating-form') || document.getElementById('add-rating-form');
     const submitRatingBtn = document.getElementById('submit-rating-btn');
     const applyFiltersBtn = document.getElementById('apply-filters-btn');
     const clearFiltersBtn = document.getElementById('clear-filters-btn');
     const ratingsContainer = document.getElementById('ratings-container');
     const ratingMessage = document.getElementById('rating-message');
 
-    const hasRatingsUI = Boolean(
-        ratingForm &&
-        submitRatingBtn &&
+    const hasFiltersUI = Boolean(
         filterMinScore &&
         filterMaxScore &&
         filterStatus &&
         filterRewatching &&
         filterSortBy &&
         filterSortOrder &&
+        applyFiltersBtn &&
+        clearFiltersBtn &&
         ratingsContainer
     );
+    const hasRatingForm = Boolean(ratingForm && submitRatingBtn);
 
-    if (hasRatingsUI) {
+    if (hasFiltersUI) {
         filterMinScore.value = filters.minScore;
         filterMaxScore.value = filters.maxScore;
         filterStatus.value = filters.status;
@@ -47,6 +54,13 @@
         filterSortOrder.value = filters.sortOrder;
     }
 
+    /**
+     * Displays a transient rating feedback message.
+     *
+     * @param {string} message Message text to render.
+     * @param {'success'|'error'} type Message style variant.
+     * @returns {void}
+     */
     function showMessage(message, type) {
         const messageEl = ratingMessage;
         if (!messageEl) {
@@ -63,21 +77,30 @@
         }, 5000);
     }
 
-    if (hasRatingsUI) {
+    if (hasRatingForm) {
         // Handle rating form submission
+        /**
+         * Submits a new user rating and refreshes the ratings list on success.
+         *
+         * @param {SubmitEvent} e Rating form submit event.
+         * @returns {Promise<void>}
+         */
         ratingForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
             submitRatingBtn.disabled = true;
             submitRatingBtn.textContent = 'Submitting...';
 
+            const rewatchingInput = document.getElementById('rating-rewatching');
             const formData = {
-                username: document.getElementById('rating-username').value,
-                anime_id: parseInt(animeId),
-                score: parseInt(document.getElementById('rating-score').value),
+                username: document.getElementById('rating-username').value.trim(),
+                anime_id: parseInt(animeId, 10),
+                score: parseInt(document.getElementById('rating-score').value, 10),
                 status: document.getElementById('rating-status').value,
-                num_watched_episodes: parseInt(document.getElementById('rating-episodes').value),
-                is_rewatching: parseInt(document.getElementById('rating-rewatching').value)
+                num_watched_episodes: parseInt(document.getElementById('rating-episodes').value, 10),
+                is_rewatching: rewatchingInput && rewatchingInput.type === 'checkbox'
+                    ? (rewatchingInput.checked ? 1 : 0)
+                    : parseInt(rewatchingInput?.value || '0', 10)
             };
 
             try {
@@ -109,8 +132,14 @@
         });
     }
 
+    /**
+     * Loads filtered ratings for the selected page via AJAX.
+     *
+     * @param {number} [page=1] Ratings page to load.
+     * @returns {Promise<void>}
+     */
     async function loadRatings(page = 1) {
-        if (!hasRatingsUI) {
+        if (!hasFiltersUI) {
             return;
         }
         const params = new URLSearchParams({ page: page });
@@ -149,9 +178,17 @@
         }
     }
 
-    // Function to render ratings HTML
+    /**
+     * Renders ratings rows and pagination controls into the ratings container.
+     *
+     * @param {Array<Object>} ratings Ratings returned by the API.
+     * @param {Object} pagination Pagination metadata returned by the API.
+     * @param {URLSearchParams} params Active filter and pagination query params.
+     * @returns {void}
+     */
     function renderRatings(ratings, pagination, params) {
         const container = ratingsContainer;
+        const paginationData = pagination || { currentPage: 1, totalPages: 1 };
 
         if (!ratings || ratings.length === 0) {
             container.innerHTML = '<p style="color: #888; font-style: italic; margin-bottom: 2rem;">No ratings available for this anime yet.</p>';
@@ -181,17 +218,24 @@
         html += '</tbody></table></div>';
 
         // Add pagination
-        if (pagination.totalPages > 1) {
+        if (paginationData.totalPages > 1) {
+            const hasPrev = typeof paginationData.hasPrev === 'boolean'
+                ? paginationData.hasPrev
+                : paginationData.currentPage > 1;
+            const hasNext = typeof paginationData.hasNext === 'boolean'
+                ? paginationData.hasNext
+                : paginationData.currentPage < paginationData.totalPages;
+
             html += '<div class="pagination" style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1rem;">';
 
-            if (pagination.hasPrev) {
-                html += `<button class="pagination-btn" data-page="${pagination.currentPage - 1}" style="padding: 0.5rem 1rem; background: #333; color: #fff; border: none; border-radius: 4px; cursor: pointer;">← Previous</button>`;
+            if (hasPrev) {
+                html += `<button class="pagination-btn" data-page="${paginationData.currentPage - 1}" style="padding: 0.5rem 1rem; background: #333; color: #fff; border: none; border-radius: 4px; cursor: pointer;">← Previous</button>`;
             }
 
-            html += `<span class="page-info" style="color: #ccc;">Page ${pagination.currentPage} of ${pagination.totalPages}</span>`;
+            html += `<span class="page-info" style="color: #ccc;">Page ${paginationData.currentPage} of ${paginationData.totalPages}</span>`;
 
-            if (pagination.hasNext) {
-                html += `<button class="pagination-btn" data-page="${pagination.currentPage + 1}" style="padding: 0.5rem 1rem; background: #333; color: #fff; border: none; border-radius: 4px; cursor: pointer;">Next →</button>`;
+            if (hasNext) {
+                html += `<button class="pagination-btn" data-page="${paginationData.currentPage + 1}" style="padding: 0.5rem 1rem; background: #333; color: #fff; border: none; border-radius: 4px; cursor: pointer;">Next →</button>`;
             }
 
             html += '</div>';
@@ -201,6 +245,11 @@
 
         // Add click handlers for pagination buttons
         document.querySelectorAll('.pagination-btn').forEach(btn => {
+            /**
+             * Loads the selected ratings page from a pagination button.
+             *
+             * @returns {void}
+             */
             btn.addEventListener('click', function() {
                 const page = parseInt(this.dataset.page);
                 loadRatings(page);
@@ -208,13 +257,25 @@
         });
     }
 
-    if (hasRatingsUI) {
+    window.loadRatings = loadRatings;
+
+    if (hasFiltersUI) {
         // Apply filters button
+        /**
+         * Applies the current filter values and resets ratings pagination.
+         *
+         * @returns {void}
+         */
         applyFiltersBtn.addEventListener('click', function() {
             loadRatings(1); // Reset to page 1 when applying filters
         });
 
         // Clear filters button
+        /**
+         * Clears all filter controls and reloads the first ratings page.
+         *
+         * @returns {void}
+         */
         clearFiltersBtn.addEventListener('click', function() {
             filterMinScore.value = '';
             filterMaxScore.value = '';
@@ -224,12 +285,26 @@
             filterSortOrder.value = 'desc';
             loadRatings(1);
         });
+
+        loadRatings(currentPage);
     }
 
+    /**
+     * Checks whether a value is an absolute HTTP or HTTPS URL.
+     *
+     * @param {unknown} value Value to check.
+     * @returns {boolean} True when the value is an HTTP(S) URL.
+     */
     function isHttpUrl(value) {
         return typeof value === 'string' && /^https?:\/\//i.test(value.trim());
     }
 
+    /**
+     * Normalizes related character API payloads into a character array.
+     *
+     * @param {Array<Object>|Object|null|undefined} payload Raw API response payload.
+     * @returns {Array<Object>} Normalized related character list.
+     */
     function normalizeRelatedCharacters(payload) {
         if (!payload) {
             return [];
@@ -240,6 +315,17 @@
         return payload.characters || payload.items || payload.related_characters || [];
     }
 
+    /**
+     * Builds the HTML markup for a related character card.
+     *
+     * @param {Object} character Related character data.
+     * @param {number|string} [character.character_mal_id] MyAnimeList character id.
+     * @param {number|string} [character.character_id] Local character id fallback.
+     * @param {string} [character.image] Character image URL.
+     * @param {string} [character.image_url] Character image URL fallback.
+     * @param {string} [character.name] Character display name.
+     * @returns {string} Character card HTML string.
+     */
     function buildCharacterCard(character) {
         const characterId = character.character_mal_id || character.character_id;
         const href = characterId ? `/characters/${characterId}` : '#';
@@ -265,7 +351,12 @@
         `;
     }
 
-    
+    /**
+     * Renders related characters into the related characters section.
+     *
+     * @param {Array<Object>} characters Related character list.
+     * @returns {void}
+     */
     function renderRelatedCharacters(characters) {
         const section = document.getElementById('related-characters-section');
         if (!section) {
@@ -301,6 +392,11 @@
         }
     }
 
+    /**
+     * Loads related characters when they are not already present in the DOM.
+     *
+     * @returns {Promise<void>}
+     */
     async function loadRelatedCharacters() {
         const section = document.getElementById('related-characters-section');
         if (!section || !animeId) {
@@ -312,7 +408,9 @@
         }
 
         try {
-            const response = await axios.get(`http://localhost:8080/api/anime/${animeId}/characters`);
+            const response = await axios.get(`/anime/${animeId}/characters`, {
+                headers: { Accept: 'application/json' }
+            });
             const data = response.data;
             const characters = normalizeRelatedCharacters(data);
             renderRelatedCharacters(characters);

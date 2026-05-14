@@ -7,7 +7,13 @@
  * - enriches detail pages with related anime and voice actor information
  */
 
-const { apiMongo, apiPostgres } = require('./apiClients.js');
+const { apiPostgres } = require('./apiClients.js');
+const {
+	buildFiltersQuery,
+	buildPagination,
+	formatValue,
+	withSelectedOptions
+} = require('./controllerUtils.js');
 
 const SORT_OPTIONS = [
 	{ value: '', label: 'Default' },
@@ -27,7 +33,6 @@ const SORT_OPTIONS = [
 const buildFiltersModel = (query, favMaxLimit) => {
 	const favMinValue = Number.isFinite(Number(query.favMin)) ? Number(query.favMin) : 0;
 	const activeSort = query.sort || '';
-	const activeMonth = query.birthMonth || '';
 	const activeSearch = query.character_mal_id || query.q || '';
 
 	return {
@@ -36,19 +41,16 @@ const buildFiltersModel = (query, favMaxLimit) => {
 		favMaxLimit,
 		hasAbout: query.hasAbout === '1',
 		hasImage: query.hasImage === '1',
-		sortOptions: SORT_OPTIONS.map((option) => ({
-			...option,
-			selected: option.value === activeSort
-		}))
+		sortOptions: withSelectedOptions(SORT_OPTIONS, activeSort)
 	};
 };
 
 /**
  * Renders the paginated characters list.
  *
- * @param {import('express').Request} req Express request.
- * @param {import('express').Response} res Express response.
- * @param {import('express').NextFunction} next Express next middleware function.
+ * @param {Object} req Express request.
+ * @param {Object} res Express response.
+ * @param {Function} next Express next middleware function.
  * @returns {Promise<void>} Resolves when the response is rendered.
  */
 exports.list = async (req, res, next) => {
@@ -73,34 +75,21 @@ exports.list = async (req, res, next) => {
 		const favMaxLimit = response.data.favMaxLimit || response.data.maxFavorites || 50000;
 		const filters = buildFiltersModel(req.query, favMaxLimit);
 
-		const paginationQuery = new URLSearchParams();
-		Object.entries(req.query).forEach(([key, value]) => {
-			if (!value) return;
-			if (key === 'page') return;
-			paginationQuery.set(key, value);
-		});
-		const filtersQuery = paginationQuery.toString() ? `&${paginationQuery.toString()}` : '';
+		const filtersQuery = buildFiltersQuery(req.query);
 
 		res.render('characters/characters_list', {
 			title: 'Personaggi',
 			characters: characters,
 			filters,
 			filtersQuery,
-			pagination: {
-				currentPage: page,
-				totalPages: totalPages,
-				hasPrev: page > 1,
-				prevPage: page - 1,
-				hasNext: page < totalPages,
-				nextPage: parseInt(page) + 1
-			},
+			pagination: buildPagination(page, totalPages),
 			warning: !characters || characters.length === 0 ? 'Nessun personaggio trovato nel database.' : null
 		});
 	} catch (err) {
 		res.render('characters/characters_list', {
 			title: 'Personaggi',
 			characters: [],
-			filters: buildFiltersModel({}, 50000),
+			filters: buildFiltersModel(req.query, 50000),
 			filtersQuery: '',
 			currentPage: 'characters',
 			error: 'Impossibile caricare i dati dei personaggi. Il server potrebbe non essere disponibile.'
@@ -111,9 +100,9 @@ exports.list = async (req, res, next) => {
 /**
  * Renders the character detail page with related anime and voice actors.
  *
- * @param {import('express').Request} req Express request.
- * @param {import('express').Response} res Express response.
- * @param {import('express').NextFunction} next Express next middleware function.
+ * @param {Object} req Express request.
+ * @param {Object} res Express response.
+ * @param {Function} next Express next middleware function.
  * @returns {Promise<void>} Resolves when the response is rendered.
  */
 exports.detail = async (req, res, next) => {
@@ -128,14 +117,6 @@ exports.detail = async (req, res, next) => {
 		const animePayload = animeResponse.data || {};
 		const voiceActorsPayload = voiceActorsResponse.data || {};
 
-		/**
-		 * Converts empty values to a fallback string for UI rendering.
-		 *
-		 * @param {unknown} value Raw value.
-		 * @returns {unknown} 'N/A' for empty values, original value otherwise.
-		 */
-		const formatValue = (value) =>
-			value === null || value === undefined || value === '' ? 'N/A' : value;
 		const characterInfo = [
 			{ label: 'Kanji name', value: formatValue(raw.name_kanji) },
 			{ label: 'Favorites', value: formatValue(raw.favorites) },

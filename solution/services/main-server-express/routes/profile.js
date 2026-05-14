@@ -40,6 +40,13 @@ router.get('/:username', profileController.showProfile);
  *         302:
  *           description: Reindirizzamento a /users/login.
  */
+/**
+ * Redirects bare profile requests to the login page.
+ *
+ * @param {Object} req Express request.
+ * @param {Object} res Express response.
+ * @returns {void}
+ */
 router.get('/', function(req, res) {
     res.redirect('/users/login');
 });

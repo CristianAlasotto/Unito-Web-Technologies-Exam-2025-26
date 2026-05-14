@@ -7,7 +7,13 @@
  * - enriches detail pages with linked anime works
  */
 
-const { apiMongo, apiPostgres } = require('./apiClients.js');
+const { apiPostgres } = require('./apiClients.js');
+const {
+	buildFiltersQuery,
+	buildPagination,
+	formatValue,
+	withSelectedOptions
+} = require('./controllerUtils.js');
 
 const CITIES_OPTIONS = [
   { value: '', label: 'Tutte' },
@@ -54,23 +60,17 @@ const buildFiltersModel = (query) => {
 
   return {
     search: activeSearch,
-    cityOptions: CITIES_OPTIONS.map((option) => ({
-      ...option,
-      selected: option.value === activeCity
-    })),
-    sortOptions: SORT_OPTIONS.map((option) => ({
-      ...option,
-      selected: option.value === activeSort
-    }))
+    cityOptions: withSelectedOptions(CITIES_OPTIONS, activeCity),
+    sortOptions: withSelectedOptions(SORT_OPTIONS, activeSort)
   };
 };
 
 /**
  * Renders the paginated staff list.
  *
- * @param {import('express').Request} req Express request.
- * @param {import('express').Response} res Express response.
- * @param {import('express').NextFunction} next Express next middleware function.
+ * @param {Object} req Express request.
+ * @param {Object} res Express response.
+ * @param {Function} next Express next middleware function.
  * @returns {Promise<void>} Resolves when the response is rendered.
  */
 exports.list = async (req, res, next) => {
@@ -92,34 +92,21 @@ exports.list = async (req, res, next) => {
 		const totalPages = response.data.totalPages;
 		const filters = buildFiltersModel(req.query);
 
-		const paginationQuery = new URLSearchParams();
-		Object.entries(req.query).forEach(([key, value]) => {
-			if (!value) return;
-			if (key === 'page') return;
-			paginationQuery.set(key, value);
-		});
-		const filtersQuery = paginationQuery.toString() ? `&${paginationQuery.toString()}` : '';
+		const filtersQuery = buildFiltersQuery(req.query);
 
 		res.render('staff/staff_list', {
 			title: 'Staff',
 			staff: staff,
 			filters,
 			filtersQuery,
-			pagination: {
-				currentPage: page,
-				totalPages: totalPages,
-				hasPrev: page > 1,
-				prevPage: page - 1,
-				hasNext: page < totalPages,
-				nextPage: page + 1
-			},
+			pagination: buildPagination(page, totalPages),
 			warning: !staff || staff.length === 0 ? 'Nessuno staff trovato nel database.' : null
 		});
 	} catch (err) {
 		res.render('staff/staff_list', {
 			title: 'Staff',
 			staff: [],
-			filters: buildFiltersModel({}),
+			filters: buildFiltersModel(req.query),
 			filtersQuery: '',
 			currentPage: 'staff',
 			error: 'Impossibile caricare i dati dello staff. Il server potrebbe non essere disponibile.'
@@ -130,9 +117,9 @@ exports.list = async (req, res, next) => {
 /**
  * Renders the staff detail page with related anime works.
  *
- * @param {import('express').Request} req Express request.
- * @param {import('express').Response} res Express response.
- * @param {import('express').NextFunction} next Express next middleware function.
+ * @param {Object} req Express request.
+ * @param {Object} res Express response.
+ * @param {Function} next Express next middleware function.
  * @returns {Promise<void>} Resolves when the response is rendered.
  */
 exports.detail = async (req, res, next) => {
@@ -144,14 +131,6 @@ exports.detail = async (req, res, next) => {
 		]);
 		const raw = personResponse.data || {};
 		const worksPayload = worksResponse.data || {};
-		/**
-		 * Converts empty values to a fallback string for UI rendering.
-		 *
-		 * @param {unknown} value Raw value.
-		 * @returns {unknown} 'N/A' for empty values, original value otherwise.
-		 */
-		const formatValue = (value) =>
-			value === null || value === undefined || value === '' ? 'N/A' : value;
 		const staffInfo = [
 			{ label: 'Given name', value: formatValue(raw.given_name) },
 			{ label: 'Family name', value: formatValue(raw.family_name) },
