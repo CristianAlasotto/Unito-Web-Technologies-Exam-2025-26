@@ -15,14 +15,24 @@ public interface PersonDetailsRepository extends JpaRepository<PersonDetails, In
     /**
      * Search by name (case-insensitive, partial match)
      */
-    @Query("SELECT e FROM PersonDetails e WHERE LOWER(CAST(e.name AS string)) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<PersonDetails> searchByName(@Param("search") String search, Pageable pageable);
+    /**
+     * Search by name — case-insensitive partial match.
+     * Accepts a pre-built lowercase wildcard pattern from the service layer
+     * (e.g. "%miyazaki%") to avoid the lower(bytea) PostgreSQL type inference bug.
+     */
+    @Query("SELECT e FROM PersonDetails e WHERE LOWER(e.name) LIKE :searchPattern")
+    Page<PersonDetails> searchByName(@Param("searchPattern") String searchPattern, Pageable pageable);
 
     /**
      * Find by city/location (case-insensitive, partial match)
      */
-    @Query("SELECT e FROM PersonDetails e WHERE LOWER(CAST(e.relevantLocation AS string)) LIKE LOWER(CONCAT('%', :city, '%'))")
-    Page<PersonDetails> findByCityContaining(@Param("city") String city, Pageable pageable);
+    /**
+     * Find by city/location — case-insensitive partial match.
+     * Accepts a pre-built lowercase wildcard pattern from the service layer
+     * (e.g. "%tokyo%") to avoid the lower(bytea) PostgreSQL type inference bug.
+     */
+    @Query("SELECT e FROM PersonDetails e WHERE LOWER(e.relevantLocation) LIKE :cityPattern")
+    Page<PersonDetails> findByCityContaining(@Param("cityPattern") String cityPattern, Pageable pageable);
 
     /**
      * JOIN 2: Find all anime works for this person

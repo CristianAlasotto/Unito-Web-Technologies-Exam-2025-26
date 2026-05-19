@@ -13,10 +13,13 @@ import org.springframework.stereotype.Repository;
 public interface ProfilesRepository extends JpaRepository<Profiles, String> {
 
     /**
-     * Search by username (case-insensitive, partial match)
+     * Search by username — case-insensitive partial match.
+     * Accepts a pre-built lowercase wildcard pattern from the service layer
+     * (e.g. "%xinil%"), following the same likePattern() convention used in
+     * DetailsService to avoid the lower(bytea) PostgreSQL type inference bug.
      */
-    @Query("SELECT e FROM Profiles e WHERE LOWER(CAST(e.username AS string)) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<Profiles> searchByUsername(@Param("search") String search, Pageable pageable);
+    @Query("SELECT e FROM Profiles e WHERE LOWER(e.username) LIKE :searchPattern")
+    Page<Profiles> searchByUsername(@Param("searchPattern") String searchPattern, Pageable pageable);
 
     /**
      * Find by gender

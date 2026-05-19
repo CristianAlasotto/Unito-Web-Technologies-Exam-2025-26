@@ -14,12 +14,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.*;
-import java.util.stream.Collectors;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
- * REST API Controller for CharacterNicknames
- * Composite key table - supports list operations only
+ * REST API Controller for CharacterNicknames.
+ *
+ * DESIGN:
+ *   - Controller only receives requests, delegates to service, and returns responses.
+ *   - No repository is injected here — all data access goes through CharacterNicknamesService.
+ *   - DTOs are returned directly — Spring (Jackson) converts them to JSON automatically,
+ *     using @JsonProperty annotations on the DTO getters for snake_case field names.
  */
 @Tag(name = "Character Nicknames", description = "Anime character nicknames and relationships API")
 @RestController
@@ -30,9 +38,12 @@ public class CharacterNicknamesController {
     @Autowired
     private CharacterNicknamesService service;
 
+    // ── GET /api/character_nicknames ──────────────────────────────────────────
+
     @Operation(
             summary = "Get all character nicknames",
-            description = "Retrieve paginated list of nicknames with optional filters. Note: Null filters are not applicable as all fields are Primary Keys."
+            description = "Retrieve paginated list of nicknames with optional filters and sorting. " +
+                    "Note: null filters are not applicable as both fields are primary keys."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "List retrieved successfully"),
@@ -40,16 +51,13 @@ public class CharacterNicknamesController {
     })
     @GetMapping
     public ResponseEntity<?> getAll(
-            @Parameter(description = "Comma-separated fields to return", example = "nickname")
-            @RequestParam(required = false) String fields,
-
             @Parameter(description = "Search by nickname (case-insensitive)", example = "Spike")
             @RequestParam(required = false) String search,
 
             @Parameter(description = "Sort field (prefix with - for descending)", example = "-nickname")
             @RequestParam(required = false) String sort,
 
-            @Parameter(description = "Filter by Character MAL ID", example = "1")
+            @Parameter(description = "Filter by character MAL ID", example = "1")
             @RequestParam(value = "character_mal_id", required = false) Integer characterMalId,
 
             @Parameter(description = "Maximum number of results", example = "10")
@@ -64,226 +72,123 @@ public class CharacterNicknamesController {
             @Parameter(description = "Number of results per page", example = "10")
             @RequestParam(required = false) Integer pageSize) {
 
-        boolean usePageBased = (page != null || pageSize != null);
+        boolean usePageBased   = (page != null || pageSize != null);
         boolean useLimitOffset = (limit != null || offset != null) && !usePageBased;
 
         Sort sortObj = parseSortParameter(sort);
 
         if (useLimitOffset) {
-            int finalLimit = (limit != null) ? limit : 10;
+            int finalLimit  = (limit  != null) ? limit  : 10;
             int finalOffset = (offset != null) ? offset : 0;
 
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
-            Page<CharacterNicknames> pageResult = service.findWithFilters(
-                search,
-                characterMalId,
-                pageable);
+            Page<CharacterNicknamesDTO> pageResult =
+                    service.findWithFilters(search, characterMalId, pageable);
 
-            List<CharacterNicknames> results = pageResult.getContent();
-            long totalCount = pageResult.getTotalElements();
-
-            if (fields != null && !fields.isEmpty()) {
-                List<Map<String, Object>> filteredResults = results.stream()
-                    .map(entity -> filterFields(entity, fields))
-                    .collect(Collectors.toList());
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("limit", finalLimit);
-                response.put("offset", finalOffset);
-                response.put("total", totalCount);
-                response.put("items", filteredResults);
-                return ResponseEntity.ok(response);
-            }
-
-            List<Map<String, Object>> snakeCaseResults = results.stream()
-                .map(this::toSnakeCaseMap)
-                .collect(Collectors.toList());
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("limit", finalLimit);
-            response.put("offset", finalOffset);
-            response.put("total", totalCount);
-            response.put("items", snakeCaseResults);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "limit",  finalLimit,
+                    "offset", finalOffset,
+                    "total",  pageResult.getTotalElements(),
+                    "items",  pageResult.getContent()));
 
         } else if (usePageBased) {
-            int finalPage = (page != null) ? page : 1;
+            int finalPage     = (page     != null) ? page     : 1;
             int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
 
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
-            Page<CharacterNicknames> pageResult = service.findWithFilters(
-                search,
-                characterMalId,
-                pageable);
+            Page<CharacterNicknamesDTO> pageResult =
+                    service.findWithFilters(search, characterMalId, pageable);
 
-            List<CharacterNicknames> results = pageResult.getContent();
-            long totalPages = pageResult.getTotalPages();
-
-            if (fields != null && !fields.isEmpty()) {
-                List<Map<String, Object>> filteredResults = results.stream()
-                    .map(entity -> filterFields(entity, fields))
-                    .collect(Collectors.toList());
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("page", finalPage);
-                response.put("pageSize", finalPageSize);
-                response.put("totalPages", totalPages);
-                response.put("items", filteredResults);
-                return ResponseEntity.ok(response);
-            }
-
-            List<Map<String, Object>> snakeCaseResults = results.stream()
-                .map(this::toSnakeCaseMap)
-                .collect(Collectors.toList());
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("page", finalPage);
-            response.put("pageSize", finalPageSize);
-            response.put("totalPages", totalPages);
-            response.put("items", snakeCaseResults);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "page",       finalPage,
+                    "pageSize",   finalPageSize,
+                    "totalPages", pageResult.getTotalPages(),
+                    "items",      pageResult.getContent()));
 
         } else {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
-            Page<CharacterNicknames> pageResult = service.findWithFilters(
-                search,
-                characterMalId,
-                pageable);
+            Page<CharacterNicknamesDTO> pageResult =
+                    service.findWithFilters(search, characterMalId, pageable);
 
-            List<CharacterNicknames> results = pageResult.getContent();
-
-            if (fields != null && !fields.isEmpty()) {
-                List<Map<String, Object>> filteredResults = results.stream()
-                    .map(entity -> filterFields(entity, fields))
-                    .collect(Collectors.toList());
-                return ResponseEntity.ok(filteredResults);
-            }
-
-            List<Map<String, Object>> snakeCaseResults = results.stream()
-                .map(this::toSnakeCaseMap)
-                .collect(Collectors.toList());
-
-            return ResponseEntity.ok(snakeCaseResults);
+            return ResponseEntity.ok(pageResult.getContent());
         }
     }
 
+    // ── GET /api/character_nicknames/stats ────────────────────────────────────
+
+    @Operation(summary = "Get statistics", description = "Get total count of nickname records")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "Statistics retrieved successfully"))
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("total", service.count());
-        return ResponseEntity.ok(stats);
+        return ResponseEntity.ok(Map.of("total", service.count()));
     }
 
-    /**
-     * Get single resource by composite key (using query parameters)
-     * GET /api/character_nicknames/single?character_mal_id&nickname
-     */
+    // ── GET /api/character_nicknames/single ───────────────────────────────────
+
     @Operation(
             summary = "Get specific nickname entry",
             description = "Retrieve a single nickname record using the composite key (character_mal_id + nickname)"
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found successfully", content = @Content(schema = @Schema(implementation = CharacterNicknames.class))),
-            @ApiResponse(responseCode = "400", description = "Missing key fields", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Not found", content = @Content)
+            @ApiResponse(responseCode = "200", description = "Found successfully",
+                    content = @Content(schema = @Schema(implementation = CharacterNicknamesDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Missing key fields",  content = @Content),
+            @ApiResponse(responseCode = "404", description = "Not found",           content = @Content)
     })
     @GetMapping("/single")
     public ResponseEntity<?> getSingle(
-            @Parameter(description = "Character MAL ID (Required)", required = true)
+            @Parameter(description = "Character MAL ID", required = true)
             @RequestParam(value = "character_mal_id", required = false) Integer characterMalId,
 
-            @Parameter(description = "Nickname (Required)", required = true)
-            @RequestParam(required = false) String nickname,
+            @Parameter(description = "Nickname", required = true)
+            @RequestParam(required = false) String nickname) {
 
-            @Parameter(description = "Comma-separated fields to return")
-            @RequestParam(required = false) String fields) {
-
-        // Check if all key fields are provided
         if (characterMalId == null || nickname == null) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "All key fields required: characterMalId, nickname");
-            error.put("usage", "GET /api/character_nicknames/single?character_mal_id&nickname");
-            return ResponseEntity.status(400).body(error);
+            return ResponseEntity.status(400).body(Map.of(
+                    "error", "All key fields required: character_mal_id, nickname",
+                    "usage", "GET /api/character_nicknames/single?character_mal_id=1&nickname=Spike"));
         }
 
-        // Create composite key
-        CharacterNicknames.CharacterNicknamesId id = new CharacterNicknames.CharacterNicknamesId(characterMalId, nickname);
-        Optional<CharacterNicknames> entity = service.getById(id);
+        CharacterNicknames.CharacterNicknamesId id =
+                new CharacterNicknames.CharacterNicknamesId(characterMalId, nickname);
 
-        if (entity.isEmpty()) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "CharacterNicknames not found");
-            error.put("character_mal_id", characterMalId); error.put("nickname", nickname);
-            return ResponseEntity.status(404).body(error);
+        Optional<CharacterNicknamesDTO> dto = service.getById(id);
+
+        if (dto.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "error",            "CharacterNicknames not found",
+                    "character_mal_id", characterMalId,
+                    "nickname",         nickname));
         }
 
-        CharacterNicknames data = entity.get();
-
-        if (fields != null && !fields.isEmpty()) {
-            Map<String, Object> filtered = filterFields(data, fields);
-            return ResponseEntity.ok(filtered);
-        }
-
-        return ResponseEntity.ok(toSnakeCaseMap(data));
+        // Jackson serialises CharacterNicknamesDTO to JSON automatically via @JsonProperty
+        return ResponseEntity.ok(dto.get());
     }
 
+    // ── Private helper ────────────────────────────────────────────────────────
 
-    private Map<String, Object> toSnakeCaseMap(CharacterNicknames entity) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("character_mal_id", entity.getCharacterMalId());
-        result.put("nickname", entity.getNickname());
-        return result;
-    }
-
-    private Map<String, Object> filterFields(CharacterNicknames entity, String fields) {
-        Map<String, Object> result = new HashMap<>();
-        String[] requestedFields = fields.split(",");
-
-        for (String field : requestedFields) {
-            field = field.trim();
-            switch (field) {
-                case "character_mal_id":
-                    result.put("character_mal_id", entity.getCharacterMalId());
-                    break;
-                case "nickname":
-                    result.put("nickname", entity.getNickname());
-                    break;
-            }
-        }
-
-        return result;
-    }
-
+    /**
+     * Parse the sort query parameter into a Spring Sort object.
+     * Prefix a field name with "-" for descending order (e.g. "-nickname").
+     * NULL values are always sorted last.
+     */
     private Sort parseSortParameter(String sort) {
         List<Sort.Order> orders = new ArrayList<>();
-
         if (sort != null && !sort.isEmpty()) {
-            String[] sortFields = sort.split(",");
-
-            for (String field : sortFields) {
+            for (String field : sort.split(",")) {
                 field = field.trim();
-                Sort.Direction direction;
-                String actualField;
-
                 if (field.startsWith("-")) {
-                    direction = Sort.Direction.DESC;
-                    actualField = field.substring(1);
+                    orders.add(Sort.Order.by(field.substring(1))
+                            .with(Sort.Direction.DESC).nullsLast());
                 } else {
-                    direction = Sort.Direction.ASC;
-                    actualField = field;
+                    orders.add(Sort.Order.by(field)
+                            .with(Sort.Direction.ASC).nullsLast());
                 }
-
-                // ✅ FIX: NULL values always sorted LAST
-                orders.add(Sort.Order.by(actualField)
-                        .with(direction)
-                        .nullsLast());
             }
         }
-
-        // Add primary keys as tiebreaker
+        // Composite key tiebreakers
         orders.add(Sort.Order.asc("characterMalId"));
         orders.add(Sort.Order.asc("nickname"));
-
         return Sort.by(orders);
     }
 }

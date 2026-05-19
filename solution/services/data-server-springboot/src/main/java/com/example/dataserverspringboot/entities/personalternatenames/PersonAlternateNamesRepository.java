@@ -13,10 +13,12 @@ import org.springframework.stereotype.Repository;
 public interface PersonAlternateNamesRepository extends JpaRepository<PersonAlternateNames, PersonAlternateNames.PersonAlternateNamesId> {
 
     /**
-     * Search by alt_name (case-insensitive, partial match)
+     * Search by alt_name — case-insensitive partial match.
+     * Accepts a pre-built lowercase wildcard pattern from the service layer
+     * (e.g. "%miyazaki%") to avoid the lower(bytea) PostgreSQL type inference bug.
      */
-    @Query("SELECT e FROM PersonAlternateNames e WHERE LOWER(CAST(e.altName AS string)) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<PersonAlternateNames> searchByAltName(@Param("search") String search, Pageable pageable);
+    @Query("SELECT e FROM PersonAlternateNames e WHERE LOWER(e.altName) LIKE :searchPattern")
+    Page<PersonAlternateNames> searchByAltName(@Param("searchPattern") String searchPattern, Pageable pageable);
 
     /**
      * Find by person_mal_id

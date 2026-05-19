@@ -13,10 +13,12 @@ import org.springframework.stereotype.Repository;
 public interface PersonAnimeWorksRepository extends JpaRepository<PersonAnimeWorks, PersonAnimeWorks.PersonAnimeWorksId> {
 
     /**
-     * Search by position (case-insensitive, partial match)
+     * Search by position — case-insensitive partial match.
+     * Accepts a pre-built lowercase wildcard pattern from the service layer
+     * (e.g. "%director%") to avoid the lower(bytea) PostgreSQL type inference bug.
      */
-    @Query("SELECT e FROM PersonAnimeWorks e WHERE LOWER(CAST(e.position AS string)) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<PersonAnimeWorks> searchByPosition(@Param("search") String search, Pageable pageable);
+    @Query("SELECT e FROM PersonAnimeWorks e WHERE LOWER(e.position) LIKE :searchPattern")
+    Page<PersonAnimeWorks> searchByPosition(@Param("searchPattern") String searchPattern, Pageable pageable);
 
     /**
      * Find by position

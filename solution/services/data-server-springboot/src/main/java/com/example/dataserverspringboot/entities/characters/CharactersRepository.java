@@ -15,10 +15,12 @@ import io.swagger.v3.oas.annotations.Hidden;
 public interface CharactersRepository extends JpaRepository<Characters, Integer> {
 
     /**
-     * Search by name (case-insensitive, partial match)
+     * Search by name — case-insensitive partial match.
+     * Accepts a pre-built lowercase wildcard pattern from the service layer
+     * (e.g. "%spike%") to avoid the lower(bytea) PostgreSQL type inference bug.
      */
-    @Query("SELECT e FROM Characters e WHERE LOWER(CAST(e.name AS string)) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<Characters> searchByName(@Param("search") String search, Pageable pageable);
+    @Query("SELECT e FROM Characters e WHERE LOWER(e.name) LIKE :searchPattern")
+    Page<Characters> searchByName(@Param("searchPattern") String searchPattern, Pageable pageable);
 
     /**
      * JOIN 3: Find all anime where this character appears

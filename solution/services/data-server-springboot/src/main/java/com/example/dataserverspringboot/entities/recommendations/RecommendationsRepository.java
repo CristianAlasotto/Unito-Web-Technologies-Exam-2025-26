@@ -10,35 +10,41 @@ import org.springframework.stereotype.Repository;
 
 @Hidden
 @Repository
-public interface RecommendationsRepository extends JpaRepository<Recommendations, Recommendations.RecommendationsId> {
+public interface RecommendationsRepository
+        extends JpaRepository<Recommendations, Recommendations.RecommendationsId> {
 
     /**
-     * Search by mal_id (case-insensitive, partial match)
-     */
-    @Query("SELECT e FROM Recommendations e WHERE LOWER(CAST(e.malId AS string)) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<Recommendations> searchByMalId(@Param("search") String search, Pageable pageable);
-
-    /**
-     * Find by mal_id
+     * Find by source anime ID.
+     * Spring Data derives: SELECT * FROM recommendations WHERE mal_id = ?
+     *
+     * Also used by the "search" feature: the service parses the search
+     * string to an Integer and calls this method. If the string is not a
+     * valid integer, the service returns an empty page without calling this.
      */
     Page<Recommendations> findByMalId(Integer malId, Pageable pageable);
 
     /**
-     * Find by recommendation_mal_id
+     * Find by recommended anime ID.
+     * Spring Data derives: SELECT * FROM recommendations WHERE recommendation_mal_id = ?
      */
-    Page<Recommendations> findByRecommendationMalId(Integer recommendationMalId, Pageable pageable);
+    Page<Recommendations> findByRecommendationMalId(
+            Integer recommendationMalId, Pageable pageable);
 
     /**
-     * Find by both mal_id and recommendation_mal_id
+     * Find by both IDs simultaneously.
+     * Spring Data derives the AND query automatically.
      */
-    Page<Recommendations> findByMalIdAndRecommendationMalId(Integer malId, Integer recommendationMalId, Pageable pageable);
+    Page<Recommendations> findByMalIdAndRecommendationMalId(
+            Integer malId, Integer recommendationMalId, Pageable pageable);
 
     /**
-     * Count recommendations with filters
+     * Count with optional filters — used by the stats endpoint.
+     * Uses :param IS NULL OR condition so both parameters are optional.
      */
     @Query("SELECT COUNT(r) FROM Recommendations r " +
-           "WHERE (:malId IS NULL OR r.malId = :malId) " +
-           "AND (:recommendationMalId IS NULL OR r.recommendationMalId = :recommendationMalId)")
-    long countWithFilters(@Param("malId") Integer malId, 
-                         @Param("recommendationMalId") Integer recommendationMalId);
+            "WHERE (:malId IS NULL OR r.malId = :malId) " +
+            "AND (:recommendationMalId IS NULL OR r.recommendationMalId = :recommendationMalId)")
+    long countWithFilters(
+            @Param("malId") Integer malId,
+            @Param("recommendationMalId") Integer recommendationMalId);
 }

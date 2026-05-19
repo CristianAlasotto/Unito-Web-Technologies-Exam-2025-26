@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -16,88 +17,114 @@ public class CharacterAnimeWorksService {
     @Autowired
     private CharacterAnimeWorksRepository repository;
 
-    public Optional<CharacterAnimeWorks> getById(CharacterAnimeWorks.CharacterAnimeWorksId id) {
-        return repository.findById(id);
+    // ── Basic lookups ─────────────────────────────────────────────────────────
+
+    /**
+     * Fetch a single record by composite key.
+     * Returns Optional<CharacterAnimeWorksDTO> — raw entity never leaves the service layer.
+     */
+    public Optional<CharacterAnimeWorksDTO> getById(CharacterAnimeWorks.CharacterAnimeWorksId id) {
+        return repository.findById(id)
+                         .map(CharacterAnimeWorksDTO::fromEntity);
     }
 
     public long count() {
         return repository.count();
     }
 
-    public Page<CharacterAnimeWorks> findWithFilters(String search, String role, Integer character_mal_id, Integer anime_mal_id, Pageable pageable) {
-        if (search != null && !search.isEmpty()) {
-            return repository.searchByRole(search, pageable);
-        }
+    // ── Filter helpers ────────────────────────────────────────────────────────
 
-        if (role != null) {
-            return repository.findByRole(role, pageable);
-        }
-
-        if (character_mal_id != null) {
-            return repository.findByCharacterMalId(character_mal_id, pageable);
-        }
-
-        if (anime_mal_id != null) {
-            return repository.findByAnimeMalId(anime_mal_id, pageable);
-        }
-
-        return repository.findAll(pageable);
+    /**
+     * Converts a raw search string into a lowercase LIKE pattern ("%value%").
+     * Returns null if the input is null or blank.
+     * Same fix as DetailsService.likePattern() — avoids lower(bytea) bug.
+     */
+    private String likePattern(String value) {
+        if (value == null || value.isBlank()) return null;
+        return "%" + value.toLowerCase() + "%";
     }
 
     /**
-     * Find records with filters including NULL/NOT NULL filters
+     * Find records with optional filters, returning a paginated page of DTOs.
+     * The Page<CharacterAnimeWorks> result is mapped to Page<CharacterAnimeWorksDTO>
+     * so the raw JPA entity never leaves the service layer.
      */
-    public Page<CharacterAnimeWorks> findWithFilters(String search, String role, Integer character_mal_id, Integer anime_mal_id,
-                                                     String nullFilter, String notNullFilter,
-                                                     Pageable pageable) {
-        
-        // Handle NULL filter first (takes precedence)
+    public Page<CharacterAnimeWorksDTO> findWithFilters(
+            String search, String role,
+            Integer characterMalId, Integer animeMalId,
+            Pageable pageable) {
+
+        String searchPattern = likePattern(search);
+
+        if (searchPattern != null) {
+            return repository.searchByRole(searchPattern, pageable)
+                    .map(CharacterAnimeWorksDTO::fromEntity);
+        }
+        if (role != null) {
+            return repository.findByRole(role, pageable)
+                    .map(CharacterAnimeWorksDTO::fromEntity);
+        }
+        if (characterMalId != null) {
+            return repository.findByCharacterMalId(characterMalId, pageable)
+                    .map(CharacterAnimeWorksDTO::fromEntity);
+        }
+        if (animeMalId != null) {
+            return repository.findByAnimeMalId(animeMalId, pageable)
+                    .map(CharacterAnimeWorksDTO::fromEntity);
+        }
+        return repository.findAll(pageable)
+                .map(CharacterAnimeWorksDTO::fromEntity);
+    }
+
+    /**
+     * Overload that also handles IS NULL / IS NOT NULL filters.
+     */
+    public Page<CharacterAnimeWorksDTO> findWithFilters(
+            String search, String role,
+            Integer characterMalId, Integer animeMalId,
+            String nullFilter, String notNullFilter,
+            Pageable pageable) {
+
         if (nullFilter != null && !nullFilter.isEmpty()) {
             return handleNullFilter(nullFilter, pageable);
         }
-        
-        // Handle NOT NULL filter
         if (notNullFilter != null && !notNullFilter.isEmpty()) {
             return handleNotNullFilter(notNullFilter, pageable);
         }
-        
-        // Fall back to regular filters
-        return findWithFilters(search, role, character_mal_id, anime_mal_id, pageable);
+        return findWithFilters(search, role, characterMalId, animeMalId, pageable);
     }
 
     /**
-     * Handle NULL filtering for specific field
+     * Route IS NULL filter to the correct derived repository method.
      */
-    private Page<CharacterAnimeWorks> handleNullFilter(String field, Pageable pageable) {
-        return switch (field.toLowerCase()) {
+    private Page<CharacterAnimeWorksDTO> handleNullFilter(String field, Pageable pageable) {
+        Page<CharacterAnimeWorks> result = switch (field.toLowerCase()) {
             case "character_name", "charactername" -> repository.findByCharacterNameIsNull(pageable);
-            case "role" -> repository.findByRoleIsNull(pageable);
-            default ->
-                // Invalid field name, return all records
-                    repository.findAll(pageable);
+            case "role"                            -> repository.findByRoleIsNull(pageable);
+            default                                -> repository.findAll(pageable);
         };
+        return result.map(CharacterAnimeWorksDTO::fromEntity);
     }
 
     /**
-     * Handle NOT NULL filtering for specific field
+     * Route IS NOT NULL filter to the correct derived repository method.
      */
-    private Page<CharacterAnimeWorks> handleNotNullFilter(String field, Pageable pageable) {
-        return switch (field.toLowerCase()) {
+    private Page<CharacterAnimeWorksDTO> handleNotNullFilter(String field, Pageable pageable) {
+        Page<CharacterAnimeWorks> result = switch (field.toLowerCase()) {
             case "character_name", "charactername" -> repository.findByCharacterNameIsNotNull(pageable);
-            case "role" -> repository.findByRoleIsNotNull(pageable);
-            default ->
-                // Invalid field name, return all records
-                    repository.findAll(pageable);
+            case "role"                            -> repository.findByRoleIsNotNull(pageable);
+            default                                -> repository.findAll(pageable);
         };
+        return result.map(CharacterAnimeWorksDTO::fromEntity);
     }
 
     /**
-     * Get statistics on NULL values
+     * Returns a map of field names to the count of records where that field is NULL.
      */
     public Map<String, Long> getNullCounts() {
         Map<String, Long> counts = new HashMap<>();
         counts.put("character_name", repository.countByCharacterNameIsNull());
-        counts.put("role", repository.countByRoleIsNull());
+        counts.put("role",           repository.countByRoleIsNull());
         return counts;
     }
 }

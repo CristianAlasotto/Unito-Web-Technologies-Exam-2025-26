@@ -13,10 +13,12 @@ import org.springframework.stereotype.Repository;
 public interface CharacterAnimeWorksRepository extends JpaRepository<CharacterAnimeWorks, CharacterAnimeWorks.CharacterAnimeWorksId> {
 
     /**
-     * Search by role (case-insensitive, partial match)
+     * Search by role — case-insensitive partial match.
+     * Accepts a pre-built lowercase wildcard pattern from the service layer
+     * (e.g. "%main%") to avoid the lower(bytea) PostgreSQL type inference bug.
      */
-    @Query("SELECT e FROM CharacterAnimeWorks e WHERE LOWER(CAST(e.role AS string)) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<CharacterAnimeWorks> searchByRole(@Param("search") String search, Pageable pageable);
+    @Query("SELECT e FROM CharacterAnimeWorks e WHERE LOWER(e.role) LIKE :searchPattern")
+    Page<CharacterAnimeWorks> searchByRole(@Param("searchPattern") String searchPattern, Pageable pageable);
 
     /**
      * Find by role
