@@ -36,13 +36,15 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 require('dotenv').config();
 
 // view engine setup just for server start
-app.set('views', path.join(__dirname, 'views'));
+const viewsPath = path.join(__dirname, 'views');
+const pagesPath = path.join(viewsPath, 'pages');
+app.set('views', [pagesPath, viewsPath]);
 app.set('view engine', 'hbs');
 app.set('view options', { layout: 'layout/main' });
 
 // Register custom handlebars helpers
 const hbs = require('hbs');
-hbs.registerPartials(path.join(__dirname, 'views/partials'));
+hbs.registerPartials(path.join(pagesPath, 'partials'));
 
 /**
  * Serializes an object for display inside Handlebars templates.
