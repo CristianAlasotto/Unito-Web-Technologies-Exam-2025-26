@@ -55,21 +55,22 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api', apiRouter);
 app.use('/users', usersRouter);
+app.use('/jsdoc', express.static(path.join(__dirname, 'jsdoc')));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  next(createError(404));
+  next(createError(404, `Route not found: ${req.method} ${req.originalUrl}`));
 });
 
 // error handler
 app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+  res.status(err.status || 500).json({
+    error: {
+      message: err.message,
+      status: err.status || 500,
+      ...(req.app.get('env') === 'development' && { stack: err.stack })
+    }
+  });
 });
 
 module.exports = app;
