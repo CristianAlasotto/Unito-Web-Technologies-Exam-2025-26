@@ -1,15 +1,34 @@
-// Direct Access: Import the database models directly into the controller file
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: controllers/ratController.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: controllers/ratController.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// Direct Access: Import the database models directly into the controller file
 const Ratings = require('../models/Ratings');
-const NodeCache = require('node-cache');
-const { updateStats } = require('./statController');
-
-const ratCache = new NodeCache({ stdTTL: 60 });
-
-const invalidateCache = () => {
-    console.log('[CACHE INVALIDATED] ratCache flushed');
-    ratCache.flushAll();
-};
-exports.invalidateCache = invalidateCache;
+const Stats = require('../models/Stats');
 
 /**
  * Controller to handle HTTP requests for Ratings.
@@ -27,18 +46,10 @@ exports.invalidateCache = invalidateCache;
  * @function getRats
  * @param {Object} req - Express request object.
  * @param {Object} res - Express response object.
- * @returns {Promise<void>} JSON response with rating data or error.
+ * @returns {Promise&lt;void>} JSON response with rating data or error.
  */
 exports.getRats = async (req, res) => {
     try {
-        const cacheKey = req.originalUrl;
-        const cachedData = ratCache.get(cacheKey);
-
-        if (cachedData) {
-            console.log(`[CACHE HIT] ${cacheKey}`);
-            return res.json(cachedData);
-        }
-
         const params = req.query;
         
         let { fields, sort, limit, pageSize, offset, page, minScore, maxScore, ...filters } = params;
@@ -90,16 +101,11 @@ exports.getRats = async (req, res) => {
             totalPages = Math.ceil(total / finalLimit);
         }
 
-        const result = {
+        return res.json({
             items: items,
             total: total,
             totalPages: totalPages
-        };
-
-        console.log(`[CACHE MISS] ${cacheKey}`);
-        ratCache.set(cacheKey, result);
-
-        return res.json(result);
+        });
     } catch (error) {
         console.error("Error fetching ratings directly in controller:", error);
         return res.status(500).json({ error: "Internal Server Error", message: error.message });
@@ -115,15 +121,13 @@ exports.getRats = async (req, res) => {
  * @function createRating
  * @param {Object} req - Express request object.
  * @param {Object} res - Express response object.
- * @returns {Promise<void>} JSON response with the new average score.
+ * @returns {Promise&lt;void>} JSON response with the new average score.
  */
 exports.createRating = async (req, res) => {
     try {
         const ratingData = req.body;
 
         await Ratings.create(ratingData);
-
-        invalidateCache();
 
         const avg = await updateStats(ratingData.anime_id, ratingData.status, ratingData.score);
 
@@ -134,3 +138,59 @@ exports.createRating = async (req, res) => {
     }
 };
 
+/**
+ * Private helper function to handle statistical recalculation aggregates.
+ * Increments parameters atomically, modifies arrays, and updates database statistics.
+ *
+ * @async
+ * @function updateStats
+ * @private
+ * @param {Number} mal_id - The anime ID to update.
+ * @param {String} status - The status field to increment (e.g., 'watching', 'completed').
+ * @param {Number} score - The score to register (1-10).
+ * @returns {Promise&lt;Number>} The newly calculated weighted average score.
+ */
+async function updateStats(mal_id, status, score) {
+    const inc = { [status]: 1, total: 1 };
+    if (score > 0) inc[`score_${score}_votes`] = 1;
+
+    const stats = await Stats.findOneAndUpdate({ mal_id }, { $inc: inc }, { upsert: true, new: true });
+
+    let totalVotes = 0, sum = 0;
+    for (let i = 1; i &lt;= 10; i++) {
+        const v = stats[`score_${i}_votes`] || 0;
+        totalVotes += v;
+        sum += v * i;
+    }
+
+    const percentages = {};
+    for (let i = 1; i &lt;= 10; i++) {
+        percentages[`score_${i}_percentage`] = totalVotes ? parseFloat(((stats[`score_${i}_votes`] / totalVotes) * 100).toFixed(2)) : 0;
+    }
+
+    await Stats.updateOne({ mal_id }, { $set: percentages });
+
+    return totalVotes ? parseFloat((sum / totalVotes).toFixed(2)) : 0;
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-controllers_favController.html">controllers/favController</a></li><li><a href="module-controllers_ratController.html">controllers/ratController</a></li><li><a href="module-controllers_statController.html">controllers/statController</a></li><li><a href="module-models_Favs.html">models/Favs</a></li><li><a href="module-models_Ratings.html">models/Ratings</a></li><li><a href="module-models_Stats.html">models/Stats</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sat May 23 2026 18:10:21 GMT+0200 (Central European Summer Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

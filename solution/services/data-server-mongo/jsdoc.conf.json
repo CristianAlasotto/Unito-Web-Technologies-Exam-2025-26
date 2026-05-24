@@ -1,0 +1,16 @@
+{
+    "source": {
+        "include": [
+            "controllers",
+            "models",
+            "routes"
+        ],
+        "includePattern": ".+\\.js(doc|x)?$",
+        "excludePattern": "(^|\\/|\\\\)_"
+    },
+    "opts": {
+        "destination": "./jsdoc",
+        "recurse": true,
+        "readme": "README.md"
+    }
+}

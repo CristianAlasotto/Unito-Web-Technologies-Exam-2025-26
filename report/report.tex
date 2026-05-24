@@ -5,10 +5,13 @@
 \usepackage{hyperref}
 \usepackage{enumitem}
 \usepackage{parskip}
+\usepackage{graphicx}
+\graphicspath{{./}{report/}{images/}{../images/}}
 
-\geometry{margin=2cm}
+\geometry{margin=1.5cm}
 
-\title{Project Documentation: Anime Data Access System}
+\title{Project Documentation: \\ 
+	Web Technologies 2025/26 Group Project}
 \author{}
 \date{}
 
@@ -23,6 +26,14 @@ This project implements a web platform for exploring and analysing anime-related
 The system is built using a multi-server architecture with a central Express server acting as a lightweight middleware between the client and two data services: a Spring Boot service with a PostgreSQL database for static data, and an Express service with MongoDB for dynamic data. The front-end is developed with HTML, CSS, JavaScript and Handlebars templates.
 
 The project follows the design principles and technologies introduced in the course, focusing on modularity, clear separation of concerns and well-documented APIs.
+
+The project startup is fully automated through Docker containers and can be executed with a single command, \texttt{./start-dev.sh} from the \texttt{solution} directory.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\linewidth]{images/script_scheme.png}
+\end{figure}
+
 
 \section{Technical Task 1 -- System Architecture and Data Management}
 
@@ -86,11 +97,11 @@ The central server is implemented in Node.js using Express and Handlebars and ac
 
 \subsection{Issues}
 
-Key challenges included mapping user input into valid API queries while preserving active filters across pagination. Input validation and normalisation were required before forwarding requests to the data services. Some pages require data aggregation from both PostgreSQL and MongoDB, which involved coordinating multiple asynchronous calls and handling partial service failures. Fallback mechanisms were implemented to ensure static content remains available when dynamic data cannot be retrieved. Designing a clear interface using only HTML, Bootstrap and Handlebars required careful layout planning. The absence of caching at this level means that performance depends on network latency and back-end response times.
+Key challenges included mapping user input into valid API queries while preserving active filters across pagination. Input validation and normalisation were required before forwarding requests to the data services. Some pages require data aggregation from both PostgreSQL and MongoDB, which involved coordinating multiple asynchronous calls and handling partial service failures. Fallback mechanisms were implemented to ensure static content remains available when dynamic data cannot be retrieved. Designing a clear interface using only HTML and Handlebars required careful layout planning. The absence of caching at this level means that performance depends on network latency and back-end response times.
 
 \subsection{Requirements}
 
-The central server satisfies the assignment requirements by using Express as the main gateway and Handlebars for templating. It supports filtering, sorting and pagination aligned with the underlying APIs. Configuration is managed via environment variables, including service URLs and logging options. Rating submission is handled through POST forms, with username validation delegated to the PostgreSQL service before forwarding data to MongoDB. Static assets are served directly, and all routes are documented using Swagger to ensure clarity and maintainability.
+The central server satisfies the assignment requirements by using Express as the main gateway and Handlebars for templating. It supports filtering, sorting and pagination aligned with the underlying APIs. Configuration is managed via environment variables, including service URLs and logging options. Rating submission is handled through POST forms, with username validation delegated to the PostgreSQL service before forwarding data to MongoDB. Static assets are served directly, and all routes are documented using Swagger to ensure clarity and maintainability, while the code has been documented with jsDoc.
 
 \subsection{Limitations}
 
@@ -98,24 +109,17 @@ The application does not implement authentication or advanced personalisation fe
 
 \section{Conclusions}
 
-Building a multi-service web application that integrates relational and document-oriented data taught us valuable lessons about system design, data modelling and cross-technology integration. We realised early on that clear separation of concerns and consistent API design make it easier to manage complexity. Containerisation with Docker simplified deployment and allowed us to replicate the environment across different development machines. Handling large datasets required tuning indexes and writing efficient queries; we learned to measure performance and iterate based on empirical evidence. Collaboration across different programming languages fostered better teamwork, as each member had to understand how their component interacted with the others. While our implementation meets the essential requirements, numerous opportunities remain for improvement, such as adding authentication, caching and more sophisticated search capabilities.
+Building a multi-service web application that integrates relational and document-oriented data taught us valuable lessons about system design, data modelling and cross-technology integration. We realised early on that clear separation of concerns and consistent API design make it easier to manage complexity. Containerisation with Docker simplified deployment and allowed us to replicate the environment across different development machines. Handling large datasets required tuning indexes and writing efficient queries; we learned to measure performance. Collaboration across different programming languages fostered better teamwork, as each member had to understand how their component interacted with the others. While our implementation meets the essential requirements, numerous opportunities remain for improvement, such as adding authentication with password managment and caching.
 
 \section{Division of Work}
 
-We divided tasks to leverage each member's strengths while ensuring that everyone contributed to all parts of the project. Member A (Alasotto) focused on the central Express server and front-end, designing the Handlebars templates, implementing route logic and ensuring that query parameters were correctly mapped to API calls. Member B (Collura) took primary responsibility for the Spring Boot service, modelling the PostgreSQL schema in Java, writing custom queries and integrating Swagger documentation. Member C (Correndo) led the development of the MongoDB service, writing controllers and services for ratings, favourites and statistics, and implementing data import and indexing scripts.
-
-All members collaborated on the overall architecture, wrote Docker Compose scripts and helped import and verify the dataset. We met regularly to integrate components, fix bugs and prepare the final documentation.
+We divided tasks to leverage each member's strengths while ensuring that everyone contributed to all parts of the project.\\
+Member Alasotto Cristian focused on the central Express server and front-end, designing the Handlebars templates, implementing route logic, ensuring that query parameters were correctly mapped to API calls, and creating and managing the Docker containers used to run the project services.\\
+Member Collura Federico took primary responsibility for the Spring Boot service, modelling the PostgreSQL schema in Java, writing custom queries and integrating Swagger documentation.\\
+Member Correndo Davide led the development of the MongoDB service, writing controllers and services for ratings, favourites and statistics, and implementing data import and indexing scripts.\\
 
 \section{Extra Information}
 
-To run the system, ensure that Docker and Node.js are installed and that the dataset files are placed in the \texttt{solution/data} folder. For the simplest setup, navigate to the \texttt{solution} directory and run \texttt{./start-dev.sh}; this script starts the databases, imports the PostgreSQL data and launches all services. Alternatively, you can start the containers manually using \texttt{docker compose up}, install dependencies in the \texttt{main-server-express} directory and run \texttt{npm run dev}. MongoDB collections can be populated using \texttt{./db/mongo/import.sh} and indexed with \texttt{./db/mongo/index.sh}; the script \texttt{./db/mongo/verify.sh} checks that the counts of documents match the expected totals. The system uses environment variables defined in \texttt{.env} to configure service URLs and logging levels; sample values are provided in \texttt{.env.example}. Once running, the web interface is accessible at \url{http://localhost:3000}.
-
-\section{Bibliography}
-
-\begin{itemize}
-	\item Assignment specification and report guidelines.
-	\item Project README for deployment instructions.
-	\item Internal code documentation and lecture materials for design patterns and architectural guidance (no citation required).
-\end{itemize}
+To run the system, ensure that Docker and Node.js are installed and that the dataset files are placed in the \texttt{solution/data} folder. For the simplest setup, navigate to the \texttt{solution} directory and run \texttt{./start-dev.sh}; this script starts the databases, imports the PostgreSQL data and launches all services. Alternatively, you can start the containers manually using \texttt{docker compose up}, install dependencies in the \texttt{main-server-express} directory and run \texttt{npm run dev}. MongoDB collections can be populated using \texttt{./db/mongo/import.sh} and indexed with \texttt{./db/mongo/index.sh}; the script \texttt{./db/mongo/verify.sh} checks that the counts of documents match the expected totals. The system uses environment variables defined in \texttt{.env} to configure service URLs and logging levels. Once running, the web interface is accessible at \url{http://localhost:3000}.
 
 \end{document}
