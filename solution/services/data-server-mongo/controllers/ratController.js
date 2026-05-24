@@ -1,6 +1,15 @@
 // Direct Access: Import the database models directly into the controller file
 const Ratings = require('../models/Ratings');
-const Stats = require('../models/Stats');
+const NodeCache = require('node-cache');
+const { updateStats } = require('./statController');
+
+const ratCache = new NodeCache({ stdTTL: 60 });
+
+const invalidateCache = () => {
+    console.log('[CACHE INVALIDATED] ratCache flushed');
+    ratCache.flushAll();
+};
+exports.invalidateCache = invalidateCache;
 
 /**
  * Controller to handle HTTP requests for Ratings.
@@ -22,6 +31,14 @@ const Stats = require('../models/Stats');
  */
 exports.getRats = async (req, res) => {
     try {
+        const cacheKey = req.originalUrl;
+        const cachedData = ratCache.get(cacheKey);
+
+        if (cachedData) {
+            console.log(`[CACHE HIT] ${cacheKey}`);
+            return res.json(cachedData);
+        }
+
         const params = req.query;
         
         let { fields, sort, limit, pageSize, offset, page, minScore, maxScore, ...filters } = params;
@@ -73,11 +90,16 @@ exports.getRats = async (req, res) => {
             totalPages = Math.ceil(total / finalLimit);
         }
 
-        return res.json({
+        const result = {
             items: items,
             total: total,
             totalPages: totalPages
-        });
+        };
+
+        console.log(`[CACHE MISS] ${cacheKey}`);
+        ratCache.set(cacheKey, result);
+
+        return res.json(result);
     } catch (error) {
         console.error("Error fetching ratings directly in controller:", error);
         return res.status(500).json({ error: "Internal Server Error", message: error.message });
@@ -101,6 +123,8 @@ exports.createRating = async (req, res) => {
 
         await Ratings.create(ratingData);
 
+        invalidateCache();
+
         const avg = await updateStats(ratingData.anime_id, ratingData.status, ratingData.score);
 
         return res.status(201).json({ new_average_score: avg });
@@ -110,37 +134,3 @@ exports.createRating = async (req, res) => {
     }
 };
 
-/**
- * Private helper function to handle statistical recalculation aggregates.
- * Increments parameters atomically, modifies arrays, and updates database statistics.
- *
- * @async
- * @function updateStats
- * @private
- * @param {Number} mal_id - The anime ID to update.
- * @param {String} status - The status field to increment (e.g., 'watching', 'completed').
- * @param {Number} score - The score to register (1-10).
- * @returns {Promise<Number>} The newly calculated weighted average score.
- */
-async function updateStats(mal_id, status, score) {
-    const inc = { [status]: 1, total: 1 };
-    if (score > 0) inc[`score_${score}_votes`] = 1;
-
-    const stats = await Stats.findOneAndUpdate({ mal_id }, { $inc: inc }, { upsert: true, new: true });
-
-    let totalVotes = 0, sum = 0;
-    for (let i = 1; i <= 10; i++) {
-        const v = stats[`score_${i}_votes`] || 0;
-        totalVotes += v;
-        sum += v * i;
-    }
-
-    const percentages = {};
-    for (let i = 1; i <= 10; i++) {
-        percentages[`score_${i}_percentage`] = totalVotes ? parseFloat(((stats[`score_${i}_votes`] / totalVotes) * 100).toFixed(2)) : 0;
-    }
-
-    await Stats.updateOne({ mal_id }, { $set: percentages });
-
-    return totalVotes ? parseFloat((sum / totalVotes).toFixed(2)) : 0;
-}
