@@ -14,12 +14,32 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.*;
-import java.util.stream.Collectors;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
- * REST API Controller for PersonAlternateNames
- * Composite key table - supports list operations only
+ * REST API controller for the {@link PersonAlternateNames} module.
+ *
+ * <p>Exposes three endpoints under {@code /api/person_alternate_names}:</p>
+ * <ul>
+ *   <li>{@code GET /api/person_alternate_names} — paginated list with optional filters.</li>
+ *   <li>{@code GET /api/person_alternate_names/stats} — total record count.</li>
+ *   <li>{@code GET /api/person_alternate_names/single} — single record by composite key.</li>
+ * </ul>
+ *
+ * <p>Design principles:</p>
+ * <ul>
+ *   <li>Only {@link PersonAlternateNamesService} is injected — no repository access.</li>
+ *   <li>{@link PersonAlternateNamesDTO} objects are returned directly to
+ *       {@link ResponseEntity}; Spring (Jackson) serialises them to JSON
+ *       automatically using the {@code @JsonProperty} annotations on the DTO
+ *       getters for snake_case field names.</li>
+ *   <li>Every method returns {@link ResponseEntity} to allow full control
+ *       over HTTP status codes.</li>
+ * </ul>
  */
 @Tag(name = "Person Alternate Names", description = "Anime alternate name of staff people and relationships API")
 @RestController
@@ -30,26 +50,56 @@ public class PersonAlternateNamesController {
     @Autowired
     private PersonAlternateNamesService service;
 
+    /**
+     * Returns a paginated list of {@link PersonAlternateNamesDTO} matching optional filters.
+     *
+     * <p>Supports three pagination modes (page-based takes priority over
+     * limit/offset when both sets of parameters are present):</p>
+     * <ul>
+     *   <li>{@code page} + {@code pageSize} — response includes
+     *       {@code page}, {@code pageSize}, {@code totalPages}, {@code items}.</li>
+     *   <li>{@code limit} + {@code offset} — response includes
+     *       {@code limit}, {@code offset}, {@code total}, {@code items}.</li>
+     *   <li>No pagination parameters — returns the first 10 records as a plain list.</li>
+     * </ul>
+     *
+     * <p>Optional filters (applied in priority order by the service):</p>
+     * <ul>
+     *   <li>{@code search} — case-insensitive partial match on the alternate name.</li>
+     *   <li>{@code person_mal_id} — exact person ID match.</li>
+     * </ul>
+     *
+     * <p>The {@code sort} parameter accepts a comma-separated list of field names.
+     * Prefix a field name with {@code -} for descending order. {@code NULL} values
+     * are always sorted last. Tiebreakers on both composite key fields are always
+     * appended for deterministic pagination.</p>
+     *
+     * @param search      case-insensitive partial match on alternate name
+     * @param sort        sort expression, e.g. {@code "alt_name"}
+     * @param personMalId exact person ID filter
+     * @param limit       maximum results (limit/offset mode)
+     * @param offset      records to skip (limit/offset mode)
+     * @param page        1-indexed page number (page-based mode)
+     * @param pageSize    records per page (page-based mode)
+     * @return {@link ResponseEntity} with paginated or plain-list body of
+     *         {@link PersonAlternateNamesDTO}
+     */
     @Operation(
             summary = "Get all person alternate names",
-            description = "Retrieve paginated list of alternate names with optional filters."
-    )
+            description = "Retrieve paginated list of alternate names with optional filters and sorting.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "List retrieved successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid parameters", content = @Content)
     })
     @GetMapping
     public ResponseEntity<?> getAll(
-            @Parameter(description = "Comma-separated fields to return", example = "alt_name")
-            @RequestParam(required = false) String fields,
-
             @Parameter(description = "Search by alternate name (case-insensitive)", example = "Miyazaki")
             @RequestParam(required = false) String search,
 
             @Parameter(description = "Sort field (prefix with - for descending)", example = "alt_name")
             @RequestParam(required = false) String sort,
 
-            @Parameter(description = "Filter by Person MAL ID", example = "1")
+            @Parameter(description = "Filter by person MAL ID", example = "1")
             @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
 
             @Parameter(description = "Maximum number of results", example = "10")
@@ -64,227 +114,142 @@ public class PersonAlternateNamesController {
             @Parameter(description = "Number of results per page", example = "10")
             @RequestParam(required = false) Integer pageSize) {
 
-        boolean usePageBased = (page != null || pageSize != null);
+        boolean usePageBased   = (page != null || pageSize != null);
         boolean useLimitOffset = (limit != null || offset != null) && !usePageBased;
 
         Sort sortObj = parseSortParameter(sort);
 
         if (useLimitOffset) {
-            int finalLimit = (limit != null) ? limit : 10;
+            int finalLimit  = (limit  != null) ? limit  : 10;
             int finalOffset = (offset != null) ? offset : 0;
 
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
-            Page<PersonAlternateNames> pageResult = service.findWithFilters(
-                    search,
-                    personMalId,
-                    pageable);
+            Page<PersonAlternateNamesDTO> pageResult =
+                    service.findWithFilters(search, personMalId, pageable);
 
-            List<PersonAlternateNames> results = pageResult.getContent();
-            long totalCount = pageResult.getTotalElements();
-
-            if (fields != null && !fields.isEmpty()) {
-                List<Map<String, Object>> filteredResults = results.stream()
-                        .map(entity -> filterFields(entity, fields))
-                        .collect(Collectors.toList());
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("limit", finalLimit);
-                response.put("offset", finalOffset);
-                response.put("total", totalCount);
-                response.put("items", filteredResults);
-                return ResponseEntity.ok(response);
-            }
-
-            List<Map<String, Object>> snakeCaseResults = results.stream()
-                    .map(this::toSnakeCaseMap)
-                    .collect(Collectors.toList());
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("limit", finalLimit);
-            response.put("offset", finalOffset);
-            response.put("total", totalCount);
-            response.put("items", snakeCaseResults);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "limit",  finalLimit,
+                    "offset", finalOffset,
+                    "total",  pageResult.getTotalElements(),
+                    "items",  pageResult.getContent()));
 
         } else if (usePageBased) {
-            int finalPage = (page != null) ? page : 1;
+            int finalPage     = (page     != null) ? page     : 1;
             int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
 
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
-            Page<PersonAlternateNames> pageResult = service.findWithFilters(
-                    search,
-                    personMalId,
-                    pageable);
+            Page<PersonAlternateNamesDTO> pageResult =
+                    service.findWithFilters(search, personMalId, pageable);
 
-            List<PersonAlternateNames> results = pageResult.getContent();
-            long totalPages = pageResult.getTotalPages();
-
-            if (fields != null && !fields.isEmpty()) {
-                List<Map<String, Object>> filteredResults = results.stream()
-                        .map(entity -> filterFields(entity, fields))
-                        .collect(Collectors.toList());
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("page", finalPage);
-                response.put("pageSize", finalPageSize);
-                response.put("totalPages", totalPages);
-                response.put("items", filteredResults);
-                return ResponseEntity.ok(response);
-            }
-
-            List<Map<String, Object>> snakeCaseResults = results.stream()
-                    .map(this::toSnakeCaseMap)
-                    .collect(Collectors.toList());
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("page", finalPage);
-            response.put("pageSize", finalPageSize);
-            response.put("totalPages", totalPages);
-            response.put("items", snakeCaseResults);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "page",       finalPage,
+                    "pageSize",   finalPageSize,
+                    "totalPages", pageResult.getTotalPages(),
+                    "items",      pageResult.getContent()));
 
         } else {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
-            Page<PersonAlternateNames> pageResult = service.findWithFilters(
-                    search,
-                    personMalId,
-                    pageable);
+            Page<PersonAlternateNamesDTO> pageResult =
+                    service.findWithFilters(search, personMalId, pageable);
 
-            List<PersonAlternateNames> results = pageResult.getContent();
-
-            if (fields != null && !fields.isEmpty()) {
-                List<Map<String, Object>> filteredResults = results.stream()
-                        .map(entity -> filterFields(entity, fields))
-                        .collect(Collectors.toList());
-                return ResponseEntity.ok(filteredResults);
-            }
-
-            List<Map<String, Object>> snakeCaseResults = results.stream()
-                    .map(this::toSnakeCaseMap)
-                    .collect(Collectors.toList());
-
-            return ResponseEntity.ok(snakeCaseResults);
+            return ResponseEntity.ok(pageResult.getContent());
         }
     }
 
+    /**
+     * Returns the total number of alternate name records in the database.
+     *
+     * @return {@link ResponseEntity} with body {@code {"total": N}}
+     */
+    @Operation(summary = "Get statistics",
+            description = "Get total count of alternate name records")
+    @ApiResponses(@ApiResponse(responseCode = "200",
+            description = "Statistics retrieved successfully"))
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("total", service.count());
-        return ResponseEntity.ok(stats);
+        return ResponseEntity.ok(Map.of("total", service.count()));
     }
 
-
     /**
-     * Get single resource by composite key (using query parameters)
-     * GET /api/person_alternate_names/single?person_mal_id&alt_name
+     * Returns a single alternate name record looked up by its composite key.
+     *
+     * <p>Both {@code person_mal_id} and {@code altName} are required.
+     * If either is missing, {@code 400 Bad Request} is returned with a usage hint.
+     * If the composite key does not exist, {@code 404 Not Found} is returned.</p>
+     *
+     * @param personMalId person MAL ID (required)
+     * @param altName     alternate name (required)
+     * @return {@link ResponseEntity} containing the {@link PersonAlternateNamesDTO},
+     *         or an error body with status 400 or 404
      */
     @Operation(
             summary = "Get specific alternate name entry",
-            description = "Retrieve a single alternate name record using the composite key (person_mal_id + alt_name)"
-    )
+            description = "Retrieve a single alternate name record using the composite key "
+                    + "(person_mal_id + alt_name)")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found successfully", content = @Content(schema = @Schema(implementation = PersonAlternateNames.class))),
-            @ApiResponse(responseCode = "400", description = "Missing key fields", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Not found", content = @Content)
+            @ApiResponse(responseCode = "200", description = "Found successfully",
+                    content = @Content(schema = @Schema(implementation = PersonAlternateNamesDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Missing key fields",  content = @Content),
+            @ApiResponse(responseCode = "404", description = "Not found",           content = @Content)
     })
     @GetMapping("/single")
     public ResponseEntity<?> getSingle(
-            @Parameter(description = "Person MAL ID (Required)", required = true)
+            @Parameter(description = "Person MAL ID", required = true)
             @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
 
-            @Parameter(description = "Alternate Name (Required)", required = true)
-            @RequestParam(required = false) String altName,
+            @Parameter(description = "Alternate name", required = true)
+            @RequestParam(required = false) String altName) {
 
-            @Parameter(description = "Comma-separated fields to return")
-            @RequestParam(required = false) String fields) {
-
-        // Check if all key fields are provided
         if (personMalId == null || altName == null) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "All key fields required: personMalId, altName");
-            error.put("usage", "GET /api/person_alternate_names/single?person_mal_id&alt_name");
-            return ResponseEntity.status(400).body(error);
+            return ResponseEntity.status(400).body(Map.of(
+                    "error", "All key fields required: person_mal_id, alt_name",
+                    "usage", "GET /api/person_alternate_names/single?person_mal_id=1&altName=Miyazaki+Hayao"));
         }
 
-        // Create composite key
-        PersonAlternateNames.PersonAlternateNamesId id = new PersonAlternateNames.PersonAlternateNamesId(personMalId, altName);
-        Optional<PersonAlternateNames> entity = service.getById(id);
+        PersonAlternateNames.PersonAlternateNamesId id =
+                new PersonAlternateNames.PersonAlternateNamesId(personMalId, altName);
 
-        if (entity.isEmpty()) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "PersonAlternateNames not found");
-            error.put("person_mal_id", personMalId); error.put("alt_name", altName);
-            return ResponseEntity.status(404).body(error);
+        Optional<PersonAlternateNamesDTO> dto = service.getById(id);
+
+        if (dto.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "error",         "PersonAlternateNames not found",
+                    "person_mal_id", personMalId,
+                    "alt_name",      altName));
         }
 
-        PersonAlternateNames data = entity.get();
-
-        if (fields != null && !fields.isEmpty()) {
-            Map<String, Object> filtered = filterFields(data, fields);
-            return ResponseEntity.ok(filtered);
-        }
-
-        return ResponseEntity.ok(toSnakeCaseMap(data));
+        return ResponseEntity.ok(dto.get());
     }
 
-
-    private Map<String, Object> toSnakeCaseMap(PersonAlternateNames entity) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("person_mal_id", entity.getPersonMalId());
-        result.put("alt_name", entity.getAltName());
-        return result;
-    }
-
-    private Map<String, Object> filterFields(PersonAlternateNames entity, String fields) {
-        Map<String, Object> result = new HashMap<>();
-        String[] requestedFields = fields.split(",");
-
-        for (String field : requestedFields) {
-            field = field.trim();
-            switch (field) {
-                case "person_mal_id":
-                    result.put("person_mal_id", entity.getPersonMalId());
-                    break;
-                case "alt_name":
-                    result.put("alt_name", entity.getAltName());
-                    break;
-            }
-        }
-
-        return result;
-    }
-
+    /**
+     * Converts the {@code sort} query parameter string into a Spring
+     * {@link Sort} object.
+     *
+     * <p>Each comma-separated token is a field name. A leading {@code -}
+     * means descending; no prefix means ascending. {@code NULL} values are
+     * always placed last via {@link Sort.Order#nullsLast()}. Stable tiebreakers
+     * on both composite key fields ({@code personMalId} and {@code altName})
+     * are always appended for deterministic pagination.</p>
+     *
+     * @param sort comma-separated sort expression, e.g. {@code "alt_name"}
+     * @return a {@link Sort} object ready to pass to {@link PageRequest}
+     */
     private Sort parseSortParameter(String sort) {
         List<Sort.Order> orders = new ArrayList<>();
-
         if (sort != null && !sort.isEmpty()) {
-            String[] sortFields = sort.split(",");
-
-            for (String field : sortFields) {
+            for (String field : sort.split(",")) {
                 field = field.trim();
-                Sort.Direction direction;
-                String actualField;
-
                 if (field.startsWith("-")) {
-                    direction = Sort.Direction.DESC;
-                    actualField = field.substring(1);
+                    orders.add(Sort.Order.by(field.substring(1))
+                            .with(Sort.Direction.DESC).nullsLast());
                 } else {
-                    direction = Sort.Direction.ASC;
-                    actualField = field;
+                    orders.add(Sort.Order.by(field)
+                            .with(Sort.Direction.ASC).nullsLast());
                 }
-
-                // ✅ FIX: NULL values always sorted LAST
-                orders.add(Sort.Order.by(actualField)
-                        .with(direction)
-                        .nullsLast());
             }
         }
-
-        // Add primary keys as tiebreaker
         orders.add(Sort.Order.asc("personMalId"));
         orders.add(Sort.Order.asc("altName"));
-
         return Sort.by(orders);
     }
 }

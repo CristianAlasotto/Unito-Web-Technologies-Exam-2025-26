@@ -14,12 +14,32 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.*;
-import java.util.stream.Collectors;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
- * REST API Controller for PersonAnimeWorks
- * Composite key table - supports list operations only
+ * REST API controller for the {@link PersonAnimeWorks} module.
+ *
+ * <p>Exposes three endpoints under {@code /api/person_anime_works}:</p>
+ * <ul>
+ *   <li>{@code GET /api/person_anime_works} — paginated list with optional filters.</li>
+ *   <li>{@code GET /api/person_anime_works/stats} — total record count.</li>
+ *   <li>{@code GET /api/person_anime_works/single} — single record by composite key.</li>
+ * </ul>
+ *
+ * <p>Design principles:</p>
+ * <ul>
+ *   <li>Only {@link PersonAnimeWorksService} is injected — no repository access.</li>
+ *   <li>{@link PersonAnimeWorksDTO} objects are returned directly to
+ *       {@link ResponseEntity}; Spring (Jackson) serialises them to JSON
+ *       automatically using the {@code @JsonProperty} annotations on the DTO
+ *       getters for snake_case field names.</li>
+ *   <li>Every method returns {@link ResponseEntity} to allow full control
+ *       over HTTP status codes.</li>
+ * </ul>
  */
 @Tag(name = "Person Anime Works", description = "Anime people staff with position and relationships API")
 @RestController
@@ -30,32 +50,61 @@ public class PersonAnimeWorksController {
     @Autowired
     private PersonAnimeWorksService service;
 
+    /**
+     * Returns a paginated list of {@link PersonAnimeWorksDTO} matching optional filters.
+     *
+     * <p>Supports three pagination modes (page-based takes priority over
+     * limit/offset when both sets of parameters are present):</p>
+     * <ul>
+     *   <li>{@code page} + {@code pageSize} — response includes
+     *       {@code page}, {@code pageSize}, {@code totalPages}, {@code items}.</li>
+     *   <li>{@code limit} + {@code offset} — response includes
+     *       {@code limit}, {@code offset}, {@code total}, {@code items}.</li>
+     *   <li>No pagination parameters — returns the first 10 records as a plain list.</li>
+     * </ul>
+     *
+     * <p>Optional filters (applied in priority order by the service):</p>
+     * <ul>
+     *   <li>{@code search} — case-insensitive partial match on position.</li>
+     *   <li>{@code position} — exact position match.</li>
+     *   <li>{@code person_mal_id} — exact person ID match.</li>
+     *   <li>{@code anime_mal_id} — exact anime ID match.</li>
+     * </ul>
+     *
+     * @param search      case-insensitive partial match on position
+     * @param sort        sort expression, e.g. {@code "-position"}
+     * @param position    exact position filter
+     * @param personMalId exact person ID filter
+     * @param animeMalId  exact anime ID filter
+     * @param limit       maximum results (limit/offset mode)
+     * @param offset      records to skip (limit/offset mode)
+     * @param page        1-indexed page number (page-based mode)
+     * @param pageSize    records per page (page-based mode)
+     * @return {@link ResponseEntity} with paginated or plain-list body of
+     *         {@link PersonAnimeWorksDTO}
+     */
     @Operation(
             summary = "Get all person anime works",
-            description = "Retrieve paginated list of works with optional filters for Position, Person ID, or Anime ID."
-    )
+            description = "Retrieve paginated list of works with optional filters for position, person ID, or anime ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "List retrieved successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid parameters", content = @Content)
     })
     @GetMapping
     public ResponseEntity<?> getAll(
-            @Parameter(description = "Comma-separated fields to return", example = "position")
-            @RequestParam(required = false) String fields,
-
             @Parameter(description = "Search by position (case-insensitive)", example = "Director")
             @RequestParam(required = false) String search,
 
             @Parameter(description = "Sort field (prefix with - for descending)", example = "-position")
             @RequestParam(required = false) String sort,
 
-            @Parameter(description = "Filter by Position (exact match)", example = "Director")
+            @Parameter(description = "Filter by position (exact match)", example = "Director")
             @RequestParam(required = false) String position,
 
-            @Parameter(description = "Filter by Person MAL ID", example = "1")
+            @Parameter(description = "Filter by person MAL ID", example = "1")
             @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
 
-            @Parameter(description = "Filter by Anime MAL ID", example = "1")
+            @Parameter(description = "Filter by anime MAL ID", example = "1")
             @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId,
 
             @Parameter(description = "Maximum number of results", example = "10")
@@ -70,234 +119,149 @@ public class PersonAnimeWorksController {
             @Parameter(description = "Number of results per page", example = "10")
             @RequestParam(required = false) Integer pageSize) {
 
-        boolean usePageBased = (page != null || pageSize != null);
+        boolean usePageBased   = (page != null || pageSize != null);
         boolean useLimitOffset = (limit != null || offset != null) && !usePageBased;
 
         Sort sortObj = parseSortParameter(sort);
 
         if (useLimitOffset) {
-            int finalLimit = (limit != null) ? limit : 10;
+            int finalLimit  = (limit  != null) ? limit  : 10;
             int finalOffset = (offset != null) ? offset : 0;
 
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
-            Page<PersonAnimeWorks> pageResult = service.findWithFilters(
-                search,
-                position, personMalId, animeMalId,
-                pageable);
+            Page<PersonAnimeWorksDTO> pageResult = service.findWithFilters(
+                    search, position, personMalId, animeMalId, pageable);
 
-            List<PersonAnimeWorks> results = pageResult.getContent();
-            long totalCount = pageResult.getTotalElements();
-
-            if (fields != null && !fields.isEmpty()) {
-                List<Map<String, Object>> filteredResults = results.stream()
-                    .map(entity -> filterFields(entity, fields))
-                    .collect(Collectors.toList());
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("limit", finalLimit);
-                response.put("offset", finalOffset);
-                response.put("total", totalCount);
-                response.put("items", filteredResults);
-                return ResponseEntity.ok(response);
-            }
-
-            List<Map<String, Object>> snakeCaseResults = results.stream()
-                .map(this::toSnakeCaseMap)
-                .collect(Collectors.toList());
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("limit", finalLimit);
-            response.put("offset", finalOffset);
-            response.put("total", totalCount);
-            response.put("items", snakeCaseResults);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "limit",  finalLimit,
+                    "offset", finalOffset,
+                    "total",  pageResult.getTotalElements(),
+                    "items",  pageResult.getContent()));
 
         } else if (usePageBased) {
-            int finalPage = (page != null) ? page : 1;
+            int finalPage     = (page     != null) ? page     : 1;
             int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
 
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
-            Page<PersonAnimeWorks> pageResult = service.findWithFilters(
-                search,
-                position, personMalId, animeMalId,
-                pageable);
+            Page<PersonAnimeWorksDTO> pageResult = service.findWithFilters(
+                    search, position, personMalId, animeMalId, pageable);
 
-            List<PersonAnimeWorks> results = pageResult.getContent();
-            long totalPages = pageResult.getTotalPages();
-
-            if (fields != null && !fields.isEmpty()) {
-                List<Map<String, Object>> filteredResults = results.stream()
-                    .map(entity -> filterFields(entity, fields))
-                    .collect(Collectors.toList());
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("page", finalPage);
-                response.put("pageSize", finalPageSize);
-                response.put("totalPages", totalPages);
-                response.put("items", filteredResults);
-                return ResponseEntity.ok(response);
-            }
-
-            List<Map<String, Object>> snakeCaseResults = results.stream()
-                .map(this::toSnakeCaseMap)
-                .collect(Collectors.toList());
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("page", finalPage);
-            response.put("pageSize", finalPageSize);
-            response.put("totalPages", totalPages);
-            response.put("items", snakeCaseResults);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "page",       finalPage,
+                    "pageSize",   finalPageSize,
+                    "totalPages", pageResult.getTotalPages(),
+                    "items",      pageResult.getContent()));
 
         } else {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
-            Page<PersonAnimeWorks> pageResult = service.findWithFilters(
-                search,
-                position, personMalId, animeMalId,
-                pageable);
+            Page<PersonAnimeWorksDTO> pageResult = service.findWithFilters(
+                    search, position, personMalId, animeMalId, pageable);
 
-            List<PersonAnimeWorks> results = pageResult.getContent();
-
-            if (fields != null && !fields.isEmpty()) {
-                List<Map<String, Object>> filteredResults = results.stream()
-                    .map(entity -> filterFields(entity, fields))
-                    .collect(Collectors.toList());
-                return ResponseEntity.ok(filteredResults);
-            }
-
-            List<Map<String, Object>> snakeCaseResults = results.stream()
-                .map(this::toSnakeCaseMap)
-                .collect(Collectors.toList());
-
-            return ResponseEntity.ok(snakeCaseResults);
+            return ResponseEntity.ok(pageResult.getContent());
         }
     }
 
+    /**
+     * Returns the total number of staff credit records in the database.
+     *
+     * @return {@link ResponseEntity} with body {@code {"total": N}}
+     */
+    @Operation(summary = "Get statistics",
+            description = "Get total count of person anime work records")
+    @ApiResponses(@ApiResponse(responseCode = "200",
+            description = "Statistics retrieved successfully"))
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("total", service.count());
-        return ResponseEntity.ok(stats);
+        return ResponseEntity.ok(Map.of("total", service.count()));
     }
 
-
     /**
-     * Get single resource by composite key (using query parameters)
-     * GET /api/person_anime_works/single?person_mal_id&position&anime_mal_id
+     * Returns a single staff credit record looked up by its composite key.
+     *
+     * <p>All three key fields ({@code person_mal_id}, {@code position},
+     * {@code anime_mal_id}) are required. If any is missing,
+     * {@code 400 Bad Request} is returned with a usage hint. If the composite
+     * key does not exist, {@code 404 Not Found} is returned.</p>
+     *
+     * @param personMalId person MAL ID (required)
+     * @param position    staff production role (required)
+     * @param animeMalId  anime MAL ID (required)
+     * @return {@link ResponseEntity} containing the {@link PersonAnimeWorksDTO},
+     *         or an error body with status 400 or 404
      */
     @Operation(
             summary = "Get specific work entry",
-            description = "Retrieve a single work record using the composite key (person_mal_id + position + anime_mal_id)"
-    )
+            description = "Retrieve a single work record using the composite key "
+                    + "(person_mal_id + position + anime_mal_id)")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found successfully", content = @Content(schema = @Schema(implementation = PersonAnimeWorks.class))),
-            @ApiResponse(responseCode = "400", description = "Missing key fields", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Not found", content = @Content)
+            @ApiResponse(responseCode = "200", description = "Found successfully",
+                    content = @Content(schema = @Schema(implementation = PersonAnimeWorksDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Missing key fields",  content = @Content),
+            @ApiResponse(responseCode = "404", description = "Not found",           content = @Content)
     })
     @GetMapping("/single")
     public ResponseEntity<?> getSingle(
-            @Parameter(description = "Person MAL ID (Required)", required = true)
+            @Parameter(description = "Person MAL ID", required = true)
             @RequestParam(value = "person_mal_id", required = false) Integer personMalId,
 
-            @Parameter(description = "Position (Required)", required = true)
+            @Parameter(description = "Position", required = true)
             @RequestParam(required = false) String position,
 
-            @Parameter(description = "Anime MAL ID (Required)", required = true)
-            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId,
+            @Parameter(description = "Anime MAL ID", required = true)
+            @RequestParam(value = "anime_mal_id", required = false) Integer animeMalId) {
 
-            @Parameter(description = "Comma-separated fields to return")
-            @RequestParam(required = false) String fields) {
-
-        // Check if all key fields are provided
         if (personMalId == null || position == null || animeMalId == null) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "All key fields required: personMalId, position, animeMalId");
-            error.put("usage", "GET /api/person_anime_works/single?person_mal_id&position&anime_mal_id");
-            return ResponseEntity.status(400).body(error);
+            return ResponseEntity.status(400).body(Map.of(
+                    "error", "All key fields required: person_mal_id, position, anime_mal_id",
+                    "usage", "GET /api/person_anime_works/single?person_mal_id=1&position=Director&anime_mal_id=1"));
         }
 
-        // Create composite key
-        PersonAnimeWorks.PersonAnimeWorksId id = new PersonAnimeWorks.PersonAnimeWorksId(personMalId, position, animeMalId);
-        Optional<PersonAnimeWorks> entity = service.getById(id);
+        PersonAnimeWorks.PersonAnimeWorksId id =
+                new PersonAnimeWorks.PersonAnimeWorksId(personMalId, position, animeMalId);
 
-        if (entity.isEmpty()) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "PersonAnimeWorks not found");
-            error.put("person_mal_id", personMalId); error.put("position", position); error.put("anime_mal_id", animeMalId);
-            return ResponseEntity.status(404).body(error);
+        Optional<PersonAnimeWorksDTO> dto = service.getById(id);
+
+        if (dto.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "error",         "PersonAnimeWorks not found",
+                    "person_mal_id", personMalId,
+                    "position",      position,
+                    "anime_mal_id",  animeMalId));
         }
 
-        PersonAnimeWorks data = entity.get();
-
-        if (fields != null && !fields.isEmpty()) {
-            Map<String, Object> filtered = filterFields(data, fields);
-            return ResponseEntity.ok(filtered);
-        }
-
-        return ResponseEntity.ok(toSnakeCaseMap(data));
+        return ResponseEntity.ok(dto.get());
     }
 
-
-    private Map<String, Object> toSnakeCaseMap(PersonAnimeWorks entity) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("person_mal_id", entity.getPersonMalId());
-        result.put("position", entity.getPosition());
-        result.put("anime_mal_id", entity.getAnimeMalId());
-        return result;
-    }
-
-    private Map<String, Object> filterFields(PersonAnimeWorks entity, String fields) {
-        Map<String, Object> result = new HashMap<>();
-        String[] requestedFields = fields.split(",");
-
-        for (String field : requestedFields) {
-            field = field.trim();
-            switch (field) {
-                case "person_mal_id":
-                    result.put("person_mal_id", entity.getPersonMalId());
-                    break;
-                case "position":
-                    result.put("position", entity.getPosition());
-                    break;
-                case "anime_mal_id":
-                    result.put("anime_mal_id", entity.getAnimeMalId());
-                    break;
-            }
-        }
-
-        return result;
-    }
-
+    /**
+     * Converts the {@code sort} query parameter string into a Spring
+     * {@link Sort} object.
+     *
+     * <p>Each comma-separated token is a field name. A leading {@code -}
+     * means descending; no prefix means ascending. {@code NULL} values are
+     * always placed last via {@link Sort.Order#nullsLast()}. Stable tiebreakers
+     * on {@code personMalId} and {@code animeMalId} are always appended
+     * (note: {@code position} is a String key field and is already part of
+     * the sort when the user requests it).</p>
+     *
+     * @param sort comma-separated sort expression, e.g. {@code "-position"}
+     * @return a {@link Sort} object ready to pass to {@link PageRequest}
+     */
     private Sort parseSortParameter(String sort) {
         List<Sort.Order> orders = new ArrayList<>();
-
         if (sort != null && !sort.isEmpty()) {
-            String[] sortFields = sort.split(",");
-
-            for (String field : sortFields) {
+            for (String field : sort.split(",")) {
                 field = field.trim();
-                Sort.Direction direction;
-                String actualField;
-
                 if (field.startsWith("-")) {
-                    direction = Sort.Direction.DESC;
-                    actualField = field.substring(1);
+                    orders.add(Sort.Order.by(field.substring(1))
+                            .with(Sort.Direction.DESC).nullsLast());
                 } else {
-                    direction = Sort.Direction.ASC;
-                    actualField = field;
+                    orders.add(Sort.Order.by(field)
+                            .with(Sort.Direction.ASC).nullsLast());
                 }
-
-                // ✅ FIX: NULL values always sorted LAST
-                orders.add(Sort.Order.by(actualField)
-                        .with(direction)
-                        .nullsLast());
             }
         }
-
-        // Add primary keys as tiebreaker
         orders.add(Sort.Order.asc("personMalId"));
         orders.add(Sort.Order.asc("animeMalId"));
-
         return Sort.by(orders);
     }
 }

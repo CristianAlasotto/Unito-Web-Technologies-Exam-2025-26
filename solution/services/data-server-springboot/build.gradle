@@ -30,3 +30,11 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+javadoc {
+    options.encoding = 'UTF-8'
+    options.author   = true
+    options.version  = true
+    options.windowTitle = 'Anime Database API Docs'
+    options.docTitle    = 'Anime Database - data-server-springboot'
+}

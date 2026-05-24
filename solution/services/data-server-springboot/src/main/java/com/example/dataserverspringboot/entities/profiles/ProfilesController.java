@@ -14,14 +14,34 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.*;
-import java.util.stream.Collectors;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
- * REST API Controller for Profiles
- * Returns field names in snake_case to match database columns
+ * REST API controller for the {@link Profiles} module.
+ *
+ * <p>Exposes four endpoints under {@code /api/profiles}:</p>
+ * <ul>
+ *   <li>{@code GET /api/profiles/{username}} — single profile by username.</li>
+ *   <li>{@code GET /api/profiles} — paginated list with optional filters.</li>
+ *   <li>{@code GET /api/profiles/stats} — total record count.</li>
+ *   <li>{@code GET /api/profiles/stats/null_counts} — NULL statistics.</li>
+ * </ul>
+ *
+ * <p>Design principles:</p>
+ * <ul>
+ *   <li>Only {@link ProfilesService} is injected — no repository access.</li>
+ *   <li>{@link ProfilesDTO} objects are returned directly to
+ *       {@link ResponseEntity}; Spring (Jackson) serialises them to JSON
+ *       automatically using the {@code @JsonProperty} annotations on the DTO
+ *       getters for snake_case field names.</li>
+ *   <li>Every method returns {@link ResponseEntity} to allow full control
+ *       over HTTP status codes, as shown in the professor's slides.</li>
+ * </ul>
  */
-
 @Tag(name = "Profile", description = "Website users and relationships API")
 @RestController
 @RequestMapping("/api/profiles")
@@ -31,65 +51,100 @@ public class ProfilesController {
     @Autowired
     private ProfilesService service;
 
-    @Operation(
-            summary = "Get profile by Username",
-            description = "Retrieve a single user profile using their username"
-    )
+    /**
+     * Returns a single user profile looked up by username.
+     *
+     * <p>Calls {@link ProfilesService#getById(String)} and unwraps the
+     * {@link Optional}. Returns {@code 404 Not Found} if no profile with
+     * that username exists, otherwise {@code 200 OK} with the
+     * {@link ProfilesDTO} body serialised by Jackson.</p>
+     *
+     * @param username the username to look up (path variable, primary key)
+     * @return {@link ResponseEntity} with the {@link ProfilesDTO},
+     *         or {@code 404} with an error body
+     */
+    @Operation(summary = "Get profile by Username",
+            description = "Retrieve a single user profile using their username")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Profile found successfully", content = @Content(schema = @Schema(implementation = Profiles.class))),
+            @ApiResponse(responseCode = "200", description = "Profile found successfully",
+                    content = @Content(schema = @Schema(implementation = ProfilesDTO.class))),
             @ApiResponse(responseCode = "404", description = "Profile not found", content = @Content)
     })
     @GetMapping("/{username}")
     public ResponseEntity<?> getById(
             @Parameter(description = "Username (Primary Key)", example = "Xinil", required = true)
-            @PathVariable("username") String username,
+            @PathVariable("username") String username) {
 
-            @Parameter(description = "Comma-separated fields to return", example = "username,joined")
-            @RequestParam(required = false) String fields) {
+        Optional<ProfilesDTO> dto = service.getById(username);
 
-        Optional<Profiles> entity = service.getById(username);
-
-        if (entity.isEmpty()) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "Profiles not found");
-            error.put("username", username);
-            return ResponseEntity.status(404).body(error);
+        if (dto.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "error",    "Profile not found",
+                    "username", username));
         }
 
-        Profiles data = entity.get();
-
-        if (fields != null && !fields.isEmpty()) {
-            Map<String, Object> filtered = filterFields(data, fields);
-            return ResponseEntity.ok(filtered);
-        }
-
-        // Return all fields with snake_case names
-        return ResponseEntity.ok(toSnakeCaseMap(data));
+        return ResponseEntity.ok(dto.get());
     }
 
-    @Operation(
-            summary = "Get all profiles",
-            description = "Retrieve paginated list of profiles with optional filters, sorting, and field selection. NULL values are always sorted last."
-    )
+    /**
+     * Returns a paginated list of {@link ProfilesDTO} matching optional filters.
+     *
+     * <p>Supports three pagination modes (page-based takes priority over
+     * limit/offset when both sets of parameters are present):</p>
+     * <ul>
+     *   <li>{@code page} + {@code pageSize} — page-based; response includes
+     *       {@code page}, {@code pageSize}, {@code totalPages}, {@code items}.</li>
+     *   <li>{@code limit} + {@code offset} — response includes
+     *       {@code limit}, {@code offset}, {@code total}, {@code items}.</li>
+     *   <li>No pagination parameters — returns the first 10 records as a plain list.</li>
+     * </ul>
+     *
+     * <p>Optional filters (mutually exclusive; null/not-null filters take priority):</p>
+     * <ul>
+     *   <li>{@code search} — case-insensitive partial match on username.</li>
+     *   <li>{@code gender} — exact match on gender.</li>
+     *   <li>{@code location} — exact match on location.</li>
+     *   <li>{@code nullFilter} — field name to filter with IS NULL
+     *       ({@code gender}, {@code birthday}, {@code location}).</li>
+     *   <li>{@code notNullFilter} — field name to filter with IS NOT NULL.</li>
+     * </ul>
+     *
+     * <p>The {@code sort} parameter accepts a comma-separated list of field names.
+     * Prefix a name with {@code -} for descending order. {@code NULL} values are
+     * always sorted last. A stable tiebreaker on {@code username} is always appended.</p>
+     *
+     * @param search        case-insensitive partial match on username
+     * @param sort          sort expression, e.g. {@code "-joined,username"}
+     * @param gender        exact gender filter
+     * @param location      exact location filter
+     * @param nullFilter    field name for IS NULL filter
+     * @param notNullFilter field name for IS NOT NULL filter
+     * @param limit         maximum results (limit/offset mode)
+     * @param offset        records to skip (limit/offset mode)
+     * @param page          1-indexed page number (page-based mode)
+     * @param pageSize      records per page (page-based mode)
+     * @return {@link ResponseEntity} with a paginated or plain-list body of
+     *         {@link ProfilesDTO}
+     */
+    @Operation(summary = "Get all profiles",
+            description = "Retrieve paginated list of profiles with optional filters and sorting. " +
+                    "NULL values are always sorted last.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Profiles retrieved successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid parameters", content = @Content)
     })
     @GetMapping
     public ResponseEntity<?> getAll(
-            @Parameter(description = "Comma-separated fields to return", example = "username,gender")
-            @RequestParam(required = false) String fields,
-
             @Parameter(description = "Search by username (case-insensitive)", example = "Xinil")
             @RequestParam(required = false) String search,
 
             @Parameter(description = "Sort field (prefix with - for descending)", example = "-joined")
             @RequestParam(required = false) String sort,
 
-            @Parameter(description = "Filter by Gender", example = "Male")
+            @Parameter(description = "Filter by gender", example = "Male")
             @RequestParam(required = false) String gender,
 
-            @Parameter(description = "Filter by Location", example = "California")
+            @Parameter(description = "Filter by location", example = "California")
             @RequestParam(required = false) String location,
 
             @Parameter(description = "Filter records where field IS NULL", example = "location")
@@ -110,244 +165,111 @@ public class ProfilesController {
             @Parameter(description = "Number of results per page", example = "10")
             @RequestParam(required = false) Integer pageSize) {
 
-        boolean usePageBased = (page != null || pageSize != null);
+        boolean usePageBased   = (page != null || pageSize != null);
         boolean useLimitOffset = (limit != null || offset != null) && !usePageBased;
 
         Sort sortObj = parseSortParameter(sort);
 
         if (useLimitOffset) {
-            int finalLimit = (limit != null) ? limit : 10;
+            int finalLimit  = (limit  != null) ? limit  : 10;
             int finalOffset = (offset != null) ? offset : 0;
 
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
-            Page<Profiles> pageResult = service.findWithFilters(
-                search,
-                gender,
-                location,
-                nullFilter,
-                notNullFilter,
-                pageable);
+            Page<ProfilesDTO> pageResult = service.findWithFilters(
+                    search, gender, location, nullFilter, notNullFilter, pageable);
 
-            List<Profiles> results = pageResult.getContent();
-            long totalCount = pageResult.getTotalElements();
-
-            if (fields != null && !fields.isEmpty()) {
-                List<Map<String, Object>> filteredResults = results.stream()
-                    .map(entity -> filterFields(entity, fields))
-                    .collect(Collectors.toList());
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("limit", finalLimit);
-                response.put("offset", finalOffset);
-                response.put("total", totalCount);
-                response.put("items", filteredResults);
-                return ResponseEntity.ok(response);
-            }
-
-            // Convert all entities to snake_case
-            List<Map<String, Object>> snakeCaseResults = results.stream()
-                .map(this::toSnakeCaseMap)
-                .collect(Collectors.toList());
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("limit", finalLimit);
-            response.put("offset", finalOffset);
-            response.put("total", totalCount);
-            response.put("items", snakeCaseResults);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "limit",  finalLimit,
+                    "offset", finalOffset,
+                    "total",  pageResult.getTotalElements(),
+                    "items",  pageResult.getContent()));
 
         } else if (usePageBased) {
-            int finalPage = (page != null) ? page : 1;
+            int finalPage     = (page     != null) ? page     : 1;
             int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
 
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
-            Page<Profiles> pageResult = service.findWithFilters(
-                search,
-                gender,
-                location,
-                nullFilter,
-                notNullFilter,
-                pageable);
+            Page<ProfilesDTO> pageResult = service.findWithFilters(
+                    search, gender, location, nullFilter, notNullFilter, pageable);
 
-            List<Profiles> results = pageResult.getContent();
-            long totalPages = pageResult.getTotalPages();
-
-            if (fields != null && !fields.isEmpty()) {
-                List<Map<String, Object>> filteredResults = results.stream()
-                    .map(entity -> filterFields(entity, fields))
-                    .collect(Collectors.toList());
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("page", finalPage);
-                response.put("pageSize", finalPageSize);
-                response.put("totalPages", totalPages);
-                response.put("items", filteredResults);
-                return ResponseEntity.ok(response);
-            }
-
-            // Convert all entities to snake_case
-            List<Map<String, Object>> snakeCaseResults = results.stream()
-                .map(this::toSnakeCaseMap)
-                .collect(Collectors.toList());
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("page", finalPage);
-            response.put("pageSize", finalPageSize);
-            response.put("totalPages", totalPages);
-            response.put("items", snakeCaseResults);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "page",       finalPage,
+                    "pageSize",   finalPageSize,
+                    "totalPages", pageResult.getTotalPages(),
+                    "items",      pageResult.getContent()));
 
         } else {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
-            Page<Profiles> pageResult = service.findWithFilters(
-                search,
-                gender,
-                location,
-                nullFilter,
-                notNullFilter,
-                pageable);
+            Page<ProfilesDTO> pageResult = service.findWithFilters(
+                    search, gender, location, nullFilter, notNullFilter, pageable);
 
-            List<Profiles> results = pageResult.getContent();
-
-            if (fields != null && !fields.isEmpty()) {
-                List<Map<String, Object>> filteredResults = results.stream()
-                    .map(entity -> filterFields(entity, fields))
-                    .collect(Collectors.toList());
-                return ResponseEntity.ok(filteredResults);
-            }
-
-            // Convert all entities to snake_case
-            List<Map<String, Object>> snakeCaseResults = results.stream()
-                .map(this::toSnakeCaseMap)
-                .collect(Collectors.toList());
-
-            return ResponseEntity.ok(snakeCaseResults);
+            return ResponseEntity.ok(pageResult.getContent());
         }
     }
 
+    /**
+     * Returns the total number of profile records in the database.
+     *
+     * @return {@link ResponseEntity} with body {@code {"total": N}}
+     */
+    @Operation(summary = "Get statistics",
+            description = "Get total count of profiles in the database")
+    @ApiResponses(@ApiResponse(responseCode = "200",
+            description = "Statistics retrieved successfully"))
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("total", service.count());
-        return ResponseEntity.ok(stats);
+        return ResponseEntity.ok(Map.of("total", service.count()));
     }
 
     /**
-     * Get statistics on NULL values for various fields
-     * GET /api/profiles/stats/null_counts
+     * Returns NULL value statistics for each nullable field.
+     *
+     * <p>Calls {@link ProfilesService#getNullCounts()} and includes the
+     * total record count for percentage calculations on the client.</p>
+     *
+     * @return {@link ResponseEntity} with body
+     *         {@code {"null_counts": {...}, "total_records": N}}
      */
-    @Operation(
-            summary = "Get NULL value statistics",
-            description = "Get count of NULL values for each nullable field (gender, birthday, location)"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "NULL statistics retrieved successfully")
-    })
+    @Operation(summary = "Get NULL value statistics",
+            description = "Get count of NULL values for each nullable field "
+                    + "(gender, birthday, location)")
+    @ApiResponses(@ApiResponse(responseCode = "200",
+            description = "NULL statistics retrieved successfully"))
     @GetMapping("/stats/null_counts")
     public ResponseEntity<Map<String, Object>> getNullCounts() {
-        Map<String, Long> nullCounts = service.getNullCounts();
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("null_counts", nullCounts);
-        response.put("total_records", service.count());
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Map.of(
+                "null_counts",   service.getNullCounts(),
+                "total_records", service.count()));
     }
 
     /**
-     * Convert entity to Map with snake_case field names
+     * Converts the {@code sort} query parameter string into a Spring
+     * {@link Sort} object.
+     *
+     * <p>Each comma-separated token is interpreted as a field name. A leading
+     * {@code -} means descending; no prefix means ascending. {@code NULL} values
+     * are always placed last via {@link Sort.Order#nullsLast()}. A stable
+     * tiebreaker on {@code username} is always appended so that results are
+     * deterministic across pages.</p>
+     *
+     * @param sort comma-separated sort expression, e.g. {@code "-joined,username"}
+     * @return a {@link Sort} object ready to pass to {@link PageRequest}
      */
-    private Map<String, Object> toSnakeCaseMap(Profiles entity) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("username", entity.getUsername());
-        result.put("gender", entity.getGender());
-        result.put("birthday", entity.getBirthday());
-        result.put("location", entity.getLocation());
-        result.put("joined", entity.getJoined());
-        result.put("watching", entity.getWatching());
-        result.put("completed", entity.getCompleted());
-        result.put("on_hold", entity.getOnHold());
-        result.put("dropped", entity.getDropped());
-        result.put("plan_to_watch", entity.getPlanToWatch());
-        return result;
-    }
-
-    /**
-     * Filter fields based on comma-separated field list
-     * Field names use snake_case
-     */
-    private Map<String, Object> filterFields(Profiles entity, String fields) {
-        Map<String, Object> result = new HashMap<>();
-        String[] requestedFields = fields.split(",");
-
-        for (String field : requestedFields) {
-            field = field.trim();
-            switch (field) {
-                case "username":
-                    result.put("username", entity.getUsername());
-                    break;
-                case "gender":
-                    result.put("gender", entity.getGender());
-                    break;
-                case "birthday":
-                    result.put("birthday", entity.getBirthday());
-                    break;
-                case "location":
-                    result.put("location", entity.getLocation());
-                    break;
-                case "joined":
-                    result.put("joined", entity.getJoined());
-                    break;
-                case "watching":
-                    result.put("watching", entity.getWatching());
-                    break;
-                case "completed":
-                    result.put("completed", entity.getCompleted());
-                    break;
-                case "on_hold":
-                    result.put("on_hold", entity.getOnHold());
-                    break;
-                case "dropped":
-                    result.put("dropped", entity.getDropped());
-                    break;
-                case "plan_to_watch":
-                    result.put("plan_to_watch", entity.getPlanToWatch());
-                    break;
-            }
-        }
-
-        return result;
-    }
-
     private Sort parseSortParameter(String sort) {
         List<Sort.Order> orders = new ArrayList<>();
-
         if (sort != null && !sort.isEmpty()) {
-            String[] sortFields = sort.split(",");
-
-            for (String field : sortFields) {
+            for (String field : sort.split(",")) {
                 field = field.trim();
-                Sort.Direction direction;
-                String actualField;
-
                 if (field.startsWith("-")) {
-                    direction = Sort.Direction.DESC;
-                    actualField = field.substring(1);
+                    orders.add(Sort.Order.by(field.substring(1))
+                            .with(Sort.Direction.DESC).nullsLast());
                 } else {
-                    direction = Sort.Direction.ASC;
-                    actualField = field;
+                    orders.add(Sort.Order.by(field)
+                            .with(Sort.Direction.ASC).nullsLast());
                 }
-
-                // ✅ FIX: NULL values always sorted LAST
-                orders.add(Sort.Order.by(actualField)
-                        .with(direction)
-                        .nullsLast());
             }
         }
-
-        // Add primary keys as tiebreaker
         orders.add(Sort.Order.asc("username"));
-
         return Sort.by(orders);
     }
 }

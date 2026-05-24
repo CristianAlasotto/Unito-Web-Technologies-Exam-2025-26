@@ -13,19 +13,32 @@ import org.springframework.stereotype.Repository;
 public interface DetailsRepository extends JpaRepository<Details, Integer> {
 
     /**
-     * COMBINED FILTER QUERY - All filters applied with AND logic.
+     * Executes a combined AND filter across all searchable fields.
      *
-     * FIX: Back to pure JPQL (no nativeQuery) to avoid the "column e.malid does
-     * not exist" pagination bug that native queries cause with camelCase field names.
+     * <p>Uses pure JPQL (no {@code nativeQuery=true}) so Hibernate correctly maps
+     * camelCase Java field names to snake_case SQL columns via {@code @Column}
+     * annotations, and Spring Data's pagination ORDER BY generation works correctly.</p>
      *
-     * The "lower(bytea)" fix is handled upstream: DetailsService pre-builds the
-     * wildcard strings (e.g. "%attack%") before calling this method, so we use a
-     * plain LIKE instead of LOWER(CONCAT(...)). Hibernate can always infer the type
-     * of a non-null String parameter correctly, so the bytea error never occurs.
+     * <p>The {@code lower(bytea)} PostgreSQL error is avoided by pre-building
+     * wildcard patterns in {@link DetailsService#likePattern} before calling
+     * this method. Parameters {@code searchPattern} and {@code genresPattern} arrive
+     * already as {@code "%value%"} (a non-null {@link String}) or {@code null},
+     * so Hibernate always infers {@code VARCHAR} correctly.</p>
      *
-     * Parameters:
-     *   searchPattern - already wrapped with %, e.g. "%naruto%", or null to skip
-     *   genresPattern - already wrapped with %, e.g. "%action%", or null to skip
+     * <p>The {@code :param IS NULL OR condition} pattern makes every filter optional:
+     * when a parameter is {@code null}, the left side evaluates to {@code TRUE}
+     * and the right side is never evaluated, effectively removing that filter.</p>
+     *
+     * @param searchPattern pre-built LIKE pattern, e.g. {@code "%naruto%"}, or {@code null}
+     * @param type          exact type filter, or {@code null}
+     * @param year          exact year filter, or {@code null}
+     * @param status        exact status filter, or {@code null}
+     * @param rating        exact rating filter, or {@code null}
+     * @param source        exact source filter, or {@code null}
+     * @param genresPattern pre-built LIKE pattern, e.g. {@code "%action%"}, or {@code null}
+     * @param episodes      exact episode count filter, or {@code null}
+     * @param pageable      pagination and sorting parameters
+     * @return paginated page of matching {@link Details} records
      */
     @Query("SELECT e FROM Details e WHERE " +
             "(:searchPattern IS NULL OR LOWER(e.title) LIKE :searchPattern) AND " +
@@ -48,83 +61,136 @@ public interface DetailsRepository extends JpaRepository<Details, Integer> {
             Pageable pageable);
 
     /**
-     * Search by title (case-insensitive, partial match).
-     * FIX: Accepts pre-built wildcard pattern from service layer.
+     * Searches anime by title with a case-insensitive partial match.
+     *
+     * @param searchPattern pre-built lowercase LIKE pattern, e.g. {@code "%cowboy%"}
+     * @param pageable      pagination and sorting parameters
+     * @return paginated page of matching records
      */
     @Query("SELECT e FROM Details e WHERE LOWER(e.title) LIKE :searchPattern")
     Page<Details> searchByTitle(@Param("searchPattern") String searchPattern, Pageable pageable);
 
     /**
-     * Find by type
+     * Returns all anime with an exact type match.
+     *
+     * @param type     exact type value, e.g. {@code "TV"}
+     * @param pageable pagination and sorting parameters
+     * @return paginated page of matching records
      */
     Page<Details> findByType(String type, Pageable pageable);
 
     /**
-     * Find by year
+     * Returns all anime broadcast in the given year.
+     *
+     * @param year     broadcast year
+     * @param pageable pagination and sorting parameters
+     * @return paginated page of matching records
      */
     Page<Details> findByYear(Integer year, Pageable pageable);
 
     /**
-     * Find by status
+     * Returns all anime with the given airing status.
+     *
+     * @param status   airing status, e.g. {@code "Finished Airing"}
+     * @param pageable pagination and sorting parameters
+     * @return paginated page of matching records
      */
     Page<Details> findByStatus(String status, Pageable pageable);
 
     /**
-     * Find by rating
+     * Returns all anime with the given age rating.
+     *
+     * @param rating   age rating, e.g. {@code "PG-13"}
+     * @param pageable pagination and sorting parameters
+     * @return paginated page of matching records
      */
     Page<Details> findByRating(String rating, Pageable pageable);
 
     /**
-     * Find by source
+     * Returns all anime with the given source material.
+     *
+     * @param source   source material, e.g. {@code "Manga"}
+     * @param pageable pagination and sorting parameters
+     * @return paginated page of matching records
      */
     Page<Details> findBySource(String source, Pageable pageable);
 
     /**
-     * Find by episodes (exact match)
+     * Returns all anime with exactly the given episode count.
+     *
+     * @param episodes exact episode count
+     * @param pageable pagination and sorting parameters
+     * @return paginated page of matching records
      */
     Page<Details> findByEpisodes(Integer episodes, Pageable pageable);
 
     /**
-     * Find by genres (case-insensitive, partial match).
-     * FIX: Accepts pre-built wildcard pattern from service layer.
+     * Searches anime by genres with a case-insensitive partial match.
+     *
+     * @param genrePattern pre-built lowercase LIKE pattern, e.g. {@code "%action%"}
+     * @param pageable     pagination and sorting parameters
+     * @return paginated page of matching records
      */
     @Query("SELECT e FROM Details e WHERE LOWER(e.genres) LIKE :genrePattern")
     Page<Details> findByGenresContaining(@Param("genrePattern") String genrePattern, Pageable pageable);
 
     /**
-     * Find recommendations for a specific anime using subquery
+     * Returns all anime recommended as similar to the given anime, ordered by score descending.
+     *
+     * <p>Implements a cross-entity JPQL subquery:
+     * {@code details → recommendations → details}.</p>
+     *
+     * @param malId    source anime MAL ID
+     * @param pageable pagination parameters
+     * @return paginated page of recommended {@link Details} ordered by score
      */
     @Query("SELECT d FROM Details d WHERE d.malId IN " +
-            "(SELECT r.recommendationMalId FROM com.example.dataserverspringboot.entities.recommendations.Recommendations r WHERE r.malId = :malId) " +
+            "(SELECT r.recommendationMalId FROM " +
+            "com.example.dataserverspringboot.entities.recommendations.Recommendations r " +
+            "WHERE r.malId = :malId) " +
             "ORDER BY d.score DESC")
     Page<Details> findRecommendationsForAnime(@Param("malId") Integer malId, Pageable pageable);
 
     /**
-     * JOIN: Find all characters that appear in this anime
-     * details → character_anime_works → characters
+     * Returns all characters that appear in this anime, ordered by favourites descending.
+     *
+     * <p>Cross-entity JPQL join:
+     * {@code details → character_anime_works → characters}.</p>
+     *
+     * @param malId    anime MAL ID
+     * @param pageable pagination parameters
+     * @return paginated page of {@link com.example.dataserverspringboot.entities.characters.Characters}
      */
-    @Query("SELECT c FROM com.example.dataserverspringboot.entities.characters.Characters c WHERE c.characterMalId IN " +
-            "(SELECT caw.characterMalId FROM com.example.dataserverspringboot.entities.characteranimeworks.CharacterAnimeWorks caw " +
+    @Query("SELECT c FROM com.example.dataserverspringboot.entities.characters.Characters c " +
+            "WHERE c.characterMalId IN " +
+            "(SELECT caw.characterMalId FROM " +
+            "com.example.dataserverspringboot.entities.characteranimeworks.CharacterAnimeWorks caw " +
             "WHERE caw.animeMalId = :malId) " +
             "ORDER BY c.favorites DESC NULLS LAST")
-    Page<com.example.dataserverspringboot.entities.characters.Characters> findCharactersInAnime(@Param("malId") Integer malId, Pageable pageable);
+    Page<com.example.dataserverspringboot.entities.characters.Characters>
+            findCharactersInAnime(@Param("malId") Integer malId, Pageable pageable);
 
     /**
-     * COUNT: Total characters in this anime
+     * Counts distinct characters that appear in this anime.
+     *
+     * @param malId anime MAL ID
+     * @return count of distinct characters
      */
-    @Query("SELECT COUNT(DISTINCT caw.characterMalId) FROM com.example.dataserverspringboot.entities.characteranimeworks.CharacterAnimeWorks caw " +
+    @Query("SELECT COUNT(DISTINCT caw.characterMalId) FROM " +
+            "com.example.dataserverspringboot.entities.characteranimeworks.CharacterAnimeWorks caw " +
             "WHERE caw.animeMalId = :malId")
     long countCharactersInAnime(@Param("malId") Integer malId);
 
     /**
-     * Count recommendations for a specific anime
+     * Counts recommendations for the given anime.
+     *
+     * @param malId anime MAL ID
+     * @return count of recommendation records
      */
-    @Query("SELECT COUNT(r) FROM com.example.dataserverspringboot.entities.recommendations.Recommendations r WHERE r.malId = :malId")
+    @Query("SELECT COUNT(r) FROM " +
+            "com.example.dataserverspringboot.entities.recommendations.Recommendations r " +
+            "WHERE r.malId = :malId")
     long countRecommendationsForAnime(@Param("malId") Integer malId);
-
-    // ============================================================
-    // NULL FILTERING METHODS
-    // ============================================================
 
     Page<Details> findBySynopsisIsNull(Pageable pageable);
     Page<Details> findBySynopsisIsNotNull(Pageable pageable);
@@ -144,10 +210,10 @@ public interface DetailsRepository extends JpaRepository<Details, Integer> {
     Page<Details> findByFavoritesIsNull(Pageable pageable);
     Page<Details> findByFavoritesIsNotNull(Pageable pageable);
 
-    long countByFavoritesIsNull();
     long countBySynopsisIsNull();
     long countByScoreIsNull();
     long countByEndDateIsNull();
     long countByTitleJapaneseIsNull();
     long countBySeasonIsNull();
+    long countByFavoritesIsNull();
 }
