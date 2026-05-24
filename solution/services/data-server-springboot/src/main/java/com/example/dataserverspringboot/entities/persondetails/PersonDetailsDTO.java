@@ -5,18 +5,22 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 
 /**
- * Data Transfer Object for the PersonDetails entity.
+ * Data Transfer Object for the {@link PersonDetails} entity.
  *
- * PURPOSE:
- *   Decouples the internal JPA entity (PersonDetails.java) from the data exposed
- *   through the REST API — same pattern as DetailsDTO, ProfilesDTO, PersonVoiceWorksDTO.
- *   The raw PersonDetails entity NEVER leaves the service layer; only this DTO is
- *   returned to the controller and serialised to JSON.
+ * <p>Decouples the internal JPA entity from the data exposed through the REST API.
+ * The raw {@link PersonDetails} entity is never serialised to JSON — only this
+ * DTO leaves the service layer.</p>
  *
- * DESIGN:
- *   - Private constructor — prevents accidental instantiation.
- *   - Static factory method fromEntity() — the only way to build a DTO.
- *   - Getters only — DTO is read-only once built (no setters).
+ * <p>Design principles:</p>
+ * <ul>
+ *   <li>Private constructor — prevents accidental instantiation outside the factory.</li>
+ *   <li>{@link #fromEntity(PersonDetails)} is the only way to build a DTO;
+ *       construction logic is centralised in one place.</li>
+ *   <li>Getters only — the DTO is read-only once constructed (no setters).</li>
+ *   <li>{@code @JsonProperty} on camelCase getters tells Jackson to use snake_case
+ *       JSON keys automatically, without any manual {@code Map} construction
+ *       in the controller.</li>
+ * </ul>
  */
 @Schema(description = "Person details data transfer object")
 public class PersonDetailsDTO {
@@ -51,14 +55,17 @@ public class PersonDetailsDTO {
     @Schema(description = "Relevant location / hometown", example = "Tokyo, Japan")
     private String relevantLocation;
 
-    // ── Private constructor — use fromEntity() ────────────────────────────────
+    /** Private constructor — use {@link #fromEntity(PersonDetails)}. */
     private PersonDetailsDTO() {}
 
     /**
-     * Static factory method: converts a PersonDetails JPA entity into a DTO.
+     * Static factory method: converts a {@link PersonDetails} JPA entity into a DTO.
      *
-     * @param p the PersonDetails entity fetched from the database
-     * @return a fully populated PersonDetailsDTO ready to be serialised as JSON
+     * <p>This is the only way to build a DTO — keeps construction logic in one
+     * place and prevents partially initialised instances.</p>
+     *
+     * @param p the {@link PersonDetails} entity fetched from the database
+     * @return a fully populated {@link PersonDetailsDTO} ready to be serialised as JSON
      */
     public static PersonDetailsDTO fromEntity(PersonDetails p) {
         PersonDetailsDTO dto = new PersonDetailsDTO();
@@ -75,23 +82,69 @@ public class PersonDetailsDTO {
         return dto;
     }
 
-    // ── Getters (no setters — DTO is read-only once built) ───────────────────
-    // @JsonProperty ensures Jackson serialises each field with the correct
-    // snake_case key automatically — no manual Map conversion needed.
+    /**
+     * Returns the person MAL ID.
+     * {@code @JsonProperty} maps this camelCase getter to {@code "person_mal_id"}.
+     *
+     * @return person MAL ID
+     */
     @JsonProperty("person_mal_id")
     public Integer   getPersonMalId()      { return personMalId; }
+
+    /** @return MyAnimeList profile URL */
     public String    getUrl()              { return url; }
+
+    /**
+     * Returns the personal website URL.
+     * {@code @JsonProperty} maps this getter to {@code "website_url"}.
+     *
+     * @return personal website URL, or {@code null} if not set
+     */
     @JsonProperty("website_url")
     public String    getWebsiteUrl()       { return websiteUrl; }
+
+    /**
+     * Returns the profile image URL.
+     * {@code @JsonProperty} maps this getter to {@code "image_url"}.
+     *
+     * @return profile image URL
+     */
     @JsonProperty("image_url")
     public String    getImageUrl()         { return imageUrl; }
+
+    /** @return full name */
     public String    getName()             { return name; }
+
+    /**
+     * Returns the given name.
+     * {@code @JsonProperty} maps this getter to {@code "given_name"}.
+     *
+     * @return given name, or {@code null} if not set
+     */
     @JsonProperty("given_name")
     public String    getGivenName()        { return givenName; }
+
+    /**
+     * Returns the family name.
+     * {@code @JsonProperty} maps this getter to {@code "family_name"}.
+     *
+     * @return family name, or {@code null} if not set
+     */
     @JsonProperty("family_name")
     public String    getFamilyName()       { return familyName; }
+
+    /** @return date of birth, or {@code null} if not set */
     public LocalDate getBirthday()         { return birthday; }
+
+    /** @return favourites count */
     public Integer   getFavorites()        { return favorites; }
+
+    /**
+     * Returns the hometown or relevant location.
+     * {@code @JsonProperty} maps this getter to {@code "relevant_location"}.
+     *
+     * @return hometown or location, or {@code null} if not set
+     */
     @JsonProperty("relevant_location")
     public String    getRelevantLocation() { return relevantLocation; }
 }

@@ -21,13 +21,25 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * REST API Controller for PersonAnimeWorks.
+ * REST API controller for the {@link PersonAnimeWorks} module.
  *
- * DESIGN:
- *   - Controller only receives requests, delegates to service, and returns responses.
- *   - No repository is injected here — all data access goes through PersonAnimeWorksService.
- *   - DTOs are returned directly — Spring (Jackson) converts them to JSON automatically,
- *     using @JsonProperty annotations on the DTO getters for snake_case field names.
+ * <p>Exposes three endpoints under {@code /api/person_anime_works}:</p>
+ * <ul>
+ *   <li>{@code GET /api/person_anime_works} — paginated list with optional filters.</li>
+ *   <li>{@code GET /api/person_anime_works/stats} — total record count.</li>
+ *   <li>{@code GET /api/person_anime_works/single} — single record by composite key.</li>
+ * </ul>
+ *
+ * <p>Design principles:</p>
+ * <ul>
+ *   <li>Only {@link PersonAnimeWorksService} is injected — no repository access.</li>
+ *   <li>{@link PersonAnimeWorksDTO} objects are returned directly to
+ *       {@link ResponseEntity}; Spring (Jackson) serialises them to JSON
+ *       automatically using the {@code @JsonProperty} annotations on the DTO
+ *       getters for snake_case field names.</li>
+ *   <li>Every method returns {@link ResponseEntity} to allow full control
+ *       over HTTP status codes.</li>
+ * </ul>
  */
 @Tag(name = "Person Anime Works", description = "Anime people staff with position and relationships API")
 @RestController
@@ -38,12 +50,42 @@ public class PersonAnimeWorksController {
     @Autowired
     private PersonAnimeWorksService service;
 
-    // ── GET /api/person_anime_works ───────────────────────────────────────────
-
+    /**
+     * Returns a paginated list of {@link PersonAnimeWorksDTO} matching optional filters.
+     *
+     * <p>Supports three pagination modes (page-based takes priority over
+     * limit/offset when both sets of parameters are present):</p>
+     * <ul>
+     *   <li>{@code page} + {@code pageSize} — response includes
+     *       {@code page}, {@code pageSize}, {@code totalPages}, {@code items}.</li>
+     *   <li>{@code limit} + {@code offset} — response includes
+     *       {@code limit}, {@code offset}, {@code total}, {@code items}.</li>
+     *   <li>No pagination parameters — returns the first 10 records as a plain list.</li>
+     * </ul>
+     *
+     * <p>Optional filters (applied in priority order by the service):</p>
+     * <ul>
+     *   <li>{@code search} — case-insensitive partial match on position.</li>
+     *   <li>{@code position} — exact position match.</li>
+     *   <li>{@code person_mal_id} — exact person ID match.</li>
+     *   <li>{@code anime_mal_id} — exact anime ID match.</li>
+     * </ul>
+     *
+     * @param search      case-insensitive partial match on position
+     * @param sort        sort expression, e.g. {@code "-position"}
+     * @param position    exact position filter
+     * @param personMalId exact person ID filter
+     * @param animeMalId  exact anime ID filter
+     * @param limit       maximum results (limit/offset mode)
+     * @param offset      records to skip (limit/offset mode)
+     * @param page        1-indexed page number (page-based mode)
+     * @param pageSize    records per page (page-based mode)
+     * @return {@link ResponseEntity} with paginated or plain-list body of
+     *         {@link PersonAnimeWorksDTO}
+     */
     @Operation(
             summary = "Get all person anime works",
-            description = "Retrieve paginated list of works with optional filters for position, person ID, or anime ID."
-    )
+            description = "Retrieve paginated list of works with optional filters for position, person ID, or anime ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "List retrieved successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid parameters", content = @Content)
@@ -119,21 +161,38 @@ public class PersonAnimeWorksController {
         }
     }
 
-    // ── GET /api/person_anime_works/stats ─────────────────────────────────────
-
-    @Operation(summary = "Get statistics", description = "Get total count of person anime work records")
-    @ApiResponses(@ApiResponse(responseCode = "200", description = "Statistics retrieved successfully"))
+    /**
+     * Returns the total number of staff credit records in the database.
+     *
+     * @return {@link ResponseEntity} with body {@code {"total": N}}
+     */
+    @Operation(summary = "Get statistics",
+            description = "Get total count of person anime work records")
+    @ApiResponses(@ApiResponse(responseCode = "200",
+            description = "Statistics retrieved successfully"))
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
         return ResponseEntity.ok(Map.of("total", service.count()));
     }
 
-    // ── GET /api/person_anime_works/single ────────────────────────────────────
-
+    /**
+     * Returns a single staff credit record looked up by its composite key.
+     *
+     * <p>All three key fields ({@code person_mal_id}, {@code position},
+     * {@code anime_mal_id}) are required. If any is missing,
+     * {@code 400 Bad Request} is returned with a usage hint. If the composite
+     * key does not exist, {@code 404 Not Found} is returned.</p>
+     *
+     * @param personMalId person MAL ID (required)
+     * @param position    staff production role (required)
+     * @param animeMalId  anime MAL ID (required)
+     * @return {@link ResponseEntity} containing the {@link PersonAnimeWorksDTO},
+     *         or an error body with status 400 or 404
+     */
     @Operation(
             summary = "Get specific work entry",
-            description = "Retrieve a single work record using the composite key (person_mal_id + position + anime_mal_id)"
-    )
+            description = "Retrieve a single work record using the composite key "
+                    + "(person_mal_id + position + anime_mal_id)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Found successfully",
                     content = @Content(schema = @Schema(implementation = PersonAnimeWorksDTO.class))),
@@ -170,16 +229,22 @@ public class PersonAnimeWorksController {
                     "anime_mal_id",  animeMalId));
         }
 
-        // Jackson serialises PersonAnimeWorksDTO to JSON automatically via @JsonProperty
         return ResponseEntity.ok(dto.get());
     }
 
-    // ── Private helper ────────────────────────────────────────────────────────
-
     /**
-     * Parse the sort query parameter into a Spring Sort object.
-     * Prefix a field name with "-" for descending order (e.g. "-position").
-     * NULL values are always sorted last.
+     * Converts the {@code sort} query parameter string into a Spring
+     * {@link Sort} object.
+     *
+     * <p>Each comma-separated token is a field name. A leading {@code -}
+     * means descending; no prefix means ascending. {@code NULL} values are
+     * always placed last via {@link Sort.Order#nullsLast()}. Stable tiebreakers
+     * on {@code personMalId} and {@code animeMalId} are always appended
+     * (note: {@code position} is a String key field and is already part of
+     * the sort when the user requests it).</p>
+     *
+     * @param sort comma-separated sort expression, e.g. {@code "-position"}
+     * @return a {@link Sort} object ready to pass to {@link PageRequest}
      */
     private Sort parseSortParameter(String sort) {
         List<Sort.Order> orders = new ArrayList<>();
@@ -195,7 +260,6 @@ public class PersonAnimeWorksController {
                 }
             }
         }
-        // Composite key tiebreakers
         orders.add(Sort.Order.asc("personMalId"));
         orders.add(Sort.Order.asc("animeMalId"));
         return Sort.by(orders);

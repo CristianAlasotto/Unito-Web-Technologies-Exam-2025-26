@@ -5,18 +5,22 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 
 /**
- * Data Transfer Object for the Profiles entity.
+ * Data Transfer Object for the {@link Profiles} entity.
  *
- * PURPOSE:
- *   Decouples the internal JPA entity (Profiles.java) from the data exposed
- *   through the REST API — the same pattern used by DetailsDTO for the Details entity.
- *   The raw Profiles entity NEVER leaves the service layer; only ProfilesDTO is
- *   returned to the controller and serialised to JSON.
+ * <p>Decouples the internal JPA entity from the data exposed through the REST API.
+ * The raw {@link Profiles} entity is never serialised to JSON — only this DTO
+ * leaves the service layer.</p>
  *
- * DESIGN:
- *   - Private constructor — prevents accidental instantiation.
- *   - Static factory method fromEntity(Profiles p) — the only way to build a DTO.
- *   - Getters only — DTO is read-only once built (no setters).
+ * <p>Design principles:</p>
+ * <ul>
+ *   <li>Private constructor — prevents accidental instantiation outside the factory.</li>
+ *   <li>{@link #fromEntity(Profiles)} is the only way to build a DTO; construction
+ *       logic is centralised in one place.</li>
+ *   <li>Getters only — the DTO is read-only once constructed (no setters).</li>
+ *   <li>{@code @JsonProperty} annotations on camelCase getters tell Jackson to
+ *       use snake_case JSON keys automatically, without any manual {@code Map}
+ *       construction in the controller.</li>
+ * </ul>
  */
 @Schema(description = "User profile data transfer object")
 public class ProfilesDTO {
@@ -51,15 +55,18 @@ public class ProfilesDTO {
     @Schema(description = "Number of anime planned to watch", example = "50")
     private Integer planToWatch;
 
-    // ── Private constructor — use fromEntity() ────────────────────────────────
+    /** Private constructor — use {@link #fromEntity(Profiles)}. */
     private ProfilesDTO() {}
 
     /**
-     * Static factory method: converts a Profiles JPA entity into a ProfilesDTO.
-     * This is the only way to build a DTO — keeps construction logic in one place.
+     * Static factory method: converts a {@link Profiles} JPA entity into a
+     * {@link ProfilesDTO}.
      *
-     * @param p the Profiles entity fetched from the database
-     * @return a fully populated ProfilesDTO ready to be serialised as JSON
+     * <p>This is the only way to build a DTO — keeps construction logic in one
+     * place and prevents partially initialised instances.</p>
+     *
+     * @param p the {@link Profiles} entity fetched from the database
+     * @return a fully populated {@link ProfilesDTO} ready to be serialised as JSON
      */
     public static ProfilesDTO fromEntity(Profiles p) {
         ProfilesDTO dto = new ProfilesDTO();
@@ -76,19 +83,47 @@ public class ProfilesDTO {
         return dto;
     }
 
-    // ── Getters (no setters — DTO is read-only once built) ───────────────────
-    // @JsonProperty ensures Jackson serialises each field with the correct
-    // snake_case key automatically — no manual Map conversion needed.
+    /** @return unique username */
     public String    getUsername()    { return username; }
+
+    /** @return user gender, or {@code null} if not set */
     public String    getGender()      { return gender; }
+
+    /** @return user date of birth, or {@code null} if not set */
     public LocalDate getBirthday()    { return birthday; }
+
+    /** @return user location, or {@code null} if not set */
     public String    getLocation()    { return location; }
+
+    /** @return registration date */
     public LocalDate getJoined()      { return joined; }
+
+    /** @return anime currently watching count */
     public Integer   getWatching()    { return watching; }
+
+    /** @return anime completed count */
     public Integer   getCompleted()   { return completed; }
+
+    /**
+     * Returns the number of anime the user has put on hold.
+     * {@code @JsonProperty} maps the camelCase getter to the snake_case
+     * JSON key {@code "on_hold"}.
+     *
+     * @return anime on-hold count
+     */
     @JsonProperty("on_hold")
     public Integer   getOnHold()      { return onHold; }
+
+    /** @return anime dropped count */
     public Integer   getDropped()     { return dropped; }
+
+    /**
+     * Returns the number of anime the user plans to watch.
+     * {@code @JsonProperty} maps the camelCase getter to the snake_case
+     * JSON key {@code "plan_to_watch"}.
+     *
+     * @return anime planned-to-watch count
+     */
     @JsonProperty("plan_to_watch")
     public Integer   getPlanToWatch() { return planToWatch; }
 }

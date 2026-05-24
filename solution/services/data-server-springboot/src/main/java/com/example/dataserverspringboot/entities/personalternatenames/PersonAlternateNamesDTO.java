@@ -4,20 +4,22 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * Data Transfer Object for the PersonAlternateNames entity.
+ * Data Transfer Object for the {@link PersonAlternateNames} entity.
  *
- * PURPOSE:
- *   Decouples the internal JPA entity (PersonAlternateNames.java) from the data
- *   exposed through the REST API — same pattern as all other DTOs in the project.
- *   The raw PersonAlternateNames entity NEVER leaves the service layer; only this
- *   DTO is returned to the controller and serialised to JSON.
+ * <p>Decouples the internal JPA entity from the data exposed through the REST API.
+ * The raw {@link PersonAlternateNames} entity is never serialised to JSON — only
+ * this DTO leaves the service layer.</p>
  *
- * DESIGN:
- *   - Private constructor — prevents accidental instantiation.
- *   - Static factory method fromEntity() — the only way to build a DTO.
- *   - Getters only — DTO is read-only once built (no setters).
- *   - @JsonProperty ensures Jackson serialises camelCase fields as snake_case
- *     automatically — no manual Map conversion needed in the controller.
+ * <p>Design principles:</p>
+ * <ul>
+ *   <li>Private constructor — prevents accidental instantiation outside the factory.</li>
+ *   <li>{@link #fromEntity(PersonAlternateNames)} is the only way to build a DTO;
+ *       construction logic is centralised in one place.</li>
+ *   <li>Getters only — the DTO is read-only once constructed (no setters).</li>
+ *   <li>{@code @JsonProperty} on both getters tells Jackson to use snake_case JSON
+ *       keys ({@code "person_mal_id"} and {@code "alt_name"}) automatically, without
+ *       any manual {@code Map} construction in the controller.</li>
+ * </ul>
  */
 @Schema(description = "Person alternate names data transfer object")
 public class PersonAlternateNamesDTO {
@@ -28,14 +30,18 @@ public class PersonAlternateNamesDTO {
     @Schema(description = "Alternate name (Composite Key)", example = "Miyazaki Hayao")
     private String altName;
 
-    // ── Private constructor — use fromEntity() ────────────────────────────────
+    /** Private constructor — use {@link #fromEntity(PersonAlternateNames)}. */
     private PersonAlternateNamesDTO() {}
 
     /**
-     * Static factory method: converts a PersonAlternateNames JPA entity into a DTO.
+     * Static factory method: converts a {@link PersonAlternateNames} JPA entity
+     * into a {@link PersonAlternateNamesDTO}.
      *
-     * @param e the PersonAlternateNames entity fetched from the database
-     * @return a fully populated PersonAlternateNamesDTO ready to be serialised as JSON
+     * <p>This is the only way to build a DTO — keeps construction logic in one
+     * place and prevents partially initialised instances.</p>
+     *
+     * @param e the {@link PersonAlternateNames} entity fetched from the database
+     * @return a fully populated {@link PersonAlternateNamesDTO} ready to be serialised as JSON
      */
     public static PersonAlternateNamesDTO fromEntity(PersonAlternateNames e) {
         PersonAlternateNamesDTO dto = new PersonAlternateNamesDTO();
@@ -44,9 +50,21 @@ public class PersonAlternateNamesDTO {
         return dto;
     }
 
-    // ── Getters (no setters — DTO is read-only once built) ───────────────────
+    /**
+     * Returns the person MAL ID.
+     * {@code @JsonProperty} maps this camelCase getter to {@code "person_mal_id"}.
+     *
+     * @return person MAL ID
+     */
     @JsonProperty("person_mal_id")
     public Integer getPersonMalId() { return personMalId; }
+
+    /**
+     * Returns the alternate name.
+     * {@code @JsonProperty} maps this camelCase getter to {@code "alt_name"}.
+     *
+     * @return alternate name
+     */
     @JsonProperty("alt_name")
-    public String  getAltName()     { return altName; }
+    public String getAltName() { return altName; }
 }

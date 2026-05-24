@@ -23,13 +23,27 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * REST API Controller for Characters.
+ * REST API controller for the {@link Characters} module.
  *
- * DESIGN:
- *   - Controller only receives requests, delegates to service, and returns responses.
- *   - No repository is injected here — all data access goes through CharactersService.
- *   - DTOs are returned directly — Spring (Jackson) converts them to JSON automatically,
- *     using @JsonProperty annotations on the DTO getters for snake_case field names.
+ * <p>Exposes six endpoints under {@code /api/characters}:</p>
+ * <ul>
+ *   <li>{@code GET /api/characters/{character_mal_id}} — single character by ID.</li>
+ *   <li>{@code GET /api/characters/{character_mal_id}/details} — anime appearances.</li>
+ *   <li>{@code GET /api/characters/{character_mal_id}/voice_actors} — voice actors.</li>
+ *   <li>{@code GET /api/characters} — paginated list with optional filters.</li>
+ *   <li>{@code GET /api/characters/stats} — total record count.</li>
+ *   <li>{@code GET /api/characters/stats/null_counts} — NULL statistics.</li>
+ * </ul>
+ *
+ * <p>Design principles:</p>
+ * <ul>
+ *   <li>Only {@link CharactersService} is injected — no repository access.</li>
+ *   <li>{@link CharactersDTO}, {@link DetailsDTO}, and {@link PersonDetailsDTO}
+ *       objects are returned directly to {@link ResponseEntity}; Spring (Jackson)
+ *       serialises them automatically using {@code @JsonProperty} annotations.</li>
+ *   <li>Every method returns {@link ResponseEntity} to allow full control over
+ *       HTTP status codes.</li>
+ * </ul>
  */
 @Tag(name = "Characters", description = "Anime characters and relationships API")
 @RestController
@@ -40,8 +54,15 @@ public class CharactersController {
     @Autowired
     private CharactersService service;
 
-    // ── GET /api/characters/{character_mal_id} ────────────────────────────────
-
+    /**
+     * Returns a single character looked up by their MAL ID.
+     *
+     * <p>Returns {@code 404 Not Found} if no character with that ID exists,
+     * otherwise {@code 200 OK} with the {@link CharactersDTO} serialised by Jackson.</p>
+     *
+     * @param characterMalId character MAL ID (path variable, primary key)
+     * @return {@link ResponseEntity} with the {@link CharactersDTO}, or {@code 404}
+     */
     @Operation(summary = "Get character by ID",
             description = "Retrieve a single anime character by their MyAnimeList character ID")
     @ApiResponses(value = {
@@ -62,12 +83,31 @@ public class CharactersController {
                     "character_mal_id", characterMalId));
         }
 
-        // Jackson serialises CharactersDTO to JSON automatically via @JsonProperty
         return ResponseEntity.ok(dto.get());
     }
 
-    // ── GET /api/characters/{character_mal_id}/details ────────────────────────
-
+    /**
+     * Returns the paginated list of anime this character appears in.
+     *
+     * <p>First looks up the character to include in the response body and to
+     * return a meaningful {@code 404} if it does not exist. Then delegates to
+     * {@link CharactersService#getAnimeAppearancesForCharacter}, which returns
+     * {@code Page<DetailsDTO>} — no raw entity reaches the controller.</p>
+     *
+     * <p>Supports two pagination modes (page-based takes priority):</p>
+     * <ul>
+     *   <li>{@code page} + {@code pageSize} — page-based.</li>
+     *   <li>{@code limit} + {@code offset} — limit/offset.</li>
+     * </ul>
+     *
+     * @param characterMalId character MAL ID
+     * @param page           1-indexed page number (page-based mode)
+     * @param pageSize       results per page (page-based mode)
+     * @param limit          maximum results (limit/offset mode)
+     * @param offset         records to skip (limit/offset mode)
+     * @return {@link ResponseEntity} with paginated body of {@link DetailsDTO},
+     *         or {@code 404} if the character does not exist
+     */
     @Operation(summary = "Get anime appearances",
             description = "Retrieve all anime where this character appears, sorted by score")
     @ApiResponses(value = {
@@ -105,9 +145,6 @@ public class CharactersController {
             int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
 
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize);
-
-            // Relation query goes through service — no repository in controller
-            // Returns Page<DetailsDTO> — Jackson serialises each DetailsDTO automatically
             Page<DetailsDTO> animePage =
                     service.getAnimeAppearancesForCharacter(characterMalId, pageable);
 
@@ -136,8 +173,28 @@ public class CharactersController {
         }
     }
 
-    // ── GET /api/characters/{character_mal_id}/voice_actors ───────────────────
-
+    /**
+     * Returns the paginated list of voice actors for this character.
+     *
+     * <p>First looks up the character to include in the response body and to
+     * return a meaningful {@code 404} if it does not exist. Then delegates to
+     * {@link CharactersService#getVoiceActorsForCharacter}, which returns
+     * {@code Page<PersonDetailsDTO>} — no raw entity reaches the controller.</p>
+     *
+     * <p>Supports two pagination modes (page-based takes priority):</p>
+     * <ul>
+     *   <li>{@code page} + {@code pageSize} — page-based.</li>
+     *   <li>{@code limit} + {@code offset} — limit/offset.</li>
+     * </ul>
+     *
+     * @param characterMalId character MAL ID
+     * @param page           1-indexed page number (page-based mode)
+     * @param pageSize       results per page (page-based mode)
+     * @param limit          maximum results (limit/offset mode)
+     * @param offset         records to skip (limit/offset mode)
+     * @return {@link ResponseEntity} with paginated body of {@link PersonDetailsDTO},
+     *         or {@code 404} if the character does not exist
+     */
     @Operation(summary = "Get voice actors",
             description = "Retrieve all voice actors for this character, sorted by favorites")
     @ApiResponses(value = {
@@ -175,9 +232,6 @@ public class CharactersController {
             int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
 
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize);
-
-            // Relation query goes through service — no repository in controller
-            // Returns Page<PersonDetailsDTO> — Jackson serialises each DTO automatically
             Page<PersonDetailsDTO> voiceActorsPage =
                     service.getVoiceActorsForCharacter(characterMalId, pageable);
 
@@ -206,11 +260,38 @@ public class CharactersController {
         }
     }
 
-    // ── GET /api/characters ───────────────────────────────────────────────────
-
+    /**
+     * Returns a paginated list of {@link CharactersDTO} matching optional filters.
+     *
+     * <p>Supports three pagination modes (page-based takes priority over
+     * limit/offset when both sets of parameters are present):</p>
+     * <ul>
+     *   <li>{@code page} + {@code pageSize} — page-based.</li>
+     *   <li>{@code limit} + {@code offset} — limit/offset.</li>
+     *   <li>No pagination parameters — returns the first 10 records.</li>
+     * </ul>
+     *
+     * <p>Optional filters (null/not-null take absolute priority):</p>
+     * <ul>
+     *   <li>{@code search} — case-insensitive partial match on name.</li>
+     *   <li>{@code nullFilter} — field name for IS NULL filter.</li>
+     *   <li>{@code notNullFilter} — field name for IS NOT NULL filter.</li>
+     * </ul>
+     *
+     * @param search        partial match on character name
+     * @param sort          sort expression, e.g. {@code "-favorites"}
+     * @param nullFilter    field name for IS NULL filter
+     * @param notNullFilter field name for IS NOT NULL filter
+     * @param limit         maximum results (limit/offset mode)
+     * @param offset        records to skip (limit/offset mode)
+     * @param page          1-indexed page number (page-based mode)
+     * @param pageSize      records per page (page-based mode)
+     * @return {@link ResponseEntity} with paginated or plain-list body of
+     *         {@link CharactersDTO}
+     */
     @Operation(summary = "Get all characters",
-            description = "Retrieve paginated list of characters with optional filters and sorting. " +
-                    "NULL values are always sorted last.")
+            description = "Retrieve paginated list of characters with optional filters and sorting. "
+                    + "NULL values are always sorted last.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Characters retrieved successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid parameters", content = @Content)
@@ -283,20 +364,31 @@ public class CharactersController {
         }
     }
 
-    // ── GET /api/characters/stats ─────────────────────────────────────────────
-
-    @Operation(summary = "Get statistics", description = "Get total count of characters in the database")
-    @ApiResponses(@ApiResponse(responseCode = "200", description = "Statistics retrieved successfully"))
+    /**
+     * Returns the total number of character records in the database.
+     *
+     * @return {@link ResponseEntity} with body {@code {"total": N}}
+     */
+    @Operation(summary = "Get statistics",
+            description = "Get total count of characters in the database")
+    @ApiResponses(@ApiResponse(responseCode = "200",
+            description = "Statistics retrieved successfully"))
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
         return ResponseEntity.ok(Map.of("total", service.count()));
     }
 
-    // ── GET /api/characters/stats/null_counts ─────────────────────────────────
-
+    /**
+     * Returns NULL value statistics for each nullable field.
+     *
+     * @return {@link ResponseEntity} with body
+     *         {@code {"null_counts": {...}, "total_records": N}}
+     */
     @Operation(summary = "Get NULL value statistics",
-            description = "Get count of NULL values for each nullable field (name_kanji, image, about, favorites)")
-    @ApiResponses(@ApiResponse(responseCode = "200", description = "NULL statistics retrieved successfully"))
+            description = "Get count of NULL values for each nullable field "
+                    + "(name_kanji, image, about, favorites)")
+    @ApiResponses(@ApiResponse(responseCode = "200",
+            description = "NULL statistics retrieved successfully"))
     @GetMapping("/stats/null_counts")
     public ResponseEntity<Map<String, Object>> getNullCounts() {
         return ResponseEntity.ok(Map.of(
@@ -304,12 +396,17 @@ public class CharactersController {
                 "total_records", service.count()));
     }
 
-    // ── Private helper ────────────────────────────────────────────────────────
-
     /**
-     * Parse the sort query parameter into a Spring Sort object.
-     * Prefix a field name with "-" for descending order (e.g. "-favorites").
-     * NULL values are always sorted last.
+     * Converts the {@code sort} query parameter string into a Spring
+     * {@link Sort} object.
+     *
+     * <p>Each comma-separated token is a field name. A leading {@code -}
+     * means descending; no prefix means ascending. {@code NULL} values are
+     * always placed last via {@link Sort.Order#nullsLast()}. A stable
+     * tiebreaker on {@code characterMalId} is always appended.</p>
+     *
+     * @param sort comma-separated sort expression, e.g. {@code "-favorites,name"}
+     * @return a {@link Sort} object ready to pass to {@link PageRequest}
      */
     private Sort parseSortParameter(String sort) {
         List<Sort.Order> orders = new ArrayList<>();
@@ -325,7 +422,7 @@ public class CharactersController {
                 }
             }
         }
-        orders.add(Sort.Order.asc("characterMalId")); // tiebreaker
+        orders.add(Sort.Order.asc("characterMalId"));
         return Sort.by(orders);
     }
 }

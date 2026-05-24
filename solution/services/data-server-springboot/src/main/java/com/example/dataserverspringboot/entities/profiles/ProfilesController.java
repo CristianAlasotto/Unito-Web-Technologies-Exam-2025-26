@@ -21,13 +21,26 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * REST API Controller for Profiles.
+ * REST API controller for the {@link Profiles} module.
  *
- * DESIGN:
- *   - Controller only receives requests, delegates to service, and returns responses.
- *   - No repository is injected here — all data access goes through ProfilesService.
- *   - DTOs are returned directly — Spring (Jackson) converts them to JSON automatically,
- *     using @JsonProperty annotations on the DTO getters for snake_case field names.
+ * <p>Exposes four endpoints under {@code /api/profiles}:</p>
+ * <ul>
+ *   <li>{@code GET /api/profiles/{username}} — single profile by username.</li>
+ *   <li>{@code GET /api/profiles} — paginated list with optional filters.</li>
+ *   <li>{@code GET /api/profiles/stats} — total record count.</li>
+ *   <li>{@code GET /api/profiles/stats/null_counts} — NULL statistics.</li>
+ * </ul>
+ *
+ * <p>Design principles:</p>
+ * <ul>
+ *   <li>Only {@link ProfilesService} is injected — no repository access.</li>
+ *   <li>{@link ProfilesDTO} objects are returned directly to
+ *       {@link ResponseEntity}; Spring (Jackson) serialises them to JSON
+ *       automatically using the {@code @JsonProperty} annotations on the DTO
+ *       getters for snake_case field names.</li>
+ *   <li>Every method returns {@link ResponseEntity} to allow full control
+ *       over HTTP status codes, as shown in the professor's slides.</li>
+ * </ul>
  */
 @Tag(name = "Profile", description = "Website users and relationships API")
 @RestController
@@ -38,8 +51,18 @@ public class ProfilesController {
     @Autowired
     private ProfilesService service;
 
-    // ── GET /api/profiles/{username} ──────────────────────────────────────────
-
+    /**
+     * Returns a single user profile looked up by username.
+     *
+     * <p>Calls {@link ProfilesService#getById(String)} and unwraps the
+     * {@link Optional}. Returns {@code 404 Not Found} if no profile with
+     * that username exists, otherwise {@code 200 OK} with the
+     * {@link ProfilesDTO} body serialised by Jackson.</p>
+     *
+     * @param username the username to look up (path variable, primary key)
+     * @return {@link ResponseEntity} with the {@link ProfilesDTO},
+     *         or {@code 404} with an error body
+     */
     @Operation(summary = "Get profile by Username",
             description = "Retrieve a single user profile using their username")
     @ApiResponses(value = {
@@ -60,12 +83,49 @@ public class ProfilesController {
                     "username", username));
         }
 
-        // Jackson serialises ProfilesDTO to JSON automatically via @JsonProperty
         return ResponseEntity.ok(dto.get());
     }
 
-    // ── GET /api/profiles ─────────────────────────────────────────────────────
-
+    /**
+     * Returns a paginated list of {@link ProfilesDTO} matching optional filters.
+     *
+     * <p>Supports three pagination modes (page-based takes priority over
+     * limit/offset when both sets of parameters are present):</p>
+     * <ul>
+     *   <li>{@code page} + {@code pageSize} — page-based; response includes
+     *       {@code page}, {@code pageSize}, {@code totalPages}, {@code items}.</li>
+     *   <li>{@code limit} + {@code offset} — response includes
+     *       {@code limit}, {@code offset}, {@code total}, {@code items}.</li>
+     *   <li>No pagination parameters — returns the first 10 records as a plain list.</li>
+     * </ul>
+     *
+     * <p>Optional filters (mutually exclusive; null/not-null filters take priority):</p>
+     * <ul>
+     *   <li>{@code search} — case-insensitive partial match on username.</li>
+     *   <li>{@code gender} — exact match on gender.</li>
+     *   <li>{@code location} — exact match on location.</li>
+     *   <li>{@code nullFilter} — field name to filter with IS NULL
+     *       ({@code gender}, {@code birthday}, {@code location}).</li>
+     *   <li>{@code notNullFilter} — field name to filter with IS NOT NULL.</li>
+     * </ul>
+     *
+     * <p>The {@code sort} parameter accepts a comma-separated list of field names.
+     * Prefix a name with {@code -} for descending order. {@code NULL} values are
+     * always sorted last. A stable tiebreaker on {@code username} is always appended.</p>
+     *
+     * @param search        case-insensitive partial match on username
+     * @param sort          sort expression, e.g. {@code "-joined,username"}
+     * @param gender        exact gender filter
+     * @param location      exact location filter
+     * @param nullFilter    field name for IS NULL filter
+     * @param notNullFilter field name for IS NOT NULL filter
+     * @param limit         maximum results (limit/offset mode)
+     * @param offset        records to skip (limit/offset mode)
+     * @param page          1-indexed page number (page-based mode)
+     * @param pageSize      records per page (page-based mode)
+     * @return {@link ResponseEntity} with a paginated or plain-list body of
+     *         {@link ProfilesDTO}
+     */
     @Operation(summary = "Get all profiles",
             description = "Retrieve paginated list of profiles with optional filters and sorting. " +
                     "NULL values are always sorted last.")
@@ -147,20 +207,34 @@ public class ProfilesController {
         }
     }
 
-    // ── GET /api/profiles/stats ───────────────────────────────────────────────
-
-    @Operation(summary = "Get statistics", description = "Get total count of profiles in the database")
-    @ApiResponses(@ApiResponse(responseCode = "200", description = "Statistics retrieved successfully"))
+    /**
+     * Returns the total number of profile records in the database.
+     *
+     * @return {@link ResponseEntity} with body {@code {"total": N}}
+     */
+    @Operation(summary = "Get statistics",
+            description = "Get total count of profiles in the database")
+    @ApiResponses(@ApiResponse(responseCode = "200",
+            description = "Statistics retrieved successfully"))
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
         return ResponseEntity.ok(Map.of("total", service.count()));
     }
 
-    // ── GET /api/profiles/stats/null_counts ──────────────────────────────────
-
+    /**
+     * Returns NULL value statistics for each nullable field.
+     *
+     * <p>Calls {@link ProfilesService#getNullCounts()} and includes the
+     * total record count for percentage calculations on the client.</p>
+     *
+     * @return {@link ResponseEntity} with body
+     *         {@code {"null_counts": {...}, "total_records": N}}
+     */
     @Operation(summary = "Get NULL value statistics",
-            description = "Get count of NULL values for each nullable field (gender, birthday, location)")
-    @ApiResponses(@ApiResponse(responseCode = "200", description = "NULL statistics retrieved successfully"))
+            description = "Get count of NULL values for each nullable field "
+                    + "(gender, birthday, location)")
+    @ApiResponses(@ApiResponse(responseCode = "200",
+            description = "NULL statistics retrieved successfully"))
     @GetMapping("/stats/null_counts")
     public ResponseEntity<Map<String, Object>> getNullCounts() {
         return ResponseEntity.ok(Map.of(
@@ -168,8 +242,19 @@ public class ProfilesController {
                 "total_records", service.count()));
     }
 
-    // ── Private helper ────────────────────────────────────────────────────────
-
+    /**
+     * Converts the {@code sort} query parameter string into a Spring
+     * {@link Sort} object.
+     *
+     * <p>Each comma-separated token is interpreted as a field name. A leading
+     * {@code -} means descending; no prefix means ascending. {@code NULL} values
+     * are always placed last via {@link Sort.Order#nullsLast()}. A stable
+     * tiebreaker on {@code username} is always appended so that results are
+     * deterministic across pages.</p>
+     *
+     * @param sort comma-separated sort expression, e.g. {@code "-joined,username"}
+     * @return a {@link Sort} object ready to pass to {@link PageRequest}
+     */
     private Sort parseSortParameter(String sort) {
         List<Sort.Order> orders = new ArrayList<>();
         if (sort != null && !sort.isEmpty()) {

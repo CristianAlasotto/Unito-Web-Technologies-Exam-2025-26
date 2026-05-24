@@ -21,13 +21,25 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * REST API Controller for PersonAlternateNames.
+ * REST API controller for the {@link PersonAlternateNames} module.
  *
- * DESIGN:
- *   - Controller only receives requests, delegates to service, and returns responses.
- *   - No repository is injected here — all data access goes through PersonAlternateNamesService.
- *   - DTOs are returned directly — Spring (Jackson) converts them to JSON automatically,
- *     using @JsonProperty annotations on the DTO getters for snake_case field names.
+ * <p>Exposes three endpoints under {@code /api/person_alternate_names}:</p>
+ * <ul>
+ *   <li>{@code GET /api/person_alternate_names} — paginated list with optional filters.</li>
+ *   <li>{@code GET /api/person_alternate_names/stats} — total record count.</li>
+ *   <li>{@code GET /api/person_alternate_names/single} — single record by composite key.</li>
+ * </ul>
+ *
+ * <p>Design principles:</p>
+ * <ul>
+ *   <li>Only {@link PersonAlternateNamesService} is injected — no repository access.</li>
+ *   <li>{@link PersonAlternateNamesDTO} objects are returned directly to
+ *       {@link ResponseEntity}; Spring (Jackson) serialises them to JSON
+ *       automatically using the {@code @JsonProperty} annotations on the DTO
+ *       getters for snake_case field names.</li>
+ *   <li>Every method returns {@link ResponseEntity} to allow full control
+ *       over HTTP status codes.</li>
+ * </ul>
  */
 @Tag(name = "Person Alternate Names", description = "Anime alternate name of staff people and relationships API")
 @RestController
@@ -38,12 +50,43 @@ public class PersonAlternateNamesController {
     @Autowired
     private PersonAlternateNamesService service;
 
-    // ── GET /api/person_alternate_names ───────────────────────────────────────
-
+    /**
+     * Returns a paginated list of {@link PersonAlternateNamesDTO} matching optional filters.
+     *
+     * <p>Supports three pagination modes (page-based takes priority over
+     * limit/offset when both sets of parameters are present):</p>
+     * <ul>
+     *   <li>{@code page} + {@code pageSize} — response includes
+     *       {@code page}, {@code pageSize}, {@code totalPages}, {@code items}.</li>
+     *   <li>{@code limit} + {@code offset} — response includes
+     *       {@code limit}, {@code offset}, {@code total}, {@code items}.</li>
+     *   <li>No pagination parameters — returns the first 10 records as a plain list.</li>
+     * </ul>
+     *
+     * <p>Optional filters (applied in priority order by the service):</p>
+     * <ul>
+     *   <li>{@code search} — case-insensitive partial match on the alternate name.</li>
+     *   <li>{@code person_mal_id} — exact person ID match.</li>
+     * </ul>
+     *
+     * <p>The {@code sort} parameter accepts a comma-separated list of field names.
+     * Prefix a field name with {@code -} for descending order. {@code NULL} values
+     * are always sorted last. Tiebreakers on both composite key fields are always
+     * appended for deterministic pagination.</p>
+     *
+     * @param search      case-insensitive partial match on alternate name
+     * @param sort        sort expression, e.g. {@code "alt_name"}
+     * @param personMalId exact person ID filter
+     * @param limit       maximum results (limit/offset mode)
+     * @param offset      records to skip (limit/offset mode)
+     * @param page        1-indexed page number (page-based mode)
+     * @param pageSize    records per page (page-based mode)
+     * @return {@link ResponseEntity} with paginated or plain-list body of
+     *         {@link PersonAlternateNamesDTO}
+     */
     @Operation(
             summary = "Get all person alternate names",
-            description = "Retrieve paginated list of alternate names with optional filters and sorting."
-    )
+            description = "Retrieve paginated list of alternate names with optional filters and sorting.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "List retrieved successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid parameters", content = @Content)
@@ -113,21 +156,36 @@ public class PersonAlternateNamesController {
         }
     }
 
-    // ── GET /api/person_alternate_names/stats ─────────────────────────────────
-
-    @Operation(summary = "Get statistics", description = "Get total count of alternate name records")
-    @ApiResponses(@ApiResponse(responseCode = "200", description = "Statistics retrieved successfully"))
+    /**
+     * Returns the total number of alternate name records in the database.
+     *
+     * @return {@link ResponseEntity} with body {@code {"total": N}}
+     */
+    @Operation(summary = "Get statistics",
+            description = "Get total count of alternate name records")
+    @ApiResponses(@ApiResponse(responseCode = "200",
+            description = "Statistics retrieved successfully"))
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
         return ResponseEntity.ok(Map.of("total", service.count()));
     }
 
-    // ── GET /api/person_alternate_names/single ────────────────────────────────
-
+    /**
+     * Returns a single alternate name record looked up by its composite key.
+     *
+     * <p>Both {@code person_mal_id} and {@code altName} are required.
+     * If either is missing, {@code 400 Bad Request} is returned with a usage hint.
+     * If the composite key does not exist, {@code 404 Not Found} is returned.</p>
+     *
+     * @param personMalId person MAL ID (required)
+     * @param altName     alternate name (required)
+     * @return {@link ResponseEntity} containing the {@link PersonAlternateNamesDTO},
+     *         or an error body with status 400 or 404
+     */
     @Operation(
             summary = "Get specific alternate name entry",
-            description = "Retrieve a single alternate name record using the composite key (person_mal_id + alt_name)"
-    )
+            description = "Retrieve a single alternate name record using the composite key "
+                    + "(person_mal_id + alt_name)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Found successfully",
                     content = @Content(schema = @Schema(implementation = PersonAlternateNamesDTO.class))),
@@ -160,16 +218,21 @@ public class PersonAlternateNamesController {
                     "alt_name",      altName));
         }
 
-        // Jackson serialises PersonAlternateNamesDTO to JSON automatically via @JsonProperty
         return ResponseEntity.ok(dto.get());
     }
 
-    // ── Private helper ────────────────────────────────────────────────────────
-
     /**
-     * Parse the sort query parameter into a Spring Sort object.
-     * Prefix a field name with "-" for descending order (e.g. "-alt_name").
-     * NULL values are always sorted last.
+     * Converts the {@code sort} query parameter string into a Spring
+     * {@link Sort} object.
+     *
+     * <p>Each comma-separated token is a field name. A leading {@code -}
+     * means descending; no prefix means ascending. {@code NULL} values are
+     * always placed last via {@link Sort.Order#nullsLast()}. Stable tiebreakers
+     * on both composite key fields ({@code personMalId} and {@code altName})
+     * are always appended for deterministic pagination.</p>
+     *
+     * @param sort comma-separated sort expression, e.g. {@code "alt_name"}
+     * @return a {@link Sort} object ready to pass to {@link PageRequest}
      */
     private Sort parseSortParameter(String sort) {
         List<Sort.Order> orders = new ArrayList<>();
@@ -185,7 +248,6 @@ public class PersonAlternateNamesController {
                 }
             }
         }
-        // Composite key tiebreakers
         orders.add(Sort.Order.asc("personMalId"));
         orders.add(Sort.Order.asc("altName"));
         return Sort.by(orders);

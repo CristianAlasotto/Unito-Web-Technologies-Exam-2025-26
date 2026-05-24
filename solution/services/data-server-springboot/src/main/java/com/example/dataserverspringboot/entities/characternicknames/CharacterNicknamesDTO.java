@@ -4,20 +4,23 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * Data Transfer Object for the CharacterNicknames entity.
+ * Data Transfer Object for the {@link CharacterNicknames} entity.
  *
- * PURPOSE:
- *   Decouples the internal JPA entity (CharacterNicknames.java) from the data
- *   exposed through the REST API — same pattern as all other DTOs in the project.
- *   The raw CharacterNicknames entity NEVER leaves the service layer; only this
- *   DTO is returned to the controller and serialised to JSON.
+ * <p>Decouples the internal JPA entity from the data exposed through the REST API.
+ * The raw {@link CharacterNicknames} entity is never serialised to JSON — only
+ * this DTO leaves the service layer.</p>
  *
- * DESIGN:
- *   - Private constructor — prevents accidental instantiation.
- *   - Static factory method fromEntity() — the only way to build a DTO.
- *   - Getters only — DTO is read-only once built (no setters).
- *   - @JsonProperty ensures Jackson serialises camelCase fields as snake_case
- *     automatically — no manual Map conversion needed in the controller.
+ * <p>Design principles:</p>
+ * <ul>
+ *   <li>Private constructor — prevents accidental instantiation outside the factory.</li>
+ *   <li>{@link #fromEntity(CharacterNicknames)} is the only way to build a DTO;
+ *       construction logic is centralised in one place.</li>
+ *   <li>Getters only — the DTO is read-only once constructed (no setters).</li>
+ *   <li>{@code @JsonProperty} is needed only on {@code getCharacterMalId()} because
+ *       the Java name {@code characterMalId} differs from the desired JSON key
+ *       {@code "character_mal_id"}. The field {@code nickname} needs no annotation
+ *       as its Java name is already snake_case-compatible.</li>
+ * </ul>
  */
 @Schema(description = "Character nicknames data transfer object")
 public class CharacterNicknamesDTO {
@@ -28,14 +31,18 @@ public class CharacterNicknamesDTO {
     @Schema(description = "Nickname associated with the character (Composite Key)", example = "Spike")
     private String nickname;
 
-    // ── Private constructor — use fromEntity() ────────────────────────────────
+    /** Private constructor — use {@link #fromEntity(CharacterNicknames)}. */
     private CharacterNicknamesDTO() {}
 
     /**
-     * Static factory method: converts a CharacterNicknames JPA entity into a DTO.
+     * Static factory method: converts a {@link CharacterNicknames} JPA entity
+     * into a {@link CharacterNicknamesDTO}.
      *
-     * @param e the CharacterNicknames entity fetched from the database
-     * @return a fully populated CharacterNicknamesDTO ready to be serialised as JSON
+     * <p>This is the only way to build a DTO — keeps construction logic in one
+     * place and prevents partially initialised instances.</p>
+     *
+     * @param e the {@link CharacterNicknames} entity fetched from the database
+     * @return a fully populated {@link CharacterNicknamesDTO} ready to be serialised as JSON
      */
     public static CharacterNicknamesDTO fromEntity(CharacterNicknames e) {
         CharacterNicknamesDTO dto = new CharacterNicknamesDTO();
@@ -44,8 +51,20 @@ public class CharacterNicknamesDTO {
         return dto;
     }
 
-    // ── Getters (no setters — DTO is read-only once built) ───────────────────
+    /**
+     * Returns the character MAL ID.
+     * {@code @JsonProperty} maps this camelCase getter to {@code "character_mal_id"}.
+     *
+     * @return character MAL ID
+     */
     @JsonProperty("character_mal_id")
     public Integer getCharacterMalId() { return characterMalId; }
-    public String  getNickname()       { return nickname; }
+
+    /**
+     * Returns the nickname.
+     * No {@code @JsonProperty} needed — {@code "nickname"} is already snake_case.
+     *
+     * @return nickname string
+     */
+    public String getNickname() { return nickname; }
 }

@@ -6,18 +6,21 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * Data Transfer Object for the Details entity.
+ * Data Transfer Object for the {@link Details} entity.
  *
- * PURPOSE:
- *   Decouples the internal JPA entity (Details.java) from the data exposed
- *   through the REST API. This means:
- *     - The database schema can change without breaking the API contract.
- *     - Sensitive or irrelevant fields can be excluded from responses.
- *     - Field names/shapes can be customised for the client without touching the entity.
+ * <p>Decouples the internal JPA entity from the data exposed through the REST API.
+ * The raw {@link Details} entity is never serialised to JSON — only this DTO
+ * leaves the service layer. This means the database schema can change without
+ * breaking the API contract, and unwanted fields can be excluded from responses.</p>
  *
- * USAGE:
- *   Built from a Details entity via the static factory method fromEntity(Details d).
- *   The controller and service always return DetailsDTO, never the raw Details entity.
+ * <p>Design principles:</p>
+ * <ul>
+ *   <li>Private constructor — prevents accidental instantiation outside the factory.</li>
+ *   <li>{@link #fromEntity(Details)} is the only way to build a DTO.</li>
+ *   <li>Getters only — the DTO is read-only once constructed (no setters).</li>
+ *   <li>{@code @JsonProperty} on camelCase getters tells Jackson to use snake_case
+ *       JSON keys automatically, without any manual {@code Map} construction.</li>
+ * </ul>
  */
 @Schema(description = "Anime details data transfer object")
 public class DetailsDTO {
@@ -109,7 +112,7 @@ public class DetailsDTO {
     @Schema(description = "Streaming platform names", example = "Crunchyroll")
     private String streaming;
 
-    // ── Private constructor — use fromEntity() ────────────────────────────────
+    /** Private constructor — use {@link #fromEntity(Details)}. */
     private DetailsDTO() {}
 
     /**
@@ -153,9 +156,6 @@ public class DetailsDTO {
         return dto;
     }
 
-    // ── Getters (no setters — DTO is read-only once built) ───────────────────
-    // @JsonProperty ensures Jackson serialises each field with the correct
-    // snake_case key automatically — no manual Map conversion needed.
     @JsonProperty("mal_id")
     public Integer getMalId()          { return malId; }
     public String getTitle()           { return title; }
