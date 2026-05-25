@@ -6,13 +6,13 @@ const homeController = require('../controllers/homeController');
  * @swagger
  * /:
  *   get:
- *       summary: Mostra la pagina di anteprima.
- *       description: Renderizza la home/preview del servizio.
+ *       summary: Shows the preview page.
+ *       description: Renders the service home/preview page.
  *       tags:
  *         - Home
  *       responses:
  *         200:
- *           description: Pagina di anteprima renderizzata.
+ *           description: Preview page rendered.
  */
 router.get('/', homeController.preview);
 

@@ -20,9 +20,9 @@ const swaggerOptions = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'API del progetto Anime',
+      title: 'Anime Project API',
       version: '1.0.0',
-      description: 'Documentazione delle API del progetto',
+      description: 'Project API documentation',
     },
     servers: [{ url: 'http://localhost:3000' }],
   },
