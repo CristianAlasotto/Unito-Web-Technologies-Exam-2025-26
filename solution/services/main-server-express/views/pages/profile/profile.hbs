@@ -1,0 +1,191 @@
+{{#if warning}}
+    <div class="warning-banner" style="background: #d50415; color: #000; padding: 1rem; text-align: center; margin-bottom: 1rem;">
+        ⚠️ {{warning}}
+    </div>
+{{/if}}
+
+<div class="profile-container">
+    <div class="profile-header">
+        {{#if (isHttpUrl profile.avatar_url)}}
+            <img src="{{profile.avatar_url}}" alt="{{profile.display_name}}" class="profile-avatar">
+        {{else}}
+            <img src="/images/logo.png" alt="Default Avatar" class="profile-avatar">
+        {{/if}}
+        <div class="profile-info">
+            <h2>{{profile.display_name}}</h2>
+            <p class="username">@{{profile.username}}</p>
+            {{#if profile.email}}
+                <p class="email">📧 {{profile.email}}</p>
+            {{/if}}
+            {{#if profile.joined}}
+                <p class="joined">📅 Joined: {{profile.joined}}</p>
+            {{/if}}
+        </div>
+        <a href="/" class="btn btn-secondary">Back to Home</a>
+    </div>
+
+    {{#if profile.bio}}
+        <div class="profile-section profile-bio">
+            <h3>Bio</h3>
+            <p>{{profile.bio}}</p>
+        </div>
+    {{/if}}
+
+    <div class="profile-section profile-stats">
+        <h3>Anime Stats</h3>
+        <div class="stats-grid">
+            {{#if profile.watching}}
+                <div class="stat-item">
+                    <span class="stat-value">{{profile.watching}}</span>
+                    <span class="stat-label">Watching</span>
+                </div>
+            {{/if}}
+            {{#if profile.completed}}
+                <div class="stat-item">
+                    <span class="stat-value">{{profile.completed}}</span>
+                    <span class="stat-label">Completed</span>
+                </div>
+            {{/if}}
+            {{#if profile.plan_to_watch}}
+                <div class="stat-item">
+                    <span class="stat-value">{{profile.plan_to_watch}}</span>
+                    <span class="stat-label">Plan to Watch</span>
+                </div>
+            {{/if}}
+            {{#if profile.on_hold}}
+                <div class="stat-item">
+                    <span class="stat-value">{{profile.on_hold}}</span>
+                    <span class="stat-label">On Hold</span>
+                </div>
+            {{/if}}
+            {{#if profile.dropped}}
+                <div class="stat-item">
+                    <span class="stat-value">{{profile.dropped}}</span>
+                    <span class="stat-label">Dropped</span>
+                </div>
+            {{/if}}
+        </div>
+    </div>
+
+    {{#any profile.birthday profile.location profile.gender}}
+        <div class="profile-section profile-details">
+            <h3>Details</h3>
+            <ul>
+                {{#if profile.birthday}}
+                    <li>🎂 Birthday: {{profile.birthday}}</li>
+                {{/if}}
+                {{#if profile.location}}
+                    <li>📍 Location: {{profile.location}}</li>
+                {{/if}}
+                {{#if profile.gender}}
+                    <li>👤 Gender: {{profile.gender}}</li>
+                {{/if}}
+            </ul>
+        </div>
+    {{/any}}
+
+    <hr style="border-color: #333; margin: 2rem 0;">
+
+    {{!-- Anime Favorites Carousel --}}
+    <div class="carousel" id="anime-carousel" data-current-page="{{animeCarousel.currentPage}}" data-page-size="{{animeCarousel.pageSize}}">
+        <div class="carousel_titleContainer">
+            <h3>Favorite Anime</h3>
+        </div>
+        {{#if animeCarousel.hasPrev}}
+            <button class="btn-left" data-prev-page="{{animeCarousel.prevPage}}">
+                ←
+            </button>
+        {{/if}}
+
+        <div class="carousel-container">
+            {{#if favoriteAnimes}}
+                {{> anime_carousel_items items=favoriteAnimes}}
+            {{else}}
+                <p style="color: #888; font-style: italic; padding: 2rem;">No favorite anime yet.</p>
+            {{/if}}
+        </div>
+
+        {{#if animeCarousel.hasNext}}
+            <button class="btn-right" data-next-page="{{animeCarousel.nextPage}}">
+                →
+            </button>
+        {{/if}}
+    </div>
+
+    {{!-- Character Favorites Carousel --}}
+    <div class="carousel" id="character-carousel" data-current-page="{{characterCarousel.currentPage}}" data-page-size="{{characterCarousel.pageSize}}">
+        <div class="carousel_titleContainer">
+            <h3>Favorite Characters</h3>
+        </div>
+        {{#if characterCarousel.hasPrev}}
+            <button class="btn-left" data-prev-page="{{characterCarousel.prevPage}}">
+                ←
+            </button>
+        {{/if}}
+
+        <div class="carousel-container">
+            {{#if favoriteCharacters}}
+                {{> characters_carousel_items items=favoriteCharacters}}
+            {{else}}
+                <p style="color: #888; font-style: italic; padding: 2rem;">No favorite characters yet.</p>
+            {{/if}}
+        </div>
+
+        {{#if characterCarousel.hasNext}}
+            <button class="btn-right" data-next-page="{{characterCarousel.nextPage}}">
+                →
+            </button>
+        {{/if}}
+    </div>
+
+    {{!-- Reviews Section with AJAX Pagination --}}
+    <div class="profile-section">
+        <h3>Your Reviews</h3>
+
+        <div id="ratings-container" data-username="{{profile.username}}" data-current-page="{{pagination.page}}" data-page-size="{{pagination.pageSize}}">
+            {{#if userReviews}}
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; background: #1a1a1a; border-radius: 8px; overflow: hidden; margin-bottom: 2rem;">
+                        <thead>
+                        <tr style="background: #333; color: #fff; text-align: left;">
+                            <th style="padding: 12px 15px;">Anime</th>
+                            <th style="padding: 12px 15px;">Score</th>
+                            <th style="padding: 12px 15px;">Status</th>
+                            <th style="padding: 12px 15px;">Rewatching</th>
+                            <th style="padding: 12px 15px;">Episodes</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {{#each userReviews}}
+                            <tr style="border-bottom: 1px solid #2d2d2d; color: #ccc;">
+                                <td style="padding: 12px 15px;">
+                                    <a href="/anime/{{this.anime_id}}" style="color: #fff; text-decoration: none; font-weight: bold;">
+                                        {{#if this.anime_title}}{{this.anime_title}}{{else}}Anime #{{this.anime_id}}{{/if}}
+                                    </a>
+                                </td>
+                                <td style="padding: 12px 15px;"><span style="color: #d50415; font-weight: bold;">⭐ {{this.score}}</span></td>
+                                <td style="padding: 12px 15px; text-transform: capitalize;">{{this.status}}</td>
+                                <td style="padding: 12px 15px;">
+                                    {{#if this.is_rewatching}}
+                                        <span style="color: #4caf50; font-weight: bold;">Yes</span>
+                                    {{else}}
+                                        <span style="color: #888;">No</span>
+                                    {{/if}}
+                                </td>
+                                <td style="padding: 12px 15px;">{{this.num_watched_episodes}}</td>
+                            </tr>
+                        {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            {{else}}
+                <p style="color: #888; font-style: italic;">No reviews yet.</p>
+            {{/if}}
+        </div>
+
+    </div>
+
+</div>
+
+<script src="/javascript/profile.js"></script>
+<script src="/javascript/carousels.js"></script>

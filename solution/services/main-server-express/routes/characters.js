@@ -6,8 +6,8 @@ const router = express.Router();
  * @swagger
  * /characters:
  *   get:
- *       summary: Restituisce la lista dei personaggi.
- *       description: Recupera l’elenco dei personaggi con filtri opzionali.
+ *       summary: Returns the character list.
+ *       description: Retrieves the character list with optional filters.
  *       tags:
  *         - Characters
  *       parameters:
@@ -16,10 +16,10 @@ const router = express.Router();
  *           required: false
  *           schema:
  *             type: string
- *           description: Testo da ricercare nei nomi dei personaggi.
+ *           description: Text to search for in character names.
  *       responses:
  *         200:
- *           description: Lista di personaggi.
+ *           description: Character list.
  *           content:
  *             application/json:
  *               schema:
@@ -40,8 +40,8 @@ router.get('/', charactersController.list);
  * @swagger
  * /characters/{id}:
  *   get:
- *       summary: Restituisce i dettagli di un personaggio.
- *       description: Recupera le informazioni dettagliate del personaggio identificato da {id}.
+ *       summary: Returns character details.
+ *       description: Retrieves detailed information for the character identified by {id}.
  *       tags:
  *         - Characters
  *       parameters:
@@ -50,10 +50,10 @@ router.get('/', charactersController.list);
  *           required: true
  *           schema:
  *             type: string
- *           description: ID del personaggio.
+ *           description: Character ID.
  *       responses:
  *         200:
- *           description: Dettaglio del personaggio.
+ *           description: Character details.
  *           content:
  *             application/json:
  *               schema:
@@ -68,7 +68,7 @@ router.get('/', charactersController.list);
  *                   description:
  *                     type: string
  *         404:
- *           description: Personaggio non trovato.
+ *           description: Character not found.
  */
 router.get('/:id', charactersController.detail);
 

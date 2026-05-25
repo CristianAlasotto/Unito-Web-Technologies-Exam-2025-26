@@ -14,12 +14,32 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.*;
-import java.util.stream.Collectors;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
- * REST API Controller for CharacterAnimeWorks
- * Returns field names in snake_case to match database columns
+ * REST API controller for the {@link CharacterAnimeWorks} module.
+ *
+ * <p>Exposes four endpoints under {@code /api/character_anime_works}:</p>
+ * <ul>
+ *   <li>{@code GET /api/character_anime_works/{id}} — single record by composite key.</li>
+ *   <li>{@code GET /api/character_anime_works} — paginated list with optional filters.</li>
+ *   <li>{@code GET /api/character_anime_works/stats} — total record count.</li>
+ *   <li>{@code GET /api/character_anime_works/stats/null_counts} — NULL statistics.</li>
+ * </ul>
+ *
+ * <p>Design principles:</p>
+ * <ul>
+ *   <li>Only {@link CharacterAnimeWorksService} is injected — no repository access.</li>
+ *   <li>{@link CharacterAnimeWorksDTO} objects are returned directly to
+ *       {@link ResponseEntity}; Spring (Jackson) serialises them automatically
+ *       using {@code @JsonProperty} annotations on the DTO getters.</li>
+ *   <li>Every method returns {@link ResponseEntity} to allow full control
+ *       over HTTP status codes.</li>
+ * </ul>
  */
 @Tag(name = "Character Anime Works", description = "Anime characters with role and relationships API")
 @RestController
@@ -30,348 +50,228 @@ public class CharacterAnimeWorksController {
     @Autowired
     private CharacterAnimeWorksService service;
 
+    /**
+     * Returns a single record looked up by its composite key.
+     *
+     * <p>The composite key is passed as a path variable and Spring automatically
+     * binds it to {@link CharacterAnimeWorks.CharacterAnimeWorksId}. Returns
+     * {@code 404 Not Found} if no record matches the key.</p>
+     *
+     * @param id composite key ({@code characterMalId + animeMalId})
+     * @return {@link ResponseEntity} with the {@link CharacterAnimeWorksDTO},
+     *         or {@code 404} with an error body
+     */
     @Operation(
             summary = "Get character work by Composite ID",
-            description = "Retrieve a single character work entry using character ID and anime ID"
-    )
+            description = "Retrieve a single character work entry using character ID and anime ID")
     @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Entry found successfully",
-                    content = @Content(schema = @Schema(implementation = CharacterAnimeWorks.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Entry not found",
-                    content = @Content
-            )
+            @ApiResponse(responseCode = "200", description = "Entry found successfully",
+                    content = @Content(schema = @Schema(implementation = CharacterAnimeWorksDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Entry not found", content = @Content)
     })
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(
-            @Parameter(description = "Composite ID (format depends on Spring conversion, typically JSON or comma-separated)", required = true)
-            @PathVariable CharacterAnimeWorks.CharacterAnimeWorksId id,
-
-            @Parameter(description = "Comma-separated list of fields to return", example = "role,character_name")
-            @RequestParam(required = false) String fields) {
-
-        Optional<CharacterAnimeWorks> entity = service.getById(id);
-
-        if (entity.isEmpty()) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "CharacterAnimeWorks not found");
-            error.put("id", id);
-            return ResponseEntity.status(404).body(error);
-        }
-
-        CharacterAnimeWorks data = entity.get();
-
-        if (fields != null && !fields.isEmpty()) {
-            Map<String, Object> filtered = filterFields(data, fields);
-            return ResponseEntity.ok(filtered);
-        }
-
-        // Return all fields with snake_case names
-        return ResponseEntity.ok(toSnakeCaseMap(data));
-    }
-
-    @Operation(
-            summary = "Get work summary",
-            description = "Retrieve a brief summary of the character's role in an anime"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Summary retrieved successfully"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Entry not found",
-                    content = @Content
-            )
-    })
-    @GetMapping("/{id}/summary")
-    public ResponseEntity<?> getSummary(
-            @Parameter(description = "Composite ID", required = true)
+            @Parameter(description = "Composite ID (character_mal_id + anime_mal_id)", required = true)
             @PathVariable CharacterAnimeWorks.CharacterAnimeWorksId id) {
-        Optional<CharacterAnimeWorks> entity = service.getById(id);
 
-        if (entity.isEmpty()) {
-            return ResponseEntity.status(404).build();
+        Optional<CharacterAnimeWorksDTO> dto = service.getById(id);
+
+        if (dto.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "error", "CharacterAnimeWorks not found",
+                    "id",    id));
         }
 
-        CharacterAnimeWorks data = entity.get();
-        Map<String, Object> summary = new HashMap<>();
-        summary.put("character_mal_id", data.getCharacterMalId());
-        summary.put("anime_mal_id", data.getAnimeMalId());
-        summary.put("character_name", data.getCharacterName());
-        summary.put("role", data.getRole());
-
-        return ResponseEntity.ok(summary);
+        return ResponseEntity.ok(dto.get());
     }
 
+    /**
+     * Returns a paginated list of {@link CharacterAnimeWorksDTO} matching optional filters.
+     *
+     * <p>Supports three pagination modes (page-based takes priority over
+     * limit/offset when both sets of parameters are present):</p>
+     * <ul>
+     *   <li>{@code page} + {@code pageSize} — response includes
+     *       {@code page}, {@code pageSize}, {@code totalPages}, {@code items}.</li>
+     *   <li>{@code limit} + {@code offset} — response includes
+     *       {@code limit}, {@code offset}, {@code total}, {@code items}.</li>
+     *   <li>No pagination parameters — returns the first 10 records as a plain list.</li>
+     * </ul>
+     *
+     * <p>Optional filters (null/not-null take absolute priority):</p>
+     * <ul>
+     *   <li>{@code search} — case-insensitive partial match on role.</li>
+     *   <li>{@code role} — exact role match.</li>
+     *   <li>{@code character_mal_id} — exact character ID match.</li>
+     *   <li>{@code anime_mal_id} — exact anime ID match.</li>
+     *   <li>{@code nullFilter} — field name for IS NULL filter
+     *       ({@code character_name} or {@code role}).</li>
+     *   <li>{@code notNullFilter} — field name for IS NOT NULL filter.</li>
+     * </ul>
+     *
+     * @param search         partial match on role
+     * @param sort           sort expression, e.g. {@code "-role"}
+     * @param role           exact role filter
+     * @param character_mal_id exact character ID filter
+     * @param anime_mal_id   exact anime ID filter
+     * @param nullFilter     field name for IS NULL filter
+     * @param notNullFilter  field name for IS NOT NULL filter
+     * @param limit          maximum results (limit/offset mode)
+     * @param offset         records to skip (limit/offset mode)
+     * @param page           1-indexed page number (page-based mode)
+     * @param pageSize       records per page (page-based mode)
+     * @return {@link ResponseEntity} with paginated or plain-list body of
+     *         {@link CharacterAnimeWorksDTO}
+     */
     @Operation(
             summary = "Get all character works",
-            description = "Retrieve paginated list of character works with optional filters, sorting, and field selection. NULL values are always sorted last."
-    )
+            description = "Retrieve paginated list of character works with optional filters and sorting. "
+                    + "NULL values are always sorted last.")
     @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "List retrieved successfully"
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid parameters",
-                    content = @Content
-            )
+            @ApiResponse(responseCode = "200", description = "List retrieved successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid parameters", content = @Content)
     })
     @GetMapping
     public ResponseEntity<?> getAll(
-            @Parameter(description = "Comma-separated fields to return", example = "role,character_name")
-            @RequestParam(required = false) String fields,
             @Parameter(description = "Search by role (case-insensitive)", example = "Main")
             @RequestParam(required = false) String search,
+
             @Parameter(description = "Sort field (prefix with - for descending)", example = "-role")
             @RequestParam(required = false) String sort,
-            @Parameter(description = "Filter by specific Role", example = "Supporting")
+
+            @Parameter(description = "Filter by role", example = "Supporting")
             @RequestParam(required = false) String role,
-            @Parameter(description = "Filter by Character MAL ID", example = "1")
+
+            @Parameter(description = "Filter by character MAL ID", example = "1")
             @RequestParam(required = false) Integer character_mal_id,
-            @Parameter(description = "Filter by Anime MAL ID", example = "1")
+
+            @Parameter(description = "Filter by anime MAL ID", example = "1")
             @RequestParam(required = false) Integer anime_mal_id,
+
             @Parameter(description = "Filter records where field IS NULL", example = "character_name")
             @RequestParam(required = false) String nullFilter,
+
             @Parameter(description = "Filter records where field IS NOT NULL", example = "role")
             @RequestParam(required = false) String notNullFilter,
+
             @Parameter(description = "Maximum number of results", example = "10")
             @RequestParam(required = false) Integer limit,
+
             @Parameter(description = "Offset for pagination", example = "0")
             @RequestParam(required = false) Integer offset,
+
             @Parameter(description = "Page number (1-indexed)", example = "1")
             @RequestParam(required = false) Integer page,
+
             @Parameter(description = "Number of results per page", example = "10")
             @RequestParam(required = false) Integer pageSize) {
 
-        boolean useLimitOffset = (limit != null || offset != null);
-        boolean usePageBased = (page != null || pageSize != null);
+        boolean usePageBased   = (page != null || pageSize != null);
+        boolean useLimitOffset = (limit != null || offset != null) && !usePageBased;
 
         Sort sortObj = parseSortParameter(sort);
 
         if (useLimitOffset) {
-            int finalLimit = (limit != null) ? limit : 10;
+            int finalLimit  = (limit  != null) ? limit  : 10;
             int finalOffset = (offset != null) ? offset : 0;
 
             Pageable pageable = PageRequest.of(finalOffset / finalLimit, finalLimit, sortObj);
-            Page<CharacterAnimeWorks> pageResult = service.findWithFilters(
-                search,
-                role,
-                character_mal_id,
-                anime_mal_id,
-                nullFilter,
-                notNullFilter,
-                pageable);
+            Page<CharacterAnimeWorksDTO> pageResult = service.findWithFilters(
+                    search, role, character_mal_id, anime_mal_id,
+                    nullFilter, notNullFilter, pageable);
 
-            List<CharacterAnimeWorks> results = pageResult.getContent();
-            long totalCount = pageResult.getTotalElements();
-
-            if (fields != null && !fields.isEmpty()) {
-                List<Map<String, Object>> filteredResults = results.stream()
-                    .map(entity -> filterFields(entity, fields))
-                    .collect(Collectors.toList());
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("limit", finalLimit);
-                response.put("offset", finalOffset);
-                response.put("total", totalCount);
-                response.put("items", filteredResults);
-                return ResponseEntity.ok(response);
-            }
-
-            // Convert all entities to snake_case
-            List<Map<String, Object>> snakeCaseResults = results.stream()
-                .map(this::toSnakeCaseMap)
-                .collect(Collectors.toList());
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("limit", finalLimit);
-            response.put("offset", finalOffset);
-            response.put("total", totalCount);
-            response.put("items", snakeCaseResults);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "limit",  finalLimit,
+                    "offset", finalOffset,
+                    "total",  pageResult.getTotalElements(),
+                    "items",  pageResult.getContent()));
 
         } else if (usePageBased) {
-            int finalPage = (page != null) ? page : 1;
-            int finalPageSize = (pageSize != null) ? pageSize : 10;
+            int finalPage     = (page     != null) ? page     : 1;
+            int finalPageSize = (pageSize != null) ? pageSize : (limit != null) ? limit : 10;
 
             Pageable pageable = PageRequest.of(finalPage - 1, finalPageSize, sortObj);
-            Page<CharacterAnimeWorks> pageResult = service.findWithFilters(
-                search,
-                role,
-                character_mal_id,
-                anime_mal_id,
-                nullFilter,
-                notNullFilter,
-                pageable);
+            Page<CharacterAnimeWorksDTO> pageResult = service.findWithFilters(
+                    search, role, character_mal_id, anime_mal_id,
+                    nullFilter, notNullFilter, pageable);
 
-            List<CharacterAnimeWorks> results = pageResult.getContent();
-            long totalPages = pageResult.getTotalPages();
-
-            if (fields != null && !fields.isEmpty()) {
-                List<Map<String, Object>> filteredResults = results.stream()
-                    .map(entity -> filterFields(entity, fields))
-                    .collect(Collectors.toList());
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("page", finalPage);
-                response.put("pageSize", finalPageSize);
-                response.put("totalPages", totalPages);
-                response.put("items", filteredResults);
-                return ResponseEntity.ok(response);
-            }
-
-            // Convert all entities to snake_case
-            List<Map<String, Object>> snakeCaseResults = results.stream()
-                .map(this::toSnakeCaseMap)
-                .collect(Collectors.toList());
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("page", finalPage);
-            response.put("pageSize", finalPageSize);
-            response.put("totalPages", totalPages);
-            response.put("items", snakeCaseResults);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "page",       finalPage,
+                    "pageSize",   finalPageSize,
+                    "totalPages", pageResult.getTotalPages(),
+                    "items",      pageResult.getContent()));
 
         } else {
             Pageable pageable = PageRequest.of(0, 10, sortObj);
-            Page<CharacterAnimeWorks> pageResult = service.findWithFilters(
-                search,
-                role,
-                character_mal_id,
-                anime_mal_id,
-                nullFilter,
-                notNullFilter,
-                pageable);
+            Page<CharacterAnimeWorksDTO> pageResult = service.findWithFilters(
+                    search, role, character_mal_id, anime_mal_id,
+                    nullFilter, notNullFilter, pageable);
 
-            List<CharacterAnimeWorks> results = pageResult.getContent();
-
-            if (fields != null && !fields.isEmpty()) {
-                List<Map<String, Object>> filteredResults = results.stream()
-                    .map(entity -> filterFields(entity, fields))
-                    .collect(Collectors.toList());
-                return ResponseEntity.ok(filteredResults);
-            }
-
-            // Convert all entities to snake_case
-            List<Map<String, Object>> snakeCaseResults = results.stream()
-                .map(this::toSnakeCaseMap)
-                .collect(Collectors.toList());
-
-            return ResponseEntity.ok(snakeCaseResults);
+            return ResponseEntity.ok(pageResult.getContent());
         }
     }
 
+    /**
+     * Returns the total number of character-anime records in the database.
+     *
+     * @return {@link ResponseEntity} with body {@code {"total": N}}
+     */
+    @Operation(summary = "Get statistics",
+            description = "Get total count of character work records")
+    @ApiResponses(@ApiResponse(responseCode = "200",
+            description = "Statistics retrieved successfully"))
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("total", service.count());
-        return ResponseEntity.ok(stats);
+        return ResponseEntity.ok(Map.of("total", service.count()));
     }
 
     /**
-     * Get statistics on NULL values for various fields
-     * GET /api/character_anime_works/stats/null_counts
+     * Returns NULL value statistics for each nullable non-key field.
+     *
+     * @return {@link ResponseEntity} with body
+     *         {@code {"null_counts": {"character_name": N, "role": N}, "total_records": N}}
      */
     @Operation(
             summary = "Get NULL value statistics",
-            description = "Get count of NULL values for each nullable field (character_name, role)"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "NULL statistics retrieved successfully"
-            )
-    })
+            description = "Get count of NULL values for each nullable field (character_name, role)")
+    @ApiResponses(@ApiResponse(responseCode = "200",
+            description = "NULL statistics retrieved successfully"))
     @GetMapping("/stats/null_counts")
     public ResponseEntity<Map<String, Object>> getNullCounts() {
-        Map<String, Long> nullCounts = service.getNullCounts();
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("null_counts", nullCounts);
-        response.put("total_records", service.count());
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Map.of(
+                "null_counts",   service.getNullCounts(),
+                "total_records", service.count()));
     }
 
     /**
-     * Convert entity to Map with snake_case field names
+     * Converts the {@code sort} query parameter string into a Spring
+     * {@link Sort} object.
+     *
+     * <p>Each comma-separated token is a field name. A leading {@code -}
+     * means descending; no prefix means ascending. {@code NULL} values are
+     * always placed last via {@link Sort.Order#nullsLast()}. Stable tiebreakers
+     * on both composite key fields ({@code characterMalId} and {@code animeMalId})
+     * are always appended for deterministic pagination.</p>
+     *
+     * @param sort comma-separated sort expression, e.g. {@code "-role"}
+     * @return a {@link Sort} object ready to pass to {@link PageRequest}
      */
-    private Map<String, Object> toSnakeCaseMap(CharacterAnimeWorks entity) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("character_mal_id", entity.getCharacterMalId());
-        result.put("anime_mal_id", entity.getAnimeMalId());
-        result.put("character_name", entity.getCharacterName());
-        result.put("role", entity.getRole());
-        return result;
-    }
-
-    /**
-     * Filter fields based on comma-separated field list
-     * Field names use snake_case
-     */
-    private Map<String, Object> filterFields(CharacterAnimeWorks entity, String fields) {
-        Map<String, Object> result = new HashMap<>();
-        String[] requestedFields = fields.split(",");
-
-        for (String field : requestedFields) {
-            field = field.trim();
-            switch (field) {
-                case "character_mal_id":
-                    result.put("character_mal_id", entity.getCharacterMalId());
-                    break;
-                case "anime_mal_id":
-                    result.put("anime_mal_id", entity.getAnimeMalId());
-                    break;
-                case "character_name":
-                    result.put("character_name", entity.getCharacterName());
-                    break;
-                case "role":
-                    result.put("role", entity.getRole());
-                    break;
-            }
-        }
-
-        return result;
-    }
-
     private Sort parseSortParameter(String sort) {
         List<Sort.Order> orders = new ArrayList<>();
-
         if (sort != null && !sort.isEmpty()) {
-            String[] sortFields = sort.split(",");
-
-            for (String field : sortFields) {
+            for (String field : sort.split(",")) {
                 field = field.trim();
-                Sort.Direction direction;
-                String actualField;
-
                 if (field.startsWith("-")) {
-                    direction = Sort.Direction.DESC;
-                    actualField = field.substring(1);
+                    orders.add(Sort.Order.by(field.substring(1))
+                            .with(Sort.Direction.DESC).nullsLast());
                 } else {
-                    direction = Sort.Direction.ASC;
-                    actualField = field;
+                    orders.add(Sort.Order.by(field)
+                            .with(Sort.Direction.ASC).nullsLast());
                 }
-
-                // ✅ FIX: NULL values always sorted LAST
-                orders.add(Sort.Order.by(actualField)
-                        .with(direction)
-                        .nullsLast());
             }
         }
-
-        // Add primary keys as tiebreaker
         orders.add(Sort.Order.asc("characterMalId"));
         orders.add(Sort.Order.asc("animeMalId"));
-
         return Sort.by(orders);
     }
 }

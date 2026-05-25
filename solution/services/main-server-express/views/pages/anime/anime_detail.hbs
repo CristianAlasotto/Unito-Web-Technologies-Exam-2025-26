@@ -1,0 +1,521 @@
+{{#if warning}}
+    <div class="warning-banner"
+         style="background: #d50415; color: #000; padding: 1rem; text-align: center; margin-bottom: 1rem;">
+        ⚠️ {{warning}}
+    </div>
+{{/if}}
+
+{{#if error}}
+    <div class="error-message">{{error}}</div>
+{{/if}}
+
+<div class="anime-container">
+    <h1>Anime Details</h1>
+
+    {{#if anime}}
+        <article class="anime-detail anime-detail-card">
+            <div class="anime-header">
+                {{#if (isHttpUrl anime.image_url)}}
+                    <img src="{{anime.image_url}}" alt="{{anime.title}}" class="anime-poster">
+                {{else}}
+                    <div class="card-image-placeholder">
+                        <img src="/images/logo.png" alt="Logo">
+                    </div>
+                {{/if}}
+
+                <div class="anime-main-info">
+                    <h2>{{anime.title}}</h2>
+                    {{#if anime.title_english}}
+                        <h4 class="english-title">{{anime.title_english}}</h4>
+                    {{/if}}
+                    {{#if anime.title_japanese}}
+                        <h4 class="japanese-title">{{anime.title_japanese}}</h4>
+                    {{/if}}
+
+                    <div class="anime-meta">
+                        <span class="score">⭐ {{anime.score_display}}</span>
+                        <span class="scored-by">Scored by: {{anime.scored_by_display}}</span>
+                        <span class="type">{{anime.type_display}}</span>
+                        <span class="status">{{anime.status_display}}</span>
+                        <span class="episodes">{{anime.episodes_text}}</span>
+                        <span class="season">Season: {{anime.season_display}}</span>
+                        <span class="year">Year: {{anime.year_display}}</span>
+                        <span class="rating">Rating: {{anime.rating_display}}</span>
+                        <span class="source">Source: {{anime.source_display}}</span>
+                    </div>
+
+                    <p class="dates">
+                        <strong>Start date:</strong> {{anime.start_date_display}}
+                    </p>
+                    <p class="dates">
+                        <strong>End date:</strong> {{anime.end_date_display}}
+                    </p>
+                </div>
+            </div>
+
+            {{#if anime.synopsis}}
+                <section class="synopsis">
+                    <h3>Synopsis</h3>
+                    <p>{{anime.synopsis}}</p>
+                </section>
+            {{/if}}
+
+            <div class="anime-details-grid">
+                {{#if anime.has_genres}}
+                    <section class="detail-section">
+                        <h3>Genres</h3>
+                        <div class="tags">
+                            {{#each anime.genres}}
+                                <span class="tag">{{this}}</span>
+                            {{/each}}
+                        </div>
+                    </section>
+                {{/if}}
+
+                {{#if anime.has_themes}}
+                    <section class="detail-section">
+                        <h3>Themes</h3>
+                        <div class="tags">
+                            {{#each anime.themes}}
+                                <span class="tag">{{this}}</span>
+                            {{/each}}
+                        </div>
+                    </section>
+                {{/if}}
+
+                {{#if anime.has_studios}}
+                    <section class="detail-section">
+                        <h3>Studios</h3>
+                        <div class="tags">
+                            {{#each anime.studios}}
+                                <span class="tag">{{this}}</span>
+                            {{/each}}
+                        </div>
+                    </section>
+                {{/if}}
+
+                {{#if anime.has_demographics}}
+                    <section class="detail-section">
+                        <h3>Demographics</h3>
+                        <div class="tags">
+                            {{#each anime.demographics}}
+                                <span class="tag">{{this}}</span>
+                            {{/each}}
+                        </div>
+                    </section>
+                {{/if}}
+
+                {{#if anime.has_producers}}
+                    <section class="detail-section">
+                        <h3>Producers</h3>
+                        <div class="tags">
+                            {{#each anime.producers}}
+                                <span class="tag">{{this}}</span>
+                            {{/each}}
+                        </div>
+                    </section>
+                {{/if}}
+
+                {{#if anime.has_licensors}}
+                    <section class="detail-section">
+                        <h3>Licensors</h3>
+                        <div class="tags">
+                            {{#each anime.licensors}}
+                                <span class="tag">{{this}}</span>
+                            {{/each}}
+                        </div>
+                    </section>
+                {{/if}}
+
+                {{#if anime.has_streaming}}
+                    <section class="detail-section">
+                        <h3>Streaming</h3>
+                        <div class="tags">
+                            {{#each anime.streaming}}
+                                <span class="tag">{{this}}</span>
+                            {{/each}}
+                        </div>
+                    </section>
+                {{/if}}
+
+                {{#if anime.has_explicit_genres}}
+                    <section class="detail-section">
+                        <h3>Explicit Genres</h3>
+                        <div class="tags">
+                            {{#each anime.explicit_genres}}
+                                <span class="tag">{{this}}</span>
+                            {{/each}}
+                        </div>
+                    </section>
+                {{/if}}
+            </div>
+
+            <div class="anime-stats">
+                <div class="stat">
+                    <strong>Rank:</strong> {{anime.rank_display}}
+                </div>
+                <div class="stat">
+                    <strong>Popularity:</strong> {{anime.popularity_display}}
+                </div>
+                <div class="stat">
+                    <strong>Members:</strong> {{anime.members_display}}
+                </div>
+                <div class="stat">
+                    <strong>Favorites:</strong> {{anime.favorites_display}}
+                </div>
+            </div>
+
+            {{#if anime.has_related}}
+                <section class="related-section">
+                    <h3>Related Anime</h3>
+                    <div class="related-grid">
+                        {{#each anime.related}}
+                            <div class="related-card">
+                                <div class="related-relation">{{this.relation}}</div>
+                                {{#each this.entries}}
+                                    <div class="related-entry">
+                                        {{#if this.mal_id}}
+                                        <a href="/anime/{{this.mal_id}}">
+                                        {{else}}
+                                        <a href="/anime/{{this.anime_id}}">
+                                        {{/if}}
+                                        {{#if (isHttpUrl this.image_url)}}
+                                            <img src="{{this.image_url}}" alt="{{this.title}}" class="related-image">
+                                        {{else}}
+                                            <div class="card-image-placeholder">
+                                                <img src="/images/logo.png" alt="Logo">
+                                            </div>
+                                        {{/if}}
+                                        <div class="related-title">{{this.title}}</div>
+                                        <div class="related-type">{{this.type}}</div>
+                                    </a>
+                                    </div>
+                                {{/each}}
+                            </div>
+                        {{/each}}
+                    </div>
+                </section>
+            {{/if}}
+
+            {{#if anime.has_characters}}
+                <section class="characters-section">
+                    <h3>Characters</h3>
+                    <div class="characters-grid">
+                        {{#each anime.characters}}
+                            <div class="character-card">
+                                {{#if (isHttpUrl this.image_url)}}
+                                    <img src="{{this.image_url}}" alt="{{this.name}}" class="character-image">
+                                {{else}}
+                                    <div class="card-image-placeholder">
+                                        <img src="/images/logo.png" alt="Logo">
+                                    </div>
+                                {{/if}}
+                                <div class="character-info">
+                                    <div class="character-name">{{this.name}}</div>
+                                    <div class="character-role">{{this.role}}</div>
+                                    {{#if this.has_voice_actors}}
+                                        <div class="voice-actors">
+                                            {{#each this.voice_actors}}
+                                                <div class="voice-actor">
+                                                    {{#if (isHttpUrl this.person_image_url)}}
+                                                        <img src="{{this.person_image_url}}" alt="{{this.person_name}}" class="va-image">
+                                                    {{else}}
+                                                        <div class="card-image-placeholder">
+                                                            <img src="/images/logo.png" alt="Logo">
+                                                        </div>
+                                                    {{/if}}
+                                                    <div class="va-info">
+                                                        <div class="va-name">{{this.person_name}}</div>
+                                                        <div class="va-language">{{this.language}}</div>
+                                                    </div>
+                                                </div>
+                                            {{/each}}
+                                        </div>
+                                    {{/if}}
+                                </div>
+                            </div>
+                        {{/each}}
+                    </div>
+                </section>
+            {{/if}}
+
+            {{#if anime.recommendations_link}}
+                <a href="{{anime.recommendations_link}}" class="recommendations-btn"
+                   style="display: inline-block; margin: 2rem 0; padding: 0.75rem 1.5rem; background: #d50415; color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                    View Recommendations
+                </a>
+            {{/if}}
+
+            <br>
+            <h3 class="recommendationsTitle">Related Characters</h3>
+            <section class="recommendations">
+                {{#if anime.has_related_characters}}
+                    <div class="cardsContainer">
+                        {{#each anime.related_characters}}
+                            <div class="card">
+                                {{#if this.character_mal_id}}
+                                <a href="/characters/{{this.character_mal_id}}">
+                                {{else}}
+                                <a href="/characters/{{this.character_id}}">
+                                {{/if}}
+
+                                {{#if (isHttpUrl this.image)}}
+                                    <img src="{{this.image}}" alt="{{this.name}}">
+                                {{else}}
+                                    {{#if (isHttpUrl this.image_url)}}
+                                        <img src="{{this.image_url}}" alt="{{this.name}}">
+                                    {{else}}
+                                        <div class="card-image-placeholder">
+                                            <img src="/images/logo.png" alt="Logo">
+                                        </div>
+                                    {{/if}}
+                                {{/if}}
+
+                                <div class="card-body">
+                                    <p>{{this.name}}</p>
+                                </div>
+                            </a>
+                            </div>
+                        {{/each}}
+                    </div>
+                {{else}}
+                    <p>No related_characters available.</p>
+                {{/if}}
+            </section>
+
+            <br>
+            <h3 class="recommendationsTitle">Recommended Animes</h3>
+            <section class="recommendations">
+                {{#if anime.hasRelatedAnimes}}
+                    <div class="cardsContainer">
+                        {{#each anime.recommendations}}
+                            <div class="card">
+                                {{#if this.mal_id}}
+                                <a href="/anime/{{this.mal_id}}">
+                                {{else}}
+                                <a href="/anime/{{this.anime_id}}">
+                                {{/if}}
+
+                                {{#if (isHttpUrl this.image_url)}}
+                                    <img src="{{this.image_url}}" alt="{{this.title}}">
+                                {{else}}
+                                    <div class="card-image-placeholder">
+                                        <img src="/images/logo.png" alt="Logo">
+                                    </div>
+                                {{/if}}
+
+                                <div class="card-body">
+                                    <p>{{this.title}}</p>
+                                </div>
+                            </a>
+                            </div>
+                        {{/each}}
+                    </div>
+                {{else}}
+                    <p>No recommended animes available.</p>
+                {{/if}}
+            </section>
+
+            {{#if anime.url}}
+                <a href="{{anime.url}}" target="_blank" class="mal-link">
+                    View on MyAnimeList
+                </a>
+            {{/if}}
+
+            <hr style="border-color: #333; margin: 2rem 0;">
+
+            <section class="add-rating-section" style="margin: 2rem 0; padding: 1.5rem; background: #1a1a1a; border-radius: 8px; border: 1px solid #333;">
+                <h3 style="color: #d50415; margin-bottom: 1rem;">Add Your Rating</h3>
+
+                <div id="rating-message" style="display: none; padding: 1rem; margin-bottom: 1rem; border-radius: 4px;"></div>
+
+                <form id="rating-form" style="display: grid; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="rating-username" style="display: block; margin-bottom: 0.5rem; color: #ccc;">Username *</label>
+                        <input type="text" id="rating-username" name="username" required
+                               style="width: 100%; padding: 0.75rem; background: #2d2d2d; border: 1px solid #444; border-radius: 4px; color: #fff;">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="rating-score" style="display: block; margin-bottom: 0.5rem; color: #ccc;">Score (0-10) *</label>
+                        <input type="number" id="rating-score" name="score" min="0" max="10" step="1" required
+                               style="width: 100%; padding: 0.75rem; background: #2d2d2d; border: 1px solid #444; border-radius: 4px; color: #fff;">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="rating-status" style="display: block; margin-bottom: 0.5rem; color: #ccc;">Status *</label>
+                        <select id="rating-status" name="status" required
+                                style="width: 100%; padding: 0.75rem; background: #2d2d2d; border: 1px solid #444; border-radius: 4px; color: #fff;">
+                            <option value="">Select status...</option>
+                            <option value="watching">Watching</option>
+                            <option value="completed">Completed</option>
+                            <option value="on_hold">On Hold</option>
+                            <option value="dropped">Dropped</option>
+                            <option value="plan_to_watch">Plan to Watch</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="rating-episodes" style="display: block; margin-bottom: 0.5rem; color: #ccc;">Episodes Watched *</label>
+                        <input type="number" id="rating-episodes" name="num_watched_episodes" min="0" required
+                               style="width: 100%; padding: 0.75rem; background: #2d2d2d; border: 1px solid #444; border-radius: 4px; color: #fff;">
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; color: #ccc; cursor: pointer;">
+                            <input type="checkbox" id="rating-rewatching" name="is_rewatching" value="1"
+                                   style="margin-right: 0.5rem; width: 18px; height: 18px; cursor: pointer;">
+                            Is Rewatching
+                        </label>
+                    </div>
+
+                    <button type="submit" id="submit-rating-btn"
+                            style="padding: 0.75rem 1.5rem; background: #d50415; color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 1rem;">
+                        Submit Rating
+                    </button>
+                </form>
+
+            </section>
+
+            <section class="ratings-section">
+                <h3>User Ratings</h3>
+
+                <div class="ratings-filters" style="background: #1a1a1a; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end;">
+
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Min Score</label>
+                            <select id="filter-minScore" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                                <option value="">Any</option>
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                            </select>
+                     </div>
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Max Score</label>
+                            <select id="filter-maxScore" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                                <option value="">Any</option>
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Watch Status</label>
+                            <select id="filter-status" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                                <option value="">All Statuses</option>
+                                <option value="watching">Watching</option>
+                                <option value="completed">Completed</option>
+                                <option value="on_hold">On Hold</option>
+                                <option value="dropped">Dropped</option>
+                                <option value="plan_to_watch">Plan to Watch</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Rewatching</label>
+                            <select id="filter-rewatching" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                                <option value="">All</option>
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Sort By</label>
+                            <select id="filter-sortBy" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                                <option value="score">Score</option>
+                                <option value="username">Username</option>
+                                <option value="num_watched_episodes">Episodes Watched</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 0.5rem; font-size: 0.9rem;">Order</label>
+                            <select id="filter-sortOrder" style="width: 100%; padding: 0.5rem; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                                <option value="desc">Descending</option>
+                                <option value="asc">Ascending</option>
+                            </select>
+                        </div>
+
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button id="apply-filters-btn" type="button" style="flex: 1; padding: 0.5rem 1rem; background: #d50415; color: #000; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">
+                                Apply Filters
+                            </button>
+                            <button id="clear-filters-btn" type="button" style="flex: 1; padding: 0.5rem 1rem; background: #333; color: #fff; border: none; border-radius: 4px; cursor: pointer;">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="ratings-container">
+                    {{#if ratings}}
+                        <div style="overflow-x: auto;">
+                            <table
+                                    style="width: 100%; border-collapse: collapse; background: #1a1a1a; border-radius: 8px; overflow: hidden; margin-bottom: 2rem;">
+                                <thead>
+                                <tr style="background: #333; color: #fff; text-align: left;">
+                                    <th style="padding: 12px 15px;">User</th>
+                                    <th style="padding: 12px 15px;">Score</th>
+                                    <th style="padding: 12px 15px;">Status</th>
+                                    <th style="padding: 12px 15px;">Is Rewatching</th>
+                                    <th style="padding: 12px 15px;">Watched Episodes</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {{#each ratings}}
+                                    <tr style="border-bottom: 1px solid #2d2d2d; color: #ccc;">
+                                        <td style="padding: 12px 15px;"><span
+                                                style="font-weight: bold; color: #fff;">{{this.username}}</span></td>
+                                        <td style="padding: 12px 15px;"><span
+                                                style="color: #d50415; font-weight: bold;">⭐ {{this.score}}</span>
+                                        </td>
+                                        <td style="padding: 12px 15px; text-transform: capitalize;">{{this.status}}</td>
+                                        <td style="padding: 12px 15px;">
+                                            {{#if this.is_rewatching}}
+                                                <span style="color: #4caf50; font-weight: bold;">Yes</span>
+                                            {{else}}
+                                                <span style="color: #888;">No</span>
+                                            {{/if}}
+                                        </td>
+                                        <td style="padding: 12px 15px;">{{this.num_watched_episodes}}</td>
+                                    </tr>
+                                {{/each}}
+                                </tbody>
+                            </table>
+                        </div>
+                    {{else}}
+                        <p style="color: #888; font-style: italic; margin-bottom: 2rem;">No ratings available for this
+                            anime yet.</p>
+                    {{/if}}
+                </div>
+
+            </section>
+
+        </article>
+        <script src="/javascript/anime_detail.js"></script>
+    {{else}}
+        {{#unless warning}}
+            <p class="no-data">No anime available at the moment.</p>
+        {{/unless}}
+    {{/if}}
+</div>

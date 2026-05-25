@@ -7,8 +7,8 @@ const router = express.Router();
  * @swagger
  * /anime:
  *   get:
- *       summary: Restituisce la lista degli anime.
- *       description: Recupera l’elenco degli anime con filtri opzionali su genere, anno, rating, ecc.
+ *       summary: Returns the anime list.
+ *       description: Retrieves the anime list with optional filters for genre, year, rating, and more.
  *       tags:
  *         - Anime
  *       parameters:
@@ -17,10 +17,10 @@ const router = express.Router();
  *           required: false
  *           schema:
  *             type: string
- *           description: Testo da ricercare nei titoli.
+ *           description: Text to search for in titles.
  *       responses:
  *         200:
- *           description: Lista di anime.
+ *           description: Anime list.
  *           content:
  *             application/json:
  *               schema:
@@ -30,10 +30,10 @@ const router = express.Router();
  *                   properties:
  *                     id:
  *                       type: string
- *                       description: ID dell’anime.
+ *                       description: Anime ID.
  *                     title:
  *                       type: string
- *                       description: Titolo dell’anime.
+ *                       description: Anime title.
  */
 router.get('/', animeController.list);
 
@@ -41,8 +41,8 @@ router.get('/', animeController.list);
  * @swagger
  * /anime/{id}/ratings-json:
  *   get:
- *       summary: Recupera i rating in formato JSON per un anime.
- *       description: Restituisce i rating associati all’anime identificato da {id}.
+ *       summary: Retrieves ratings for an anime in JSON format.
+ *       description: Returns the ratings associated with the anime identified by {id}.
  *       tags:
  *         - Ratings
  *       parameters:
@@ -51,10 +51,10 @@ router.get('/', animeController.list);
  *           required: true
  *           schema:
  *             type: string
- *           description: ID dell’anime.
+ *           description: Anime ID.
  *       responses:
  *         200:
- *           description: Lista dei rating per l’anime.
+ *           description: Rating list for the anime.
  *           content:
  *             application/json:
  *               schema:
@@ -73,7 +73,7 @@ router.get('/', animeController.list);
  *                     num_watched_episodes:
  *                       type: integer
  *         404:
- *           description: Anime non trovato.
+ *           description: Anime not found.
  */
 router.get('/:id/ratings-json', animeController.getRatingsJson);
 
@@ -81,8 +81,8 @@ router.get('/:id/ratings-json', animeController.getRatingsJson);
  * @swagger
  * /anime/{id}/ratings:
  *   post:
- *       summary: Registra un rating per un anime.
- *       description: Inserisce un nuovo rating per l’anime identificato da {id}.
+ *       summary: Records a rating for an anime.
+ *       description: Adds a new rating for the anime identified by {id}.
  *       tags:
  *         - Ratings
  *       parameters:
@@ -91,7 +91,7 @@ router.get('/:id/ratings-json', animeController.getRatingsJson);
  *           required: true
  *           schema:
  *             type: string
- *           description: ID dell’anime.
+ *           description: Anime ID.
  *       requestBody:
  *         required: true
  *         content:
@@ -111,7 +111,14 @@ router.get('/:id/ratings-json', animeController.getRatingsJson);
  *                   type: integer
  *       responses:
  *         201:
- *           description: Rating creato con successo.
+ *           description: Rating created successfully.
+ */
+/**
+ * Validates and stores a user rating for an anime.
+ *
+ * @param {Object} req Express request with rating body.
+ * @param {Object} res Express response.
+ * @returns {Promise<void>} Resolves when the JSON response is sent.
  */
 router.post('/:id/ratings', async function(req, res) {
     try {
@@ -177,10 +184,10 @@ router.post('/:id/ratings', async function(req, res) {
 
 /**
  * @swagger
- * /anime/{id}:
+ * /anime/{id}/characters:
  *   get:
- *       summary: Restituisce i dettagli di un anime.
- *       description: Recupera le informazioni dettagliate dell’anime identificato da {id}.
+ *       summary: Returns the characters linked to an anime.
+ *       description: Retrieves the characters linked to the anime through the main server.
  *       tags:
  *         - Anime
  *       parameters:
@@ -189,10 +196,33 @@ router.post('/:id/ratings', async function(req, res) {
  *           required: true
  *           schema:
  *             type: string
- *           description: ID dell’anime.
+ *           description: Anime ID.
  *       responses:
  *         200:
- *           description: Dettaglio dell’anime.
+ *           description: Linked character list.
+ *         404:
+ *           description: Anime not found.
+ */
+router.get('/:id/characters', animeController.characters);
+
+/**
+ * @swagger
+ * /anime/{id}:
+ *   get:
+ *       summary: Returns anime details.
+ *       description: Retrieves detailed information for the anime identified by {id}.
+ *       tags:
+ *         - Anime
+ *       parameters:
+ *         - in: path
+ *           name: id
+ *           required: true
+ *           schema:
+ *             type: string
+ *           description: Anime ID.
+ *       responses:
+ *         200:
+ *           description: Anime details.
  *           content:
  *             application/json:
  *               schema:
@@ -209,7 +239,7 @@ router.post('/:id/ratings', async function(req, res) {
  *                     items:
  *                       type: string
  *         404:
- *           description: Anime non trovato.
+ *           description: Anime not found.
  */
 router.get('/:id', animeController.detail);
 
@@ -217,8 +247,8 @@ router.get('/:id', animeController.detail);
  * @swagger
  * /anime/{id}/recommendations:
  *   get:
- *       summary: Restituisce raccomandazioni per un anime.
- *       description: Recupera una lista di anime consigliati in base all’anime identificato da {id}.
+ *       summary: Returns recommendations for an anime.
+ *       description: Retrieves a list of recommended anime based on the anime identified by {id}.
  *       tags:
  *         - Anime
  *       parameters:
@@ -227,10 +257,10 @@ router.get('/:id', animeController.detail);
  *           required: true
  *           schema:
  *             type: string
- *           description: ID dell’anime.
+ *           description: Anime ID.
  *       responses:
  *         200:
- *           description: Lista di anime consigliati.
+ *           description: Recommended anime list.
  *           content:
  *             application/json:
  *               schema:
@@ -243,7 +273,7 @@ router.get('/:id', animeController.detail);
  *                     title:
  *                       type: string
  *         404:
- *           description: Anime non trovato.
+ *           description: Anime not found.
  */
 router.get('/:id/recommendations', animeController.reccomendations);
 

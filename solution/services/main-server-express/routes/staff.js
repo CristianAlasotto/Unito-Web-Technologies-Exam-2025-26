@@ -6,8 +6,8 @@ const router = express.Router();
  * @swagger
  * /staff:
  *   get:
- *       summary: Restituisce la lista dello staff.
- *       description: Recupera l’elenco dello staff con filtri opzionali.
+ *       summary: Returns the staff list.
+ *       description: Retrieves the staff list with optional filters.
  *       tags:
  *         - Staff
  *       parameters:
@@ -16,10 +16,10 @@ const router = express.Router();
  *           required: false
  *           schema:
  *             type: string
- *           description: Testo da ricercare nei nomi dello staff.
+ *           description: Text to search for in staff names.
  *       responses:
  *         200:
- *           description: Lista dello staff.
+ *           description: Staff list.
  *           content:
  *             application/json:
  *               schema:
@@ -40,8 +40,8 @@ router.get('/', staffController.list);
  * @swagger
  * /staff/{id}:
  *   get:
- *       summary: Restituisce i dettagli di un membro dello staff.
- *       description: Recupera le informazioni dettagliate del membro dello staff identificato da {id}.
+ *       summary: Returns staff member details.
+ *       description: Retrieves detailed information for the staff member identified by {id}.
  *       tags:
  *         - Staff
  *       parameters:
@@ -50,10 +50,10 @@ router.get('/', staffController.list);
  *           required: true
  *           schema:
  *             type: string
- *           description: ID del membro dello staff.
+ *           description: Staff member ID.
  *       responses:
  *         200:
- *           description: Dettaglio dello staff.
+ *           description: Staff details.
  *           content:
  *             application/json:
  *               schema:
@@ -68,7 +68,7 @@ router.get('/', staffController.list);
  *                   biography:
  *                     type: string
  *         404:
- *           description: Membro dello staff non trovato.
+ *           description: Staff member not found.
  */
 router.get('/:id', staffController.detail);
 

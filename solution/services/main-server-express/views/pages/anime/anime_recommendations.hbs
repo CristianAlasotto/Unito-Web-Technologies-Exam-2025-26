@@ -1,0 +1,40 @@
+{{#if error}}
+    <div class="error-message">{{error}}</div>
+{{/if}}
+
+<div class="anime-container">
+    <h1>{{title}}</h1>
+
+    <section class="recommendations">
+        {{#if recommendations}}
+            <div class="cardsContainer">
+                {{#each recommendations}}
+                    <div class="card">
+                        {{#if this.mal_id}}
+                            <a href="/anime/{{this.mal_id}}">
+                        {{else}}
+                            <a href="/anime/{{this.anime_id}}">
+                        {{/if}}
+
+                            {{#if (isHttpUrl this.image_url)}}
+                                <img src="{{this.image_url}}" alt="{{this.title}}">
+                            {{else}}
+                                <div class="card-image-placeholder">
+                                    <img src="/images/logo.png" alt="Logo">
+                                </div>
+                            {{/if}}
+
+                            <div class="card-body">
+                                <p>{{this.title}}</p>
+                            </div>
+                        </a>
+                    </div>
+                {{/each}}
+            </div>
+        {{else}}
+            <p>No recommended animes available.</p>
+        {{/if}}
+    </section>
+
+    <a href="/anime" class="btn btn-secondary">Back to Anime</a>
+</div>

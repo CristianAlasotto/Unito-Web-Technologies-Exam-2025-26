@@ -9,8 +9,8 @@ router.get('/:username/ratings-json', profileController.getRatingsJson);
  * @swagger
  * /profile/{username}:
  *   get:
- *       summary: Mostra il profilo utente.
- *       description: Renderizza la pagina profilo per lo username specificato.
+ *       summary: Shows the user profile.
+ *       description: Renders the profile page for the specified username.
  *       tags:
  *         - Profile
  *       parameters:
@@ -19,12 +19,12 @@ router.get('/:username/ratings-json', profileController.getRatingsJson);
  *           required: true
  *           schema:
  *             type: string
- *           description: Username dell’utente.
+ *           description: User username.
  *       responses:
  *         200:
- *           description: Pagina profilo renderizzata.
+ *           description: Profile page rendered.
  *         404:
- *           description: Utente non trovato.
+ *           description: User not found.
  */
 router.get('/:username', profileController.showProfile);
 
@@ -32,13 +32,20 @@ router.get('/:username', profileController.showProfile);
  * @swagger
  * /profile:
  *   get:
- *       summary: Reindirizza al login.
- *       description: Reindirizza alla pagina di login utenti.
+ *       summary: Redirects to login.
+ *       description: Redirects to the user login page.
  *       tags:
  *         - Profile
  *       responses:
  *         302:
- *           description: Reindirizzamento a /users/login.
+ *           description: Redirect to /users/login.
+ */
+/**
+ * Redirects bare profile requests to the login page.
+ *
+ * @param {Object} req Express request.
+ * @param {Object} res Express response.
+ * @returns {void}
  */
 router.get('/', function(req, res) {
     res.redirect('/users/login');

@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{title}} - Anime DB</title>
   <link rel="icon" href="/images/logo.png" type="image/png">
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/stylesheets/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -14,23 +14,25 @@
     rel="stylesheet">
 
   <!-- Global CSS -->
-  <link rel="stylesheet" href="/css/style.css">
-  <link rel="stylesheet" href="/css/navbar.css">
-  <link rel="stylesheet" href="/css/hero.css">
-  <link rel="stylesheet" href="/css/carousels.css">
-  <link rel="stylesheet" href="/css/footer.css">
-  <link rel="stylesheet" href="/css/filters.css">
+  <link rel="stylesheet" href="/stylesheets/style.css">
+  <link rel="stylesheet" href="/stylesheets/navbar.css">
+  <link rel="stylesheet" href="/stylesheets/hero.css">
+  <link rel="stylesheet" href="/stylesheets/carousels.css">
+  <link rel="stylesheet" href="/stylesheets/footer.css">
+  <link rel="stylesheet" href="/stylesheets/filters.css">
 
   <!-- CSS for reusable components -->
-  <link rel="stylesheet" href="/css/cards.css">
-  <link rel="stylesheet" href="/css/forms.css">
-  <link rel="stylesheet" href="/css/pages/anime.css">
-  <link rel="stylesheet" href="/css/pages/characters.css">
-  <link rel="stylesheet" href="/css/pages/staff.css">
+  <link rel="stylesheet" href="/stylesheets/cards.css">
+  <link rel="stylesheet" href="/stylesheets/forms.css">
+  <link rel="stylesheet" href="/stylesheets/pages/anime.css">
+  <link rel="stylesheet" href="/stylesheets/pages/characters.css">
+  <link rel="stylesheet" href="/stylesheets/pages/staff.css">
 
   {{#if currentPage}}
-  <link rel="stylesheet" href="/css/pages/{{currentPage}}.css">
+  <link rel="stylesheet" href="/stylesheets/pages/{{currentPage}}.css">
   {{/if}}
+
+  <script src="/vendor/axios/axios.min.js"></script>
 </head>
 
 <body>
@@ -38,7 +40,7 @@
     <div class="container">
       <div class="logo-container">
         <div>
-            <a href="/"><img src="/images/logo.png" alt="Logo" class="logo-img"></a>
+          <a href="/"><img src="/images/logo.png" alt="Logo" class="logo-img"></a>
         </div>
         <div>
           <h1 class="logo_title">Anime Database</h1>
@@ -62,8 +64,6 @@
     <p>&copy; 2025 Anime Database. All rights reserved.</p>
   </footer>
 
-  {{!--
-  <script src="/js/main.js"></script> --}}
 </body>
 
 </html>

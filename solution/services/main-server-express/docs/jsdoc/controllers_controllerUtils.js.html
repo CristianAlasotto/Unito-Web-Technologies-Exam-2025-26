@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: controllers/controllerUtils.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: controllers/controllerUtils.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Shared controller helpers for rendering paginated views.
+ */
+
+/**
+ * Converts empty values to a display fallback.
+ *
+ * @param {unknown} value Raw value to display.
+ * @returns {unknown|string} Original value or 'N/A' for empty values.
+ */
+const formatValue = (value) =>
+  value === null || value === undefined || value === '' ? 'N/A' : value;
+
+/**
+ * Marks option objects as selected based on a target value.
+ *
+ * @param {Array&lt;{value: string, label: string}>} options Select option list.
+ * @param {string} selectedValue Current selected value.
+ * @returns {Array&lt;{value: string, label: string, selected: boolean}>} Options with selection state.
+ */
+const withSelectedOptions = (options, selectedValue) =>
+  options.map((option) => ({
+    ...option,
+    selected: option.value === selectedValue
+  }));
+
+/**
+ * Builds standard pagination metadata for templates and JSON responses.
+ *
+ * @param {number} currentPage Current one-based page number.
+ * @param {number} totalPages Total available pages.
+ * @returns {{currentPage: number, totalPages: number, hasPrev: boolean, prevPage: number, hasNext: boolean, nextPage: number}} Pagination model.
+ */
+const buildPagination = (currentPage, totalPages) => ({
+  currentPage,
+  totalPages,
+  hasPrev: currentPage > 1,
+  prevPage: currentPage - 1,
+  hasNext: currentPage &lt; totalPages,
+  nextPage: currentPage + 1
+});
+
+/**
+ * Builds a query suffix preserving active filters for pagination links.
+ *
+ * @param {Record&lt;string, unknown>} query Incoming request query object.
+ * @param {Object} [config] Query transformation options.
+ * @returns {string} Query string prefixed with '&amp;', or an empty string.
+ */
+const buildFiltersQuery = (query, config = {}) => {
+  const excluded = new Set(['page', ...(config.exclude || [])]);
+  const aliases = config.aliases || {};
+  const paginationQuery = new URLSearchParams();
+
+  Object.entries(query).forEach(([key, value]) => {
+    if (!value || excluded.has(key)) {
+      return;
+    }
+
+    const alias = aliases[key];
+    if (alias) {
+      if (!query[alias]) {
+        paginationQuery.set(alias, value);
+      }
+      return;
+    }
+
+    paginationQuery.set(key, value);
+  });
+
+  const queryString = paginationQuery.toString();
+  return queryString ? `&amp;${queryString}` : '';
+};
+
+/**
+ * Normalizes scalar, array, and serialized-array values into a clean list.
+ *
+ * @param {unknown} value Raw value from an API payload.
+ * @returns {Array&lt;string|unknown>} Normalized non-empty list.
+ */
+const normalizeList = (value) => {
+  if (Array.isArray(value)) {
+    return value.filter((item) => item !== null &amp;&amp; item !== undefined &amp;&amp; item !== '');
+  }
+  if (value === null || value === undefined) {
+    return [];
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed === '' || trimmed === '[]') {
+      return [];
+    }
+    if (trimmed.startsWith('[') &amp;&amp; trimmed.endsWith(']')) {
+      const normalized = trimmed.replace(/'/g, '"');
+      try {
+        const parsed = JSON.parse(normalized);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((item) => item !== null &amp;&amp; item !== undefined &amp;&amp; item !== '');
+        }
+      } catch (err) {
+        // Fallback to splitting below.
+      }
+      return trimmed
+        .slice(1, -1)
+        .split(',')
+        .map((item) => item.trim().replace(/^["']|["']$/g, ''))
+        .filter((item) => item !== '');
+    }
+    return [trimmed];
+  }
+  return [String(value)];
+};
+
+/**
+ * Extracts a list from common API response shapes.
+ *
+ * @param {unknown} data API response body.
+ * @returns {Array&lt;unknown>} Items array or an empty array.
+ */
+const extractItems = (data) => {
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data &amp;&amp; Array.isArray(data.items)) {
+    return data.items;
+  }
+  if (data &amp;&amp; Array.isArray(data.data)) {
+    return data.data;
+  }
+  return [];
+};
+
+/**
+ * Extracts a list from a Promise.allSettled result.
+ *
+ * @param {Object} result Settled promise result.
+ * @returns {Array&lt;unknown>} Items array or an empty array.
+ */
+const extractSettledItems = (result) => {
+  if (result.status === 'rejected') {
+    return [];
+  }
+  return extractItems(result.value.data);
+};
+
+module.exports = {
+  buildFiltersQuery,
+  buildPagination,
+  extractItems,
+  extractSettledItems,
+  formatValue,
+  normalizeList,
+  withSelectedOptions
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#GET/profile/:username/ratings-json">GET /profile/:username/ratings-json</a></li><li><a href="global.html#apiMongo">apiMongo</a></li><li><a href="global.html#apiPostgres">apiPostgres</a></li><li><a href="global.html#axios">axios</a></li><li><a href="global.html#buildFiltersModel">buildFiltersModel</a></li><li><a href="global.html#buildFiltersQuery">buildFiltersQuery</a></li><li><a href="global.html#buildPagination">buildPagination</a></li><li><a href="global.html#characters">characters</a></li><li><a href="global.html#detail">detail</a></li><li><a href="global.html#enhanceReviewsWithAnimeTitles">enhanceReviewsWithAnimeTitles</a></li><li><a href="global.html#extractItems">extractItems</a></li><li><a href="global.html#extractSettledItems">extractSettledItems</a></li><li><a href="global.html#fetchFavoriteDetails">fetchFavoriteDetails</a></li><li><a href="global.html#fetchFavorites">fetchFavorites</a></li><li><a href="global.html#formatValue">formatValue</a></li><li><a href="global.html#getApiRequestConfig">getApiRequestConfig</a></li><li><a href="global.html#getCarouselData">getCarouselData</a></li><li><a href="global.html#getItemsPage">getItemsPage</a></li><li><a href="global.html#getRatingsJson">getRatingsJson</a></li><li><a href="global.html#handleCarouselRequest">handleCarouselRequest</a></li><li><a href="global.html#list">list</a></li><li><a href="global.html#normalizeList">normalizeList</a></li><li><a href="global.html#preview">preview</a></li><li><a href="global.html#reccomendations">reccomendations</a></li><li><a href="global.html#showProfile">showProfile</a></li><li><a href="global.html#withSelectedOptions">withSelectedOptions</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri May 08 2026 15:47:45 GMT+0200 (Central European Summer Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

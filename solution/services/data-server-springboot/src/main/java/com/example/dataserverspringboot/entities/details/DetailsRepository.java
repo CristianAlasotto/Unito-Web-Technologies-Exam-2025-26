@@ -13,171 +13,207 @@ import org.springframework.stereotype.Repository;
 public interface DetailsRepository extends JpaRepository<Details, Integer> {
 
     /**
-     * Search by title (case-insensitive, partial match)
+     * Executes a combined AND filter across all searchable fields.
+     *
+     * <p>Uses pure JPQL (no {@code nativeQuery=true}) so Hibernate correctly maps
+     * camelCase Java field names to snake_case SQL columns via {@code @Column}
+     * annotations, and Spring Data's pagination ORDER BY generation works correctly.</p>
+     *
+     * <p>The {@code lower(bytea)} PostgreSQL error is avoided by pre-building
+     * wildcard patterns in {@link DetailsService#likePattern} before calling
+     * this method. Parameters {@code searchPattern} and {@code genresPattern} arrive
+     * already as {@code "%value%"} (a non-null {@link String}) or {@code null},
+     * so Hibernate always infers {@code VARCHAR} correctly.</p>
+     *
+     * <p>The {@code :param IS NULL OR condition} pattern makes every filter optional:
+     * when a parameter is {@code null}, the left side evaluates to {@code TRUE}
+     * and the right side is never evaluated, effectively removing that filter.</p>
+     *
+     * @param searchPattern pre-built LIKE pattern, e.g. {@code "%naruto%"}, or {@code null}
+     * @param type          exact type filter, or {@code null}
+     * @param year          exact year filter, or {@code null}
+     * @param status        exact status filter, or {@code null}
+     * @param rating        exact rating filter, or {@code null}
+     * @param source        exact source filter, or {@code null}
+     * @param genresPattern pre-built LIKE pattern, e.g. {@code "%action%"}, or {@code null}
+     * @param episodes      exact episode count filter, or {@code null}
+     * @param pageable      pagination and sorting parameters
+     * @return paginated page of matching {@link Details} records
      */
-    @Query("SELECT e FROM Details e WHERE LOWER(CAST(e.title AS string)) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<Details> searchByTitle(@Param("search") String search, Pageable pageable);
+    @Query("SELECT e FROM Details e WHERE " +
+            "(:searchPattern IS NULL OR LOWER(e.title) LIKE :searchPattern) AND " +
+            "(:type IS NULL OR e.type = :type) AND " +
+            "(:year IS NULL OR e.year = :year) AND " +
+            "(:status IS NULL OR e.status = :status) AND " +
+            "(:rating IS NULL OR e.rating = :rating) AND " +
+            "(:source IS NULL OR e.source = :source) AND " +
+            "(:genresPattern IS NULL OR LOWER(e.genres) LIKE :genresPattern) AND " +
+            "(:episodes IS NULL OR e.episodes = :episodes)")
+    Page<Details> findWithCombinedFilters(
+            @Param("searchPattern") String searchPattern,
+            @Param("type") String type,
+            @Param("year") Integer year,
+            @Param("status") String status,
+            @Param("rating") String rating,
+            @Param("source") String source,
+            @Param("genresPattern") String genresPattern,
+            @Param("episodes") Integer episodes,
+            Pageable pageable);
 
     /**
-     * Find by type
+     * Searches anime by title with a case-insensitive partial match.
+     *
+     * @param searchPattern pre-built lowercase LIKE pattern, e.g. {@code "%cowboy%"}
+     * @param pageable      pagination and sorting parameters
+     * @return paginated page of matching records
+     */
+    @Query("SELECT e FROM Details e WHERE LOWER(e.title) LIKE :searchPattern")
+    Page<Details> searchByTitle(@Param("searchPattern") String searchPattern, Pageable pageable);
+
+    /**
+     * Returns all anime with an exact type match.
+     *
+     * @param type     exact type value, e.g. {@code "TV"}
+     * @param pageable pagination and sorting parameters
+     * @return paginated page of matching records
      */
     Page<Details> findByType(String type, Pageable pageable);
 
     /**
-     * Find by year
+     * Returns all anime broadcast in the given year.
+     *
+     * @param year     broadcast year
+     * @param pageable pagination and sorting parameters
+     * @return paginated page of matching records
      */
     Page<Details> findByYear(Integer year, Pageable pageable);
 
     /**
-     * Find by status
+     * Returns all anime with the given airing status.
+     *
+     * @param status   airing status, e.g. {@code "Finished Airing"}
+     * @param pageable pagination and sorting parameters
+     * @return paginated page of matching records
      */
     Page<Details> findByStatus(String status, Pageable pageable);
 
     /**
-     * Find by rating
+     * Returns all anime with the given age rating.
+     *
+     * @param rating   age rating, e.g. {@code "PG-13"}
+     * @param pageable pagination and sorting parameters
+     * @return paginated page of matching records
      */
     Page<Details> findByRating(String rating, Pageable pageable);
 
     /**
-     * Find by source
+     * Returns all anime with the given source material.
+     *
+     * @param source   source material, e.g. {@code "Manga"}
+     * @param pageable pagination and sorting parameters
+     * @return paginated page of matching records
      */
     Page<Details> findBySource(String source, Pageable pageable);
 
     /**
-     * Find by episodes (exact match)
+     * Returns all anime with exactly the given episode count.
+     *
+     * @param episodes exact episode count
+     * @param pageable pagination and sorting parameters
+     * @return paginated page of matching records
      */
     Page<Details> findByEpisodes(Integer episodes, Pageable pageable);
 
     /**
-     * Find by genres (case-insensitive, partial match for genre names)
+     * Searches anime by genres with a case-insensitive partial match.
+     *
+     * @param genrePattern pre-built lowercase LIKE pattern, e.g. {@code "%action%"}
+     * @param pageable     pagination and sorting parameters
+     * @return paginated page of matching records
      */
-    @Query("SELECT e FROM Details e WHERE LOWER(CAST(e.genres AS string)) LIKE LOWER(CONCAT('%', :genre, '%'))")
-    Page<Details> findByGenresContaining(@Param("genre") String genre, Pageable pageable);
+    @Query("SELECT e FROM Details e WHERE LOWER(e.genres) LIKE :genrePattern")
+    Page<Details> findByGenresContaining(@Param("genrePattern") String genrePattern, Pageable pageable);
 
     /**
-     * Find recommendations for a specific anime using subquery
+     * Returns all anime recommended as similar to the given anime, ordered by score descending.
+     *
+     * <p>Implements a cross-entity JPQL subquery:
+     * {@code details → recommendations → details}.</p>
+     *
+     * @param malId    source anime MAL ID
+     * @param pageable pagination parameters
+     * @return paginated page of recommended {@link Details} ordered by score
      */
     @Query("SELECT d FROM Details d WHERE d.malId IN " +
-           "(SELECT r.recommendationMalId FROM com.example.dataserverspringboot.entities.recommendations.Recommendations r WHERE r.malId = :malId) " +
-           "ORDER BY d.score DESC")
+            "(SELECT r.recommendationMalId FROM " +
+            "com.example.dataserverspringboot.entities.recommendations.Recommendations r " +
+            "WHERE r.malId = :malId) " +
+            "ORDER BY d.score DESC")
     Page<Details> findRecommendationsForAnime(@Param("malId") Integer malId, Pageable pageable);
 
     /**
-     * JOIN: Find all characters that appear in this anime
-     * details → character_anime_works → characters
+     * Returns all characters that appear in this anime, ordered by favourites descending.
+     *
+     * <p>Cross-entity JPQL join:
+     * {@code details → character_anime_works → characters}.</p>
+     *
+     * @param malId    anime MAL ID
+     * @param pageable pagination parameters
+     * @return paginated page of {@link com.example.dataserverspringboot.entities.characters.Characters}
      */
-    @Query("SELECT c FROM com.example.dataserverspringboot.entities.characters.Characters c WHERE c.characterMalId IN " +
-            "(SELECT caw.characterMalId FROM com.example.dataserverspringboot.entities.characteranimeworks.CharacterAnimeWorks caw " +
+    @Query("SELECT c FROM com.example.dataserverspringboot.entities.characters.Characters c " +
+            "WHERE c.characterMalId IN " +
+            "(SELECT caw.characterMalId FROM " +
+            "com.example.dataserverspringboot.entities.characteranimeworks.CharacterAnimeWorks caw " +
             "WHERE caw.animeMalId = :malId) " +
             "ORDER BY c.favorites DESC NULLS LAST")
-    Page<com.example.dataserverspringboot.entities.characters.Characters> findCharactersInAnime(@Param("malId") Integer malId, Pageable pageable);
+    Page<com.example.dataserverspringboot.entities.characters.Characters>
+            findCharactersInAnime(@Param("malId") Integer malId, Pageable pageable);
 
     /**
-     * COUNT: Total characters in this anime
+     * Counts distinct characters that appear in this anime.
+     *
+     * @param malId anime MAL ID
+     * @return count of distinct characters
      */
-    @Query("SELECT COUNT(DISTINCT caw.characterMalId) FROM com.example.dataserverspringboot.entities.characteranimeworks.CharacterAnimeWorks caw " +
+    @Query("SELECT COUNT(DISTINCT caw.characterMalId) FROM " +
+            "com.example.dataserverspringboot.entities.characteranimeworks.CharacterAnimeWorks caw " +
             "WHERE caw.animeMalId = :malId")
     long countCharactersInAnime(@Param("malId") Integer malId);
 
     /**
-     * Count recommendations for a specific anime
+     * Counts recommendations for the given anime.
+     *
+     * @param malId anime MAL ID
+     * @return count of recommendation records
      */
-    @Query("SELECT COUNT(r) FROM com.example.dataserverspringboot.entities.recommendations.Recommendations r WHERE r.malId = :malId")
+    @Query("SELECT COUNT(r) FROM " +
+            "com.example.dataserverspringboot.entities.recommendations.Recommendations r " +
+            "WHERE r.malId = :malId")
     long countRecommendationsForAnime(@Param("malId") Integer malId);
 
-    // ============================================================
-    // NULL FILTERING METHODS
-    // ============================================================
-
-    /**
-     * Find all anime where synopsis IS NULL
-     */
     Page<Details> findBySynopsisIsNull(Pageable pageable);
-
-    /**
-     * Find all anime where synopsis IS NOT NULL
-     */
     Page<Details> findBySynopsisIsNotNull(Pageable pageable);
 
-    /**
-     * Find all anime where score IS NULL (unrated)
-     */
     Page<Details> findByScoreIsNull(Pageable pageable);
-
-    /**
-     * Find all anime where score IS NOT NULL (rated)
-     */
     Page<Details> findByScoreIsNotNull(Pageable pageable);
 
-    /**
-     * Find all anime where end_date IS NULL (currently airing or unknown)
-     */
     Page<Details> findByEndDateIsNull(Pageable pageable);
-
-    /**
-     * Find all anime where end_date IS NOT NULL (finished airing)
-     */
     Page<Details> findByEndDateIsNotNull(Pageable pageable);
 
-    /**
-     * Find all anime where title_japanese IS NULL
-     */
     Page<Details> findByTitleJapaneseIsNull(Pageable pageable);
-
-    /**
-     * Find all anime where title_japanese IS NOT NULL
-     */
     Page<Details> findByTitleJapaneseIsNotNull(Pageable pageable);
 
-    /**
-     * Find all anime where season IS NULL (movies, OVAs, etc.)
-     */
     Page<Details> findBySeasonIsNull(Pageable pageable);
-
-    /**
-     * Find all anime where season IS NOT NULL (seasonal anime)
-     */
     Page<Details> findBySeasonIsNotNull(Pageable pageable);
 
-    // Count methods for statistics
-
-    /**
-     * Find all characters where favorites IS NULL
-     */
     Page<Details> findByFavoritesIsNull(Pageable pageable);
-
-    /**
-     * Find all characters where favorites IS NOT NULL
-     */
     Page<Details> findByFavoritesIsNotNull(Pageable pageable);
 
-    /**
-     * Count characters with null favorites
-     */
-    long countByFavoritesIsNull();
-
-    /**
-     * Count anime with null synopsis
-     */
     long countBySynopsisIsNull();
-
-    /**
-     * Count anime with null score
-     */
     long countByScoreIsNull();
-
-    /**
-     * Count anime with null end_date
-     */
     long countByEndDateIsNull();
-
-    /**
-     * Count anime with null title_japanese
-     */
     long countByTitleJapaneseIsNull();
-
-    /**
-     * Count anime with null season
-     */
     long countBySeasonIsNull();
+    long countByFavoritesIsNull();
 }

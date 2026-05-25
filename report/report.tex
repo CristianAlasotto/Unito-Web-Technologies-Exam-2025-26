@@ -5,11 +5,14 @@
 \usepackage{hyperref}
 \usepackage{enumitem}
 \usepackage{parskip}
+\usepackage{graphicx}
+\graphicspath{{./}{report/}{images/}{../images/}}
 
-\geometry{margin=2cm}
+\geometry{margin=1.5cm}
 
-\title{Project Documentation: Anime Data Access System}
-\author{}
+\title{Project Documentation: \\ 
+	Web Technologies 2025/26 Group Project}
+\author{Alasotto Cristian, Collura Federico, Correndo Davide}
 \date{}
 
 \begin{document}
@@ -24,6 +27,15 @@ The system is built using a multi-server architecture with a central Express ser
 
 The project follows the design principles and technologies introduced in the course, focusing on modularity, clear separation of concerns and well-documented APIs.
 
+The project startup is fully automated through Docker containers and can be executed with a single command. To run the system, ensure that Docker and Node.js are installed and that the dataset files are placed in the \texttt{solution/data} folder. For the simplest setup, navigate to the \texttt{solution} directory and run \texttt{./start-dev.sh}; this script starts the databases, imports the PostgreSQL data and launches all services.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{images/script_scheme.png}
+\end{figure}
+
+Alternatively, you can start the containers manually using \texttt{docker compose up}, install dependencies in the \texttt{main-server-express} directory and run \texttt{npm run dev}. MongoDB data are imported, indexed and verified through the scripts in \texttt{./db/mongo}. The system uses environment variables defined in \texttt{.env} to configure service URLs and logging levels. Once running, the web interface is accessible at \url{http://localhost:3000}.
+
 \section{Technical Task 1 -- System Architecture and Data Management}
 
 \subsection{Design and Motivations}
@@ -37,85 +49,101 @@ Major challenges included handling large datasets, indexing MongoDB collections 
 \subsection{Requirements}
 
 The architecture meets the assignment requirements by separating static and dynamic data, using Express and Spring Boot, and keeping the central server lightweight. All services expose REST APIs with pagination, filtering and sorting, are fully containerised with Docker Compose, and provide Swagger documentation.
-
-\subsection{Limitations}
-
-The system lacks caching, authentication and advanced error handling. Services run as single instances, limiting scalability, and cross-database queries require data composition at the central server, which may introduce latency.
-
 \section{Technical Task 2 -- Postgres Data Service (Spring Boot)}
 
-\subsection{Design and Motivations}
+\subsection{Structure and Functioning}
 
-The Spring Boot service exposes REST endpoints under \texttt{/api} to deliver data from PostgreSQL. We used Spring Data JPA to map tables such as \texttt{details}, \texttt{characters}, \texttt{character\_anime\_works}, \texttt{character\_nicknames} and \texttt{person\_details} to Java entities. Controllers provide endpoints for listing resources with pagination, searching by attributes, selecting specific fields and filtering by NULL values. For example, \texttt{/api/details} returns paginated anime with filters for year, type, status, rating, genres and episodes; \texttt{/api/details/\{mal\_id\}} returns a single anime with optional field selection; and \texttt{/api/details/\{mal\_id\}/characters} returns characters appearing in an anime. Sorting accepts comma-separated fields prefixed with \texttt{-} for descending order, with NULL values always sorted last. Spring Boot's ecosystem enabled straightforward testing and comprehensive Swagger documentation.
+The Spring Boot service is organised into ten modules, each covering one database entity, all following a three-tier structure: \texttt{Controller} (HTTP requests), \texttt{Service} (business logic, DTO), and \texttt{Repository} (PostgreSQL).
 
-\subsection{Issues}
+Each module uses a DTO to decouple the JPA entity from JSON. The DTO is built via \texttt{fromEntity()}, exposes only getters, and is read-only. Entities never leave the service layer: all methods return a DTO or \texttt{Page<DTO>}. Field names use snake\_case via \texttt{@JsonProperty}.
 
-Mapping the relational schema to Java entities required careful handling of composite keys (\texttt{@IdClass}) for junction tables like \texttt{CharacterAnimeWorks} and \texttt{CharacterNicknames}. We implemented custom JPQL queries with \texttt{@Query} for complex operations like JOINs and genre filtering that exceeded automatic query derivation capabilities. Converting database snake\_case to JSON snake\_case while maintaining Java camelCase required manual mapping functions in controllers. NULL value handling needed dedicated repository methods (\texttt{findByFieldIsNull}/\texttt{IsNotNull}) and special sorting logic (\texttt{.nullsLast()}) to properly manage incomplete data. Swagger annotations became verbose across 20+ endpoints but provide essential self-documentation.
+The service layer includes \texttt{likePattern()}, which builds \texttt{\%value\%} for text search, ensuring Hibernate receives a non-null \texttt{String} and infers \texttt{VARCHAR}. The database has ten tables with 28,955 anime records; six use composite keys with \texttt{@IdClass} implementing \texttt{Serializable}, \texttt{equals()}, and \texttt{hashCode()}. Junction tables (e.g. \texttt{character\_anime\_works}, \texttt{person\_voice\_works}) support JPQL cross-entity queries.
+
+All endpoints support page-based and limit/offset pagination (default ten results) and a \texttt{sort} parameter (comma-separated, \texttt{-} for descending); NULL values are last. Swagger documents endpoints at \url{http://localhost:8080/swagger-ui/index.html}, and Javadoc documents all classes and methods at \texttt{data-server-springboot/build/docs/javadoc/index.html} path.
+
+\subsection{Development History and Problems}
+
+Development had three phases: initial structure with NULL filtering and Swagger, bug fixing, and replacing inline comments with Javadoc.
+
+\textbf{Bug 1 -- Combined filters ignored.} \texttt{findWithFilters()} in \texttt{DetailsService} used \texttt{if/return} chains, so once one filter was non-null, others were ignored. \\
+A request like \texttt{?type=TV\&rating=PG-13\&genres=Action} returned all 1,683 TV anime instead of 50--100 matching all filters, with results depending on parameter order. The fix introduced \texttt{findWithCombinedFilters()}, a JPQL query applying all filters with AND logic using \texttt{:param IS NULL OR condition}.
+
+\textbf{Bug 2 -- PostgreSQL casting error.} Text search failed with \texttt{function lower(bytea) does not exist} due to \texttt{LOWER(CAST(e.title AS string))}, translated to \texttt{varchar} but interpreted as \texttt{bytea}. Attempts like \texttt{AS text} failed. The fix removed \texttt{CAST()} and used \texttt{LOWER(e.title)}, since the column is already \texttt{VARCHAR}.
+
+\textbf{Refactoring of a previous approach.} A JPA Specifications approach for multi-filtering was abandoned due to complexity and poor pagination integration, and replaced by the JPQL combined query.
 
 \subsection{Requirements}
 
-The Spring Boot service meets the Java server requirement with well-documented REST endpoints supporting pagination, sorting and filtering. It uses JPA for ORM, PostgreSQL for persistence, and environment variables for configuration (database host, port, credentials) passed via startup scripts. The implementation returns snake\_case field names matching the dataset structure and includes relationship endpoints for characters, voice actors and anime appearances. Swagger/OpenAPI documentation is accessible at \texttt{/swagger-ui.html} with detailed parameter descriptions and response codes for all endpoints.
+The service uses JPA with \texttt{@Query} JPQL only (no native SQL), ensuring camelCase to snake\_case mapping. Configuration uses environment variables via Docker Compose. Cross-entity endpoints (e.g. \texttt{/api/details/\{mal\_id\}/characters}) use JPQL subqueries through junction tables.
 
 \subsection{Limitations}
 
-The service implements only basic text search (case-insensitive partial matching) without full-text indexing capabilities. Some endpoints may return large payloads when field selection is not specified. Query optimization relies on basic indexes; complex multi-table JOINs may experience latency on datasets exceeding 100,000 records. The API lacks caching, rate limiting and advanced error handling mechanisms that would be expected in production systems.
-
+Text search uses case-insensitive \texttt{LIKE} only (no full-text search). Cross-entity JPQL subqueries may be slower than SQL JOINs on large datasets. Only one endpoint supports writes (\texttt{POST /api/details/update\_score}); all others are read-only.
 \section{Technical Task 3 -- MongoDB Data Service (Node.js)}
 
 \subsection{Design and Motivations}
 
-The MongoDB service is a Node.js application using Express and native MongoDB drivers. It manages the three dynamic collections: \texttt{ratings}, \texttt{favs} and \texttt{stats}. The \texttt{/api/ratings} endpoint allows clients to retrieve ratings by anime identifier, filter by score ranges and paginate results. Clients can also submit ratings via a POST request; the service writes the new rating and updates the corresponding aggregate statistic (e.g.\ average score and vote counts). All endpoints return data with optional filters. We defined a service layer to encapsulate MongoDB operations and controllers to handle HTTP requests, ensuring separation of concerns and making the code testable.
+The MongoDB server is a Node.js application using Express and the Mongoose Object Data Modeling (ODM) library. It manages the three dynamic collections: \texttt{ratings}, \texttt{favs}, and \texttt{stats}.
+
+The \texttt{/api/\{collection\_name\}} endpoints allow clients to retrieve ratings by anime identifier, apply filters, and paginate results. Clients can also submit ratings via a POST request; the API writes the new rating and updates the corresponding aggregate statistic, such as average score and vote counts.
+
+All endpoints return data with optional filters. To streamline the architecture, we implemented a direct Model-Controller pattern: controllers handle HTTP requests and interact directly with the Mongoose models, meeting the specific architectural constraints of the Model-Controller pattern.
 
 \subsection{Issues}
 
-The primary challenges in this service were related to data volume and consistency. The ratings collection alone contains hundreds of millions of documents, so queries must use indexes to avoid full collection scans. Creating these indexes during deployment adds several minutes to the setup process. When users submit new ratings, we need to validate the request and check that the username exists in the PostgreSQL database; the service delegates this check to the central server's API client, introducing latency. Updating aggregate statistics in MongoDB requires careful handling to avoid race conditions; we chose to fetch the current statistic document, compute the new values and write them back atomically. Ensuring that our API adheres to REST principles while also providing flexibility for advanced queries required designing a consistent parameter scheme (e.g.\ \texttt{minScore} and \texttt{maxScore} for numeric filters).
+The primary challenges in this server were related to data volume and consistency. The \texttt{ratings} collection alone contains hundreds of millions of documents, so queries must use indexes to avoid full collection scans. Creating these indexes during deployment adds several minutes to the setup process.
+
+When users submit new ratings, we need to validate the request and check that the username exists in the PostgreSQL database; the server delegates this check to the central server's API client, introducing latency.
+
+Updating aggregate statistics in MongoDB requires careful handling to avoid race conditions; we chose to use an atomic \texttt{findOneAndUpdate} operation with \texttt{\$inc} modifiers to securely update raw counts, followed by dynamic calculation of weighted averages and score percentage breakdowns.
+
+Ensuring that our API adheres to REST principles while also providing flexibility for advanced queries required designing a consistent parameter scheme, for example \texttt{minScore} and \texttt{maxScore} for numeric filters.
 
 \subsection{Requirements}
 
-This service fulfils the requirement to store dynamic data in MongoDB and to implement at least one server in Node.js. It exposes REST endpoints for retrieving and creating ratings, favourites and statistics, uses pagination and supports advanced filtering options. The service is documented with swagger-jsdoc and served at \texttt{/api-docs}. Environment variables specify the MongoDB connection string and server port. Data import scripts populate the collections and create indexes; the README explains how to run these scripts. The service integrates with the central server by accepting \texttt{username}, \texttt{anime\_id} and \texttt{score} fields for new ratings and returns the updated average score to the client. Proper status codes and error messages are returned for missing data or invalid requests.
+This server fulfils the requirement to store dynamic data in MongoDB and to implement at least one server in Node.js. It exposes REST endpoints for retrieving and creating ratings, favourites, and statistics, uses pagination, and supports advanced filtering options.
+
+The server is documented with Swagger and JSDoc: the Swagger documentation is served at \url{http://localhost:3001/api-docs}, while the JSDoc documentation is available in a documentation folder named \texttt{jsdoc}.
+
+Currently, the MongoDB connection string and database configuration are statically defined within the codebase, using \texttt{localhost:27017}. Data import scripts populate the collections and create indexes; the README explains how to run these scripts. Proper status codes and error messages are returned for missing data or invalid requests.
+
+Data are also cached to improve performance by avoiding the execution of the same functions for different users when the underlying data have not changed.
 
 \subsection{Limitations}
 
-Current queries on the ratings collection rely on simple comparison operators and do not support more complex aggregations such as time-series analysis or grouping by user. Our POST endpoint for ratings does not yet support updating existing ratings; repeated submissions create duplicate documents. The service trusts the central server's validation and does not implement its own user authentication. While our design includes indexes on frequently queried fields, the large size of the collections still results in non-trivial response times, especially on commodity hardware. Additional caching, concurrency controls and transaction support would be necessary for production use.
+Current queries on the \texttt{ratings} collection rely on simple comparison operators and do not support more complex aggregations such as time-series analysis or grouping by user. The POST endpoint for ratings does not yet support updating existing ratings; repeated submissions create duplicate documents.
+
+The server trusts the central server's validation and does not implement its own user authentication. While the design includes indexes on frequently queried fields, the large size of the collections can result in non-trivial database processing times when retrieving non-cached data on commodity hardware. However, the server uses asynchronous Promises to fetch ratings, making requests non-blocking and ensuring that users do not have to wait several seconds for the page to load.
 
 \section{Technical Task 4 -- Central Express Server and Front-end}
 
 \subsection{Central Server -- Design and Motivations}
 
-The central server is implemented in Node.js using Express and Handlebars and acts as the main entry point for user interaction. It serves as a lightweight middleware between the client and two back-end data services (Spring Boot/PostgreSQL and Express/MongoDB), complying with the assignment requirement to avoid heavy computation. Communication with the data services is handled via Axios clients, and routes such as \texttt{/anime}, \texttt{/anime/:id}, \texttt{/anime/:id/ratings} and \texttt{/profile/:username} translate user requests into appropriate API calls. Handlebars templates with partials and helpers are used for server-side rendering of lists, filters and pagination while preserving query parameters across navigation. This approach simplifies the front-end stack and ensures full compliance with the assignment constraints. Compared to a React-based solution, server-side rendering with Handlebars reduces client-side complexity and avoids the need for a separate front-end build process, but it limits interactivity and prevents dynamic UI updates without page reloads.
+The central server is implemented in Node.js using Express and Handlebars and acts as the main entry point for user interaction. It serves as a lightweight middleware between the client and two back-end data services (Spring Boot/PostgreSQL and Express/MongoDB), complying with the assignment requirement to avoid heavy computation. Communication with the data services is handled via Axios clients, and routes such as \texttt{/anime}, \texttt{/anime/:id}, \texttt{/anime/:id/ratings} and \texttt{/profile/:username} translate user requests into appropriate API calls. Handlebars templates with partials and helpers are used for server-side rendering of lists, filters and pagination while preserving query parameters across navigation. This approach simplifies the front-end stack and ensures full compliance with the assignment constraints. Compared to a React-based solution, server-side rendering with Handlebars reduces client-side complexity and avoids the need for a separate front-end build process, but it limits interactivity and prevents dynamic UI updates without page reloads.\\
+A caching mechanism is implemented in the MongoDB data server, because that server directly handles dynamic and high-volume collections such as ratings, favourites and statistics. Caching there is useful to reduce repeated database accesses and improve response time for frequently requested dynamic data.
+In contrast, the main-server-express does not implement its own caching layer, because its role is not to access the databases directly, but to orchestrate requests, render Handlebars pages, and forward calls to the data servers through Axios. Adding another cache in the main server would increase complexity and could introduce consistency problems, especially for dynamic data that may change frequently.
 
 \subsection{Issues}
 
-Key challenges included mapping user input into valid API queries while preserving active filters across pagination. Input validation and normalisation were required before forwarding requests to the data services. Some pages require data aggregation from both PostgreSQL and MongoDB, which involved coordinating multiple asynchronous calls and handling partial service failures. Fallback mechanisms were implemented to ensure static content remains available when dynamic data cannot be retrieved. Designing a clear interface using only HTML, Bootstrap and Handlebars required careful layout planning. The absence of caching at this level means that performance depends on network latency and back-end response times.
+Key challenges included mapping user input into valid API queries while preserving active filters across pagination. Input validation and normalisation were required before forwarding requests to the data services. Some pages require data aggregation from both PostgreSQL and MongoDB, which involved coordinating multiple asynchronous calls and handling partial service failures. Designing a clear interface using only HTML and Handlebars required careful layout planning.
 
 \subsection{Requirements}
 
-The central server satisfies the assignment requirements by using Express as the main gateway and Handlebars for templating. It supports filtering, sorting and pagination aligned with the underlying APIs. Configuration is managed via environment variables, including service URLs and logging options. Rating submission is handled through POST forms, with username validation delegated to the PostgreSQL service before forwarding data to MongoDB. Static assets are served directly, and all routes are documented using Swagger to ensure clarity and maintainability.
+The central server satisfies the assignment requirements by using Express as the main gateway and Handlebars for templating. It supports filtering, sorting and pagination aligned with the underlying APIs. Configuration is managed via environment variables, including service URLs and logging options. Rating submission is handled through POST forms, with username validation delegated to the PostgreSQL service before forwarding data to MongoDB. The server is documented with Swagger and JSDoc: the Swagger documentation is served at \url{http://localhost:3000/api-docs}, while the JSDoc documentation is available at \url{http://localhost:3000/jsdoc}.
 
 \subsection{Limitations}
 
-The application does not implement authentication or advanced personalisation features. UI interactions are page-based and lack dynamic behaviours such as live filtering or auto-complete, which a React front-end could provide. Requests are forwarded sequentially without caching or batching, limiting scalability under heavy load. While the chosen architecture ensures simplicity and robustness, a React-based client could offer a more responsive user experience at the cost of increased architectural and implementation complexity.
+The application does not implement authentication or advanced personalisation features. UI interactions are page-based and lack dynamic behaviours such as live filtering or auto-complete, which a React front-end could provide. While the chosen architecture ensures simplicity and robustness, a React-based client could offer a more responsive user experience at the cost of increased architectural and implementation complexity.
 
 \section{Conclusions}
 
-Building a multi-service web application that integrates relational and document-oriented data taught us valuable lessons about system design, data modelling and cross-technology integration. We realised early on that clear separation of concerns and consistent API design make it easier to manage complexity. Containerisation with Docker simplified deployment and allowed us to replicate the environment across different development machines. Handling large datasets required tuning indexes and writing efficient queries; we learned to measure performance and iterate based on empirical evidence. Collaboration across different programming languages fostered better teamwork, as each member had to understand how their component interacted with the others. While our implementation meets the essential requirements, numerous opportunities remain for improvement, such as adding authentication, caching and more sophisticated search capabilities.
+Building a multi-service web application that integrates relational and document-oriented data taught us valuable lessons about system design, data modelling and cross-technology integration. We realised early on that clear separation of concerns and consistent API design make it easier to manage complexity. Containerisation with Docker simplified deployment and allowed us to replicate the environment across different development machines. Handling large datasets required tuning indexes and writing efficient queries; we learned to measure performance. Collaboration across different programming languages fostered better teamwork, as each member had to understand how their component interacted with the others. While our implementation meets the essential requirements, numerous opportunities remain for improvement, such as adding authentication with password managment and caching.
 
 \section{Division of Work}
 
-We divided tasks to leverage each member's strengths while ensuring that everyone contributed to all parts of the project. Member A (Alasotto) focused on the central Express server and front-end, designing the Handlebars templates, implementing route logic and ensuring that query parameters were correctly mapped to API calls. Member B (Collura) took primary responsibility for the Spring Boot service, modelling the PostgreSQL schema in Java, writing custom queries and integrating Swagger documentation. Member C (Correndo) led the development of the MongoDB service, writing controllers and services for ratings, favourites and statistics, and implementing data import and indexing scripts.
-
-All members collaborated on the overall architecture, wrote Docker Compose scripts and helped import and verify the dataset. We met regularly to integrate components, fix bugs and prepare the final documentation.
-
-\section{Extra Information}
-
-To run the system, ensure that Docker and Node.js are installed and that the dataset files are placed in the \texttt{solution/data} folder. For the simplest setup, navigate to the \texttt{solution} directory and run \texttt{./start-dev.sh}; this script starts the databases, imports the PostgreSQL data and launches all services. Alternatively, you can start the containers manually using \texttt{docker compose up}, install dependencies in the \texttt{main-server-express} directory and run \texttt{npm run dev}. MongoDB collections can be populated using \texttt{./db/mongo/import.sh} and indexed with \texttt{./db/mongo/index.sh}; the script \texttt{./db/mongo/verify.sh} checks that the counts of documents match the expected totals. The system uses environment variables defined in \texttt{.env} to configure service URLs and logging levels; sample values are provided in \texttt{.env.example}. Once running, the web interface is accessible at \url{http://localhost:3000}.
-
-\section{Bibliography}
-
-\begin{itemize}
-	\item Assignment specification and report guidelines.
-	\item Project README for deployment instructions.
-	\item Internal code documentation and lecture materials for design patterns and architectural guidance (no citation required).
-\end{itemize}
+We divided tasks to leverage each member's strengths while ensuring that everyone contributed to all parts of the project.\\
+Member Alasotto Cristian focused on the central Express server and front-end, designing the Handlebars templates, implementing route logic, ensuring that query parameters were correctly mapped to API calls, and creating and managing the Docker containers used to run the project services.\\
+Member Collura Federico took primary responsibility for the Spring Boot service, modelling the PostgreSQL schema in Java, writing custom queries and integrating Swagger documentation.\\
+Member Correndo Davide led the development of the MongoDB service, writing controllers and services for ratings, favourites and statistics, and implementing data import and indexing scripts.\\
 
 \end{document}
