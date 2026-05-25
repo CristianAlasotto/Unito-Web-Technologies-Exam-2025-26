@@ -59,7 +59,7 @@ Each module uses a DTO to decouple the JPA entity from JSON. The DTO is built vi
 
 The service layer includes \texttt{likePattern()}, which builds \texttt{\%value\%} for text search, ensuring Hibernate receives a non-null \texttt{String} and infers \texttt{VARCHAR}. The database has ten tables with 28,955 anime records; six use composite keys with \texttt{@IdClass} implementing \texttt{Serializable}, \texttt{equals()}, and \texttt{hashCode()}. Junction tables (e.g. \texttt{character\_anime\_works}, \texttt{person\_voice\_works}) support JPQL cross-entity queries.
 
-All endpoints support page-based and limit/offset pagination (default ten results) and a \texttt{sort} parameter (comma-separated, \texttt{-} for descending); NULL values are last. Swagger documents endpoints at \url{http://localhost:8080/swagger-ui/index.html}, and Javadoc documents all classes and methods.
+All endpoints support page-based and limit/offset pagination (default ten results) and a \texttt{sort} parameter (comma-separated, \texttt{-} for descending); NULL values are last. Swagger documents endpoints at \url{http://localhost:8080/swagger-ui/index.html}, and Javadoc documents all classes and methods at \texttt{data-server-springboot/build/docs/javadoc/index.html} path.
 
 \subsection{Development History and Problems}
 

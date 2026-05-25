@@ -75,6 +75,12 @@ echo "   Database URL: ${DB_URL}"
 echo "   Server Port: ${SERVER_PORT}"
 echo ""
 
+# Generate Javadoc HTML documentation
+echo "📚 Generating Javadoc documentation..."
+./gradlew javadoc
+echo "✅ Javadoc generated at: build/docs/javadoc/index.html"
+echo ""
+
 # Start Spring Boot with environment variables
 # NO .env file is used - all values come from parameters!
 SPRING_DATASOURCE_URL="${DB_URL}" \
