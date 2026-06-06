@@ -1,6 +1,7 @@
 # Quick Start
 
 Insert dataset files in "solution/data"
+"https://www.kaggle.com/datasets/cristianalasotto/anime-dataset-unito-web-t-project-202526"
 
 ## Prerequisites
 
